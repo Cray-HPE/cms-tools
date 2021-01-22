@@ -5,5 +5,7 @@ rpmBuild(
     target_node: "ncn",
     channel: "casmcms-builds",
     fanout_params: ["sle15sp1"],
-    recv_triggers: ["cme-premium-cf"]
+    recv_triggers: ["cme-premium-cf"],
+    githubPushRepo: "Cray-HPE/bos-python-helper",
+    githubPushBranches: /(bugfix\/.*|feature\/.*|hotfix\/.*|master|release\/.*)/
 )
