@@ -1,0 +1,374 @@
+time="2020-05-21T14:19:32-05:00" level=info msg="cmsdev starting" args=ct run=eOWsl service=ims stage=4
+time="2020-05-21T14:19:32-05:00" level=info msg="Test retry timeout is 60 seconds" args=ct run=eOWsl service=ims stage=4
+time="2020-05-21T14:19:32-05:00" level=info msg="Attempt #1" args=ct run=eOWsl service=ims stage=4
+time="2020-05-21T14:19:32-05:00" level=info msg="checking pod status for cray-ims-667456cf78-vbqr2 expecting Running" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:32-05:00" level=info msg="Pod status is as expected" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:32-05:00" level=info msg="checking pvc status for cray-ims-data-claim expecting Bound" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:32-05:00" level=info msg="pvc status is as expected" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:32-05:00" level=info msg="Reading /opt/cray/crayctl/ansible_framework/roles/cray_init_ims/defaults/main.yml" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:32-05:00" level=info msg="Parsing file to extract cray_init_ims_initial_recipes map" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:32-05:00" level=info msg="Found recipe in file: cray-sles15sp1-barebones" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:32-05:00" level=info msg="Distro is sles15" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:32-05:00" level=info msg="Getting list of cray-init-recipe pods" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:32-05:00" level=info msg="Found pod cray-init-recipe-cray-sles15sp1-barebones-7gpgj with phase Succeeded" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:32-05:00" level=info msg="Found pod cray-init-recipe-cray-sles15sp1-cle-7gsmn with phase Succeeded" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:32-05:00" level=info msg="Getting list of all recipe records in IMS via API" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:32-05:00" level=info msg="Getting access token" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/ims/recipes" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Received status code 200, as expected" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Decoding JSON in response body" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Found 3 recipe records in IMS" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Verifying that all expected IMS recipes are available" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Checking for recipe cray-sles15sp1-barebones, distro sles15" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Found this recipe in IMS with id 104ab9ff-5308-4442-b31c-ed42f61b858e" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Checking IMS Liveness Probe" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Getting access token" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/ims/healthz/live" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Received status code 200, as expected" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Checking IMS Readiness Probe" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Getting access token" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/ims/healthz/ready" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Received status code 200, as expected" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Getting IMS version" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Getting access token" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/ims/version" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Received status code 200, as expected" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Decoding JSON in response body" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="IMS version is reported to be 2.1.5" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Getting list of all image records in IMS via API" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Getting access token" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/ims/images" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Received status code 200, as expected" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Decoding JSON in response body" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Getting list of all job records in IMS via API" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:33-05:00" level=info msg="Getting access token" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:34-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/ims/jobs" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:34-05:00" level=info msg="Received status code 200, as expected" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:34-05:00" level=info msg="Decoding JSON in response body" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:34-05:00" level=info msg="Getting list of all public key records in IMS via API" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:34-05:00" level=info msg="Getting access token" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:34-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/ims/public-keys" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:34-05:00" level=info msg="Received status code 200, as expected" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:34-05:00" level=info msg="Decoding JSON in response body" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:34-05:00" level=info msg="Getting list of all image records in IMS via CLI" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:34-05:00" level=info msg="Getting access JSON object" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:34-05:00" level=info msg="Writing credentials for CLI authentication to file: /tmp/cmsdev-cray-credentials-file.2859209.json" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:34-05:00" level=info msg="Running command: CRAY_CREDENTIALS=/tmp/cmsdev-cray-credentials-file.2859209.json cray ims images list --format json" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:34-05:00" level=info msg="Decoding JSON in command output" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:34-05:00" level=info msg="Getting list of all job records in IMS via CLI" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:34-05:00" level=info msg="Running command: CRAY_CREDENTIALS=/tmp/cmsdev-cray-credentials-file.2859209.json cray ims jobs list --format json" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:35-05:00" level=info msg="Decoding JSON in command output" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:35-05:00" level=info msg="Getting list of all public key records in IMS via CLI" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:35-05:00" level=info msg="Running command: CRAY_CREDENTIALS=/tmp/cmsdev-cray-credentials-file.2859209.json cray ims public-keys list --format json" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:36-05:00" level=info msg="Decoding JSON in command output" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:36-05:00" level=info msg="Getting list of all recipe records in IMS via CLI" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:36-05:00" level=info msg="Running command: CRAY_CREDENTIALS=/tmp/cmsdev-cray-credentials-file.2859209.json cray ims recipes list --format json" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:36-05:00" level=info msg="Decoding JSON in command output" args=ct run=eOWsl-1 service=ims stage=4
+time="2020-05-21T14:19:36-05:00" level=info msg=SUCCESS args=ct run=eOWsl service=ims stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="cmsdev starting" args=ct run=xDX1S service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Test retry timeout is 90 seconds" args=ct run=xDX1S service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Attempt #1" args=ct run=xDX1S service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for cray-prs-59f846d99b-d7npw expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-cray-sles15-sp1-cn-696b5fb96b-gf4mr expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-cray-sles15-sp1-ncn-79bf846d7b-5qqdd expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-cray-sles15-sp1-sma-cn-8df8c46bb-dvtj4 expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-module-basesystem-dc786c8b-nwgc4 expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-module-basesystem-updates-67c5bcd5f4-28bqj expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-module-desktop-applications-cc4fb479d-sf9ph expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-module-desktop-applications-updates-d9dc4qjv7 expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-module-development-tools-8fbb77756-mqnn9 expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-module-development-tools-updates-56cddf5d9d84 expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-module-hpc-956bd7564-pttrp expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-module-hpc-updates-597c5ddc68-6qldb expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-module-legacy-7cf6cff49d-ds69d expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-module-legacy-updates-796fd6b88b-592ck expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-module-public-cloud-79c764cc4b-2czgg expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-module-public-cloud-updates-7f8fc4b59d-5vdr2 expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-module-server-applications-7b95486656-zhgrs expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-module-server-applications-updates-84bb4vlvbv expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-product-sles-6c54f45884-q8gb8 expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-product-sles-updates-74f4c4dc8d-fs226 expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-product-storage-6-68c78b57b6-vmdth expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-product-we-85c87844cb-pnn5k expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-product-we-updates-66d7fff6fb-79gff expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-sle-module-containers-5dc8cd74c4-hs8tl expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-sle-module-containers-updates-7d684c45dbprs2d expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-sle-module-python2-6c6b8d9dd4-5czvh expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-sle-module-python2-updates-897dccb64-lvw5h expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-sle-module-web-scripting-69c459bd4d-srzpg expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-sle-module-web-scripting-updates-956875ckcv6c expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-sle-product-hpc-8b56fb8b-jtfbq expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-sle-product-hpc-updates-687ccd5bc8-tdpg2 expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-sle15sp1-storage-6-updates-786dcd66c4-grtbq expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-third-party-sles15sp1-cn-84fd95bbf8-mndw5 expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pod status for prs-repo-third-party-sles15sp1-ncn-6dcb9c8584-q2d5d expecting Running" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Pod status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Number of PVC should be >= number of prs repo pods (33)" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-cray-sles15-sp1-cn expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-cray-sles15-sp1-ncn expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-cray-sles15-sp1-sma-cn expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-module-basesystem expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-module-basesystem-updates expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-module-desktop-applications expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-module-desktop-applications-updates expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-module-development-tools expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-module-development-tools-updates expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-module-hpc expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-module-hpc-updates expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-module-legacy expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-module-legacy-updates expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-module-public-cloud expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-module-public-cloud-updates expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-module-server-applications expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-module-server-applications-updates expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-product-sles expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-product-sles-updates expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-product-storage-6 expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-product-we expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-product-we-updates expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-sle-module-containers expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-sle-module-containers-updates expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-sle-module-python2 expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-sle-module-python2-updates expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-sle-module-web-scripting expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-sle-module-web-scripting-updates expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-sle-product-hpc expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-sle-product-hpc-updates expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-sle15sp1-storage-6-updates expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-third-party-sles15sp1-cn expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="checking pvc status for prs-repo-third-party-sles15sp1-ncn expecting Bound" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="pvc status is as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Verifying that all expected PRS repos are available" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Reading /opt/cray/crayctl/ansible_framework/roles/cray_init_prs/defaults/main.yml" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Parsing file to extract cray_rpm_repositories map" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Found repo in file: sle15sp1-SLE-Module-Containers-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="Getting repo from PRS: sle15sp1-SLE-Module-Containers-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:42-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-SLE-Module-Containers-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Found repo in file: sle15sp1-Module-HPC" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Getting repo from PRS: sle15sp1-Module-HPC" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Module-HPC" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Found repo in file: sle15sp1-SLE-Module-Containers" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Getting repo from PRS: sle15sp1-SLE-Module-Containers" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-SLE-Module-Containers" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Found repo in file: sle15sp1-Module-Development-Tools-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Getting repo from PRS: sle15sp1-Module-Development-Tools-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Module-Development-Tools-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Found repo in file: sle15sp1-Product-WE-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Getting repo from PRS: sle15sp1-Product-WE-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Product-WE-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Found repo in file: cray-sles15-sp1-sma-cn" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:43-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Getting repo from PRS: cray-sles15-sp1-sma-cn" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/cray-sles15-sp1-sma-cn" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Found repo in file: sle15sp1-Module-Development-Tools" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Getting repo from PRS: sle15sp1-Module-Development-Tools" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Module-Development-Tools" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Found repo in file: sle15sp1-Module-Server-Applications-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Getting repo from PRS: sle15sp1-Module-Server-Applications-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Module-Server-Applications-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Found repo in file: sle15sp1-SLE-Module-Web-Scripting-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Getting repo from PRS: sle15sp1-SLE-Module-Web-Scripting-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-SLE-Module-Web-Scripting-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Found repo in file: sle15sp1-Module-Server-Applications" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Getting repo from PRS: sle15sp1-Module-Server-Applications" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Module-Server-Applications" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Found repo in file: sle15sp1-SLE-Module-Python2" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Getting repo from PRS: sle15sp1-SLE-Module-Python2" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-SLE-Module-Python2" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Found repo in file: sle15sp1-SLE-Module-Python2-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:44-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Getting repo from PRS: sle15sp1-SLE-Module-Python2-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-SLE-Module-Python2-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Found repo in file: sle15sp1-Product-WE" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Getting repo from PRS: sle15sp1-Product-WE" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Product-WE" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Found repo in file: sle15sp1-Product-SLES-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Getting repo from PRS: sle15sp1-Product-SLES-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Product-SLES-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Found repo in file: sle15sp1-SLE-Product-HPC-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Getting repo from PRS: sle15sp1-SLE-Product-HPC-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-SLE-Product-HPC-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Found repo in file: third-party-sles15sp1-cn" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Getting repo from PRS: third-party-sles15sp1-cn" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/third-party-sles15sp1-cn" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Found repo in file: third-party-sles15sp1-ncn" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:45-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Getting repo from PRS: third-party-sles15sp1-ncn" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/third-party-sles15sp1-ncn" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Found repo in file: sle15sp1-Module-Legacy" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Getting repo from PRS: sle15sp1-Module-Legacy" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Module-Legacy" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Found repo in file: sle15sp1-Product-SLES" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Getting repo from PRS: sle15sp1-Product-SLES" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Product-SLES" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Found repo in file: sle15sp1-Module-Basesystem-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Getting repo from PRS: sle15sp1-Module-Basesystem-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Module-Basesystem-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Found repo in file: sle15sp1-Module-Desktop-Applications-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Getting repo from PRS: sle15sp1-Module-Desktop-Applications-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Module-Desktop-Applications-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Found repo in file: sle15sp1-Module-Legacy-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:46-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Getting repo from PRS: sle15sp1-Module-Legacy-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Module-Legacy-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Found repo in file: sle15sp1-Module-Basesystem" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Getting repo from PRS: sle15sp1-Module-Basesystem" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Module-Basesystem" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Found repo in file: sle15sp1-Module-Desktop-Applications" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Getting repo from PRS: sle15sp1-Module-Desktop-Applications" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Module-Desktop-Applications" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Found repo in file: sle15sp1-SLE-Module-Web-Scripting" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Getting repo from PRS: sle15sp1-SLE-Module-Web-Scripting" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-SLE-Module-Web-Scripting" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Found repo in file: sle15sp1-Storage-6-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Getting repo from PRS: sle15sp1-Storage-6-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Storage-6-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Found repo in file: cray-sles15-sp1-cn" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:47-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Getting repo from PRS: cray-sles15-sp1-cn" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/cray-sles15-sp1-cn" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Found repo in file: cray-sles15-sp1-ncn" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Getting repo from PRS: cray-sles15-sp1-ncn" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/cray-sles15-sp1-ncn" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Found repo in file: sle15sp1-Module-Public-Cloud" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Getting repo from PRS: sle15sp1-Module-Public-Cloud" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Module-Public-Cloud" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Found repo in file: sle15sp1-Product-Storage-6" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Getting repo from PRS: sle15sp1-Product-Storage-6" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Product-Storage-6" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Found repo in file: sle15sp1-SLE-Product-HPC" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Getting repo from PRS: sle15sp1-SLE-Product-HPC" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-SLE-Product-HPC" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Found repo in file: sle15sp1-Module-HPC-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Getting repo from PRS: sle15sp1-Module-HPC-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Module-HPC-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Found repo in file: sle15sp1-Module-Public-Cloud-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:48-05:00" level=info msg="Getting access token" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:49-05:00" level=info msg="Getting repo from PRS: sle15sp1-Module-Public-Cloud-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:49-05:00" level=info msg="GET https://api-gw-service-nmn.local/apis/prs/repositories/sle15sp1-Module-Public-Cloud-Updates" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:49-05:00" level=info msg="Received status code 200, as expected" args=ct run=xDX1S-1 service=prs stage=4
+time="2020-05-21T14:19:49-05:00" level=info msg=SUCCESS args=ct run=xDX1S service=prs stage=4
