@@ -8,6 +8,6 @@ rpmBuild(
     channel: "casmcms-builds",
     fanout_params: ["sle15sp1"],
     recv_triggers: ["cme-premium-cf"],
-    githubPushRepo: "Cray-HPE/bos-python-helper",
+    githubPushRepo: "Cray-HPE/cms-tools",
     githubPushBranches: /(bugfix\/.*|feature\/.*|hotfix\/.*|master|release\/.*)/
 )
