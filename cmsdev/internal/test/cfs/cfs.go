@@ -97,7 +97,7 @@ func testCFSCLI() (passed bool) {
 
 	common.Infof("Checking CFS CLI endpoints")
 	for _, cfsEndpoint := range cfsEndpoints {
-		cmdString := fmt.Sprintf("cray cfs %s list --format json -vvv", cfsEndpoint)
+		cmdString := fmt.Sprintf("cfs %s list --format json -vvv", cfsEndpoint)
 		cmdOut := test.RunCLICommand(cmdString)
 		if cmdOut == nil {
 			passed = false
