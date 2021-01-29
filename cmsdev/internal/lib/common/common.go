@@ -3,7 +3,7 @@
  *
  * Library of general utility functions
  *
- * Copyright 2019-2020 Hewlett Packard Enterprise Development LP
+ * Copyright 2019-2021 Hewlett Packard Enterprise Development LP
  */
 
 package common
@@ -76,13 +76,6 @@ var CMSServices = []string{
 	"ipxe",
 	"tftp",
 	"vcs",
-}
-
-// list of supported CMS services test types
-var CMSServicesTestTypes = []string{
-	"api",
-	"smoke",
-	"ct",
 }
 
 // log file handle
@@ -703,12 +696,11 @@ func CreateDirectoryIfNeeded(path string) error {
 
 // create log file and directory provided by path if one does not exist
 // if no path is provided, use DEFAULT_LOG_FILE_DIR
-func CreateLogFile(path, stage, service string, api, ct, local, logs, smoke, verbose bool) {
+func CreateLogFile(path, service string, logs, noRetry, retry, quiet, verbose bool) {
 	var err error
 	if verbose {
 		PrintVerbose = true
-	} else if ct {
-		// These are disabled for CT tests unless verbose flag is present
+	} else if quiet {
 		PrintInfo, PrintWarn = false, false
 	}
 	if !logs {
@@ -729,29 +721,26 @@ func CreateLogFile(path, stage, service string, api, ct, local, logs, smoke, ver
 	}
 	Log.SetOutput(f)
 	args := make([]string, 0, 5)
-	if api {
-		args = append(args, "api")
+	if noRetry {
+		args = append(args, "no-retry")
 	}
-	if ct {
-		args = append(args, "ct")
+	if retry {
+		args = append(args, "retry")
 	}
-	if local {
-		args = append(args, "local")
-	}
-	if smoke {
-		args = append(args, "smoke")
+	if quiet {
+		args = append(args, "quiet")
 	}
 	if verbose {
 		args = append(args, "verbose")
 	}
 	RunBaseTag = AlnumString(5)
 	RunTag = RunBaseTag
-	TestLog = Log.WithFields(logrus.Fields{"service": service, "stage": stage, "args": strings.Join(args, ",")})
+	TestLog = Log.WithFields(logrus.Fields{"service": service, "args": strings.Join(args, ",")})
 	Infof("cmsdev starting")
 	fmt.Printf("Starting main run, tag: %s\n", RunTag)
 }
 
-func InitArtifacts(stage, service string) {
+func InitArtifacts(service string) {
 	artifactDirectory = os.Getenv("ARTIFACTS")
 	if len(artifactDirectory) == 0 {
 		Warnf("ARTIFACTS environment variable not set; no artifacts will be saved")
@@ -764,7 +753,7 @@ func InitArtifacts(stage, service string) {
 		artifactDirectory = ""
 		return
 	}
-	artifactFilePrefix = service + "-stage" + stage + "-"
+	artifactFilePrefix = service + "-"
 	Infof("artifactDirectory=%s, artifactFilePrefix=%s", artifactDirectory, artifactFilePrefix)
 }
 

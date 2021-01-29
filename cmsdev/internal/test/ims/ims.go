@@ -5,7 +5,7 @@ package ims
  *
  * ims commons file
  *
- * Copyright 2019-2020 Hewlett Packard Enterprise Development LP
+ * Copyright 2019-2021 Hewlett Packard Enterprise Development LP
  */
 
 import (
@@ -73,162 +73,149 @@ var pvcNames = []string{
 // CMS service endpoints
 var endpoints map[string]map[string]*common.Endpoint = common.GetEndpoints()
 
-func IsIMSRunning(local, smoke, ct bool, crayctlStage string) (passed bool) {
+func IsIMSRunning() (passed bool) {
 	var found, artifactsCollected bool
 	var expectedRecipes []Recipe
 	passed = true
 	artifactsCollected = false
-	switch crayctlStage {
-	case "1", "2", "3":
-		common.Infof("Nothing to run for this stage")
-		return
-	case "4", "5":
-		// check service pod status
-		podNames, ok := test.GetPodNamesByPrefixKey("ims", 1, 1)
-		if !ok {
-			passed = false
-		}
-		common.Infof("Found %d ims pods", len(podNames))
-		if !test.CheckPodListStats(podNames) {
-			passed = false
-		}
+	// check service pod status
+	podNames, ok := test.GetPodNamesByPrefixKey("ims", 1, 1)
+	if !ok {
+		passed = false
+	}
+	common.Infof("Found %d ims pods", len(podNames))
+	if !test.CheckPodListStats(podNames) {
+		passed = false
+	}
 
-		for _, pvcName := range pvcNames {
-			if !test.CheckPVCStatus(pvcName) {
+	for _, pvcName := range pvcNames {
+		if !test.CheckPVCStatus(pvcName) {
+			passed = false
+		}
+	}
+
+	if !passed {
+		common.ArtifactsPodsPvcs(podNames, pvcNames)
+		artifactsCollected = true
+	}
+
+	// Until CASMCMS-6027 is resolved, this test does not verify the existence & correctness of any IMS recipes.
+	// However, the user can manually include a check for a recipe by using the following environment variables.
+	// If set, IMS_RECIPE_NAME specifies the expected name of the the default IMS recipe to verify.
+	// If set, IMS_RECIPE_DISTRO specifies the expected distro of the default IMS recipe to verify.
+	defaultRecipeName := os.Getenv("IMS_RECIPE_NAME")
+	if len(defaultRecipeName) > 0 {
+		common.Infof("IMS_RECIPE_NAME set to \"%s\"", defaultRecipeName)
+
+		defaultRecipeDistro := os.Getenv("IMS_RECIPE_DISTRO")
+		if len(defaultRecipeDistro) > 0 {
+			common.Infof("IMS_RECIPE_DISTRO set to \"%s\"", defaultRecipeDistro)
+			expectedRecipes = append(expectedRecipes, Recipe{Name: defaultRecipeName, Distro: defaultRecipeDistro})
+		} else {
+			// Default to RECIPE_DISTRO_DEFAULT
+			common.Infof("IMS_RECIPE_DISTRO not set. Default IMS recipe distro = \"%s\"", RECIPE_DISTRO_DEFAULT)
+			expectedRecipes = append(expectedRecipes, Recipe{Name: defaultRecipeName, Distro: RECIPE_DISTRO_DEFAULT})
+		}
+	} else {
+		common.Infof("IMS_RECIPE_NAME not set. Skipping default recipe checks.")
+	}
+
+	// Verify any default ims recipe pods are Succeeded
+	common.Infof("Getting list of cray-init-recipe pods")
+	pods, err := k8s.GetPods(common.NAMESPACE, "cray-init-recipe")
+	if err != nil {
+		common.Error(err)
+		passed = false
+	} else if len(pods) > 0 {
+		for _, pod := range pods {
+			podName := pod.GetName()
+			podPhase := pod.Status.Phase
+			if len(pod.Status.Message) > 0 {
+				common.Infof("Found pod %s with phase %s (message: %s)", podName, podPhase, pod.Status.Message)
+			} else {
+				common.Infof("Found pod %s with phase %s", podName, podPhase)
+			}
+			if podPhase == "Succeeded" {
+				continue
+			}
+			// Check if this is one of our default pods
+			matchingRecipes := findMatchingRecipes(podName, expectedRecipes)
+			if len(matchingRecipes) == 0 {
+				common.Warnf("Pod %s has not Succeeded (phase=%s), but it is not for one of our default recipes", podName, podPhase)
+				continue
+			}
+			recFromPod, okay := getRecipeEnvVars(pod)
+			if !okay {
+				passed = false
+				continue
+			}
+			found = false
+			podRecName := recFromPod.Name
+			podRecDistro := recFromPod.Distro
+			for _, matchingRec := range matchingRecipes {
+				if podRecName == matchingRec.Name && podRecDistro == matchingRec.Distro {
+					found = true
+				} else if podRecName == matchingRec.Name {
+					common.Warnf("Recipe name (%s) in this pod (%s) matches a default recipe, but with different distro (pod %s, default %s)", podRecName, podName, podRecDistro, matchingRec.Distro)
+				}
+			}
+			if found {
+				common.Errorf("Default recipe pod %s should have phase Succeeded but has phase=%s", podName, podPhase)
+				passed = false
+			} else {
+				common.Warnf("Pod %s is not for a default recipe (pod recipe=%s distro=%s), so we only warn that its phase %s != Succeeded", podName, podRecName, podRecDistro, podPhase)
+			}
+		}
+	} else {
+		// We don't consider this a failure because as long as the recipes exist in
+		// IMS, it is okay if the pod isn't there
+		common.Warnf("No cray-init-recipe pods found")
+	}
+
+	if !passed && !artifactsCollected {
+		common.ArtifactsPodsPvcs(podNames, pvcNames)
+		artifactsCollected = true
+	}
+
+	// Verify S3 (from an IMS perspective)
+	if !verifyS3(len(expectedRecipes)) {
+		passed = false
+	}
+
+	// Get all recipe records from IMS
+	imsRecipeList := getIMSRecipeRecordsAPI()
+	if imsRecipeList == nil {
+		passed = false
+	} else {
+		common.Infof("Found %d recipe records in IMS", len(imsRecipeList))
+		if len(expectedRecipes) > 0 {
+			// Verify that all expected base recipes are available in IMS
+			if !verifyDefaultRecipes(expectedRecipes, imsRecipeList) {
 				passed = false
 			}
 		}
-
-		if !passed {
-			common.ArtifactsPodsPvcs(podNames, pvcNames)
-			artifactsCollected = true
-		}
-
-		// Until CASMCMS-6027 is resolved, this test does not verify the existence & correctness of any IMS recipes.
-		// However, the user can manually include a check for a recipe by using the following environment variables.
-		// If set, IMS_RECIPE_NAME specifies the expected name of the the default IMS recipe to verify.
-		// If set, IMS_RECIPE_DISTRO specifies the expected distro of the default IMS recipe to verify.
-		defaultRecipeName := os.Getenv("IMS_RECIPE_NAME")
-		if len(defaultRecipeName) > 0 {
-			common.Infof("IMS_RECIPE_NAME set to \"%s\"", defaultRecipeName)
-
-			defaultRecipeDistro := os.Getenv("IMS_RECIPE_DISTRO")
-			if len(defaultRecipeDistro) > 0 {
-				common.Infof("IMS_RECIPE_DISTRO set to \"%s\"", defaultRecipeDistro)
-				expectedRecipes = append(expectedRecipes, Recipe{Name: defaultRecipeName, Distro: defaultRecipeDistro})
-			} else {
-				// Default to RECIPE_DISTRO_DEFAULT
-				common.Infof("IMS_RECIPE_DISTRO not set. Default IMS recipe distro = \"%s\"", RECIPE_DISTRO_DEFAULT)
-				expectedRecipes = append(expectedRecipes, Recipe{Name: defaultRecipeName, Distro: RECIPE_DISTRO_DEFAULT})
-			}
-		} else {
-			common.Infof("IMS_RECIPE_NAME not set. Skipping default recipe checks.")
-		}
-
-		// Verify any default ims recipe pods are Succeeded
-		common.Infof("Getting list of cray-init-recipe pods")
-		pods, err := k8s.GetPods(common.NAMESPACE, "cray-init-recipe")
-		if err != nil {
-			common.Error(err)
-			passed = false
-		} else if len(pods) > 0 {
-			for _, pod := range pods {
-				podName := pod.GetName()
-				podPhase := pod.Status.Phase
-				if len(pod.Status.Message) > 0 {
-					common.Infof("Found pod %s with phase %s (message: %s)", podName, podPhase, pod.Status.Message)
-				} else {
-					common.Infof("Found pod %s with phase %s", podName, podPhase)
-				}
-				if podPhase == "Succeeded" {
-					continue
-				}
-				// Check if this is one of our default pods
-				matchingRecipes := findMatchingRecipes(podName, expectedRecipes)
-				if len(matchingRecipes) == 0 {
-					common.Warnf("Pod %s has not Succeeded (phase=%s), but it is not for one of our default recipes", podName, podPhase)
-					continue
-				}
-				recFromPod, okay := getRecipeEnvVars(pod)
-				if !okay {
-					passed = false
-					continue
-				}
-				found = false
-				podRecName := recFromPod.Name
-				podRecDistro := recFromPod.Distro
-				for _, matchingRec := range matchingRecipes {
-					if podRecName == matchingRec.Name && podRecDistro == matchingRec.Distro {
-						found = true
-					} else if podRecName == matchingRec.Name {
-						common.Warnf("Recipe name (%s) in this pod (%s) matches a default recipe, but with different distro (pod %s, default %s)", podRecName, podName, podRecDistro, matchingRec.Distro)
-					}
-				}
-				if found {
-					common.Errorf("Default recipe pod %s should have phase Succeeded but has phase=%s", podName, podPhase)
-					passed = false
-				} else {
-					common.Warnf("Pod %s is not for a default recipe (pod recipe=%s distro=%s), so we only warn that its phase %s != Succeeded", podName, podRecName, podRecDistro, podPhase)
-				}
-			}
-		} else {
-			// We don't consider this a failure because as long as the recipes exist in
-			// IMS, it is okay if the pod isn't there
-			common.Warnf("No cray-init-recipe pods found")
-		}
-
-		if !passed && !artifactsCollected {
-			common.ArtifactsPodsPvcs(podNames, pvcNames)
-			artifactsCollected = true
-		}
-
-		// Verify S3 (from an IMS perspective)
-		if !verifyS3(len(expectedRecipes)) {
-			passed = false
-		}
-
-		// Get all recipe records from IMS
-		imsRecipeList := getIMSRecipeRecordsAPI()
-		if imsRecipeList == nil {
-			passed = false
-		} else {
-			common.Infof("Found %d recipe records in IMS", len(imsRecipeList))
-			if len(expectedRecipes) > 0 {
-				// Verify that all expected base recipes are available in IMS
-				if !verifyDefaultRecipes(expectedRecipes, imsRecipeList) {
-					passed = false
-				}
-			}
-		}
-
-		// Do a few basic API and CLI tests
-		checkIMSLivenessProbe()
-		checkIMSReadinessProbe()
-		ver := getIMSVersion()
-		common.Infof("IMS version is reported to be %s", ver)
-		getIMSImageRecordsAPI()
-		getIMSJobRecordsAPI()
-		getIMSPublicKeyRecordsAPI()
-		// We don't get the recipes via API as we have done so already earlier in this test
-
-		getIMSImageRecordsCLI()
-		getIMSJobRecordsCLI()
-		getIMSPublicKeyRecordsCLI()
-		getIMSRecipeRecordsCLI()
-
-		if !passed && !artifactsCollected {
-			common.ArtifactsPodsPvcs(podNames, pvcNames)
-			artifactsCollected = true
-		}
-
-		return
-	default:
-		common.Errorf("Invalid stage for this test")
-		passed = false
-		return
 	}
-	common.Errorf("Programming logic error: this line should never be reached")
-	passed = false
+
+	// Do a few basic API and CLI tests
+	checkIMSLivenessProbe()
+	checkIMSReadinessProbe()
+	ver := getIMSVersion()
+	common.Infof("IMS version is reported to be %s", ver)
+	getIMSImageRecordsAPI()
+	getIMSJobRecordsAPI()
+	getIMSPublicKeyRecordsAPI()
+	// We don't get the recipes via API as we have done so already earlier in this test
+
+	getIMSImageRecordsCLI()
+	getIMSJobRecordsCLI()
+	getIMSPublicKeyRecordsCLI()
+	getIMSRecipeRecordsCLI()
+
+	if !passed && !artifactsCollected {
+		common.ArtifactsPodsPvcs(podNames, pvcNames)
+		artifactsCollected = true
+	}
+
 	return
 }
 
