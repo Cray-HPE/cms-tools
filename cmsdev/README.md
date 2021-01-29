@@ -12,12 +12,8 @@ Be sure to copy the repo to a directory OUTSIDE of $GOPATH/src. In this example,
 cd /tmp/stash/cms-tools/cmsdev
 GOOS=linux GOARCH=amd64 go build -mod vendor .
 ```
-or download the binary here
-* [linux amd64](./cmsdev)
 
-# NOTE: Please rebuild and commit binary after code changes. Currently, there is no process in place to automatially rebuild after a repository commit.
-
-### Nteworthy file/directory locations
+### Noteworthy file/directory locations
 
 For most CMS components, the stage4/5 CT tests consist of a basic check for kubernetes pods. IMS also includes some calls to the service itself. These tests should absolutely be expanded (while still keeping in mind that longer-running tests should happen after localization).
 
@@ -35,7 +31,6 @@ Noteworthy files in the repo:
 
 | File or Directory | Description |
 | ------------------|-------------|
-| cmsdev/cmsdev | cmsdev binary |
 | [cmsdev/internal/cmd/test.go](internal/cmd/test.go) | Main test driver |
 | [cmsdev/internal/test/](internal/test/) | Every CMS component which is tested has a directory here that contains all test code |
 | [cmsdev/internal/lib/](internal/lib/) | Library modules shared by the tests (e.g. kubernetes functions, test logging functions, API/CLI functions, etc) |
