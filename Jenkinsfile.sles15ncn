@@ -5,9 +5,9 @@ rpmBuild(
     specfile: "cray-cmstools-crayctldeploy.spec",
     product: "csm",
     target_node: "ncn",
+    fanout_params: ["sle15sp1", "sle15sp2"],
     channel: "casmcms-builds",
-    fanout_params: ["sle15sp1"],
-    recv_triggers: ["cme-premium-cf"],
+    slack_notify: ["", "", "false", "false", "true", "true"],
     githubPushRepo: "Cray-HPE/cms-tools",
     githubPushBranches: /(bugfix\/.*|feature\/.*|hotfix\/.*|master|release\/.*)/
 )
