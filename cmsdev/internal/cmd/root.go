@@ -1,5 +1,5 @@
 /*
-Copyright © 2019-2020, Cray Inc.
+Copyright 2019-2021 Hewlett Packard Enterprise Development LP
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -30,9 +30,7 @@ var cfgFile string
 var rootCmd = &cobra.Command{
 	Use:   "cmsdev",
 	Short: "cms team development tool",
-	Long: `cmsdev is a test utility for cms services. It executes ct,
-smoke and API tests. The tool additionally contains functionality
-for gathering system information such as service logs.`,
+	Long:  "cmsdev is a test utility for cms services.",
 
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
