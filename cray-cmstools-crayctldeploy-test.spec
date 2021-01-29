@@ -8,6 +8,8 @@ Version: %(cat .rpm_version_cray-cmstools-crayctldeploy-test)
 Release: %(echo ${BUILD_METADATA})
 Source: %{name}-%{version}.tar.bz2
 Vendor: Cray Inc.
+Requires: python3 >= 3.6
+Requires: python3-requests >= 2.20
 
 # Test defines. These may make sense to put in a central location
 %define tests /opt/cray/tests
