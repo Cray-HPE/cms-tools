@@ -3,7 +3,7 @@
  *
  * test commons file
  *
- * Copyright 2019-2020 Hewlett Packard Enterprise Development LP
+ * Copyright 2019-2021 Hewlett Packard Enterprise Development LP
  */
 package cmd
 
@@ -121,20 +121,23 @@ cmsdev test bos --api
 cmsdev test cfs --smoke --verbose
   # runs cfs smoke tests with verbosity`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Variables for deprecated command line options
+		stage := "4"
+		local := false
+
 		// TODO: add custom flag validation
 		if len(args) < 1 {
 			common.Usagef("argument required, provide cms service name: %s\n", strings.Join(common.CMSServices, " "))
 		}
 		service := strings.TrimSpace(args[0])
 
-		// TODO: pass these flags as args in a more eloquent way
+		// TODO: pass these flags as args in a more elegant way
 		api, _ := cmd.Flags().GetBool("api")
 		ct, _ := cmd.Flags().GetBool("ct")
 		smoke, _ := cmd.Flags().GetBool("smoke")
-		stage, _ := cmd.Flags().GetString("crayctl-stage")
-		local, _ := cmd.Flags().GetBool("local")
 		logs, _ := cmd.Flags().GetBool("logs")
 		logsDir, _ := cmd.Flags().GetString("output")
+		noRetry, _ := cmd.Flags().GetBool("no-retry")
 		verbose, _ := cmd.Flags().GetBool("verbose")
 
 		// create log file if logs, ignore logsDir if !logs
@@ -146,25 +149,20 @@ cmsdev test cfs --smoke --verbose
 		} else if !(api || ct || smoke) {
 			common.Usagef("argument required, available cms tests types are: %s",
 				strings.Join(common.CMSServicesTestTypes, " "))
-		} else if ct {
-			i, _ := strconv.Atoi(stage)
-			if i < 0 || i > 5 {
-				common.Usagef("valid stages are crayctl-stage=1..5")
-			}
 		}
 
 		if ct {
 			// Initialize variables related to saving CT test artifacts
 			common.InitArtifacts(stage, service)
 
-			if stage != "4" {
+			if noRetry {
 				if RunCTTest(service, stage, local, smoke, ct) {
 					common.Success()
 				} else {
 					common.Failure()
 				}
 			} else {
-				// CASMCMS-4429, CASMCMS-4574: Add automatic retries for CT tests in stage 4
+				// CASMCMS-4429, CASMCMS-4574: Add automatic retries for CT tests
 				// We will sleep between retries until the test passes or we exceed the maximum
 				// retry time for that test.
 				testPassed, finalTry := false, false
@@ -259,9 +257,10 @@ func init() {
 	testCmd.Flags().Bool("ct", false, "ct tests")
 	testCmd.Flags().Bool("smoke", false, "run smoke tests")
 	// TODO: ensure that these flags are persistent
-	testCmd.Flags().BoolP("local", "l", false, "run tests locally, not implemented")
 	testCmd.Flags().BoolP("logs", "", false, "enable test script logging")
+	testCmd.Flags().BoolP("no-retry", "n", false, "disable retry on failure, requires --ct")
 	testCmd.Flags().StringP("output", "o", "", "output logging to a file, requires --logs")
 	testCmd.Flags().BoolP("verbose", "v", false, "verbose mode")
-	testCmd.Flags().String("crayctl-stage", "4", "ct test stage")
+	testCmd.Flags().BoolP("local", "l", false, "no effect (deprecated)")
+	testCmd.Flags().String("crayctl-stage", "4", "no effect (deprecated)")
 }
