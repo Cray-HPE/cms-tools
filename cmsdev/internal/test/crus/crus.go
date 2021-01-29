@@ -169,7 +169,7 @@ func mungeSecretPresent() bool {
 // Make basic CRUS API call, checking only status code at this point
 func testCRUSCLI() bool {
 	common.Infof("Checking CRUS CLI list sessions")
-	cmdOut := test.RunCLICommand("cray crus session list --format json -vvv")
+	cmdOut := test.RunCLICommand("crus session list --format json -vvv")
 	if cmdOut == nil {
 		return false
 	}

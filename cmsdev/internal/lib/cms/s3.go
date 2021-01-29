@@ -5,7 +5,7 @@ package cms
  *
  * s3 function library
  *
- * © Copyright 2019-2020 Hewlett Packard Enterprise Development LP
+ * © Copyright 2019-2021 Hewlett Packard Enterprise Development LP
  */
 
 import (
@@ -29,7 +29,7 @@ type ArtifactRecord struct {
 // If error, logs it and returns nil.
 func GetBuckets() (bucketList []string) {
 	common.Infof("Getting list of all S3 buckets via CLI")
-	cmdOut := test.RunCLICommand("cray artifacts buckets list --format json")
+	cmdOut := test.RunCLICommand("artifacts buckets list --format json")
 	if cmdOut == nil {
 		return nil
 	}
@@ -47,7 +47,7 @@ func GetBuckets() (bucketList []string) {
 // If error, logs it and returns nil.
 func GetArtifactsInBucket(bucket string) []ArtifactRecord {
 	common.Infof("Getting list of all S3 artifacts in %s bucket via CLI", bucket)
-	cmdOut := test.RunCLICommand(fmt.Sprintf("cray artifacts list %s --format json", bucket))
+	cmdOut := test.RunCLICommand(fmt.Sprintf("artifacts list %s --format json", bucket))
 	if cmdOut == nil {
 		return nil
 	}

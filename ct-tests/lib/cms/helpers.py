@@ -1,4 +1,4 @@
-# Copyright 2020 Hewlett Packard Enterprise Development LP
+# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
 
 """
 General CMS test helper functions
@@ -33,11 +33,11 @@ class CMSTestError(Exception):
             error(msg)
         super(CMSTestError, self).__init__(msg)
 
-def raise_test_error(msg):
+def raise_test_error(msg, log_error=True):
     """
     Raise a CMSTestError with the specified message.
     """
-    raise CMSTestError(msg)
+    raise CMSTestError(msg, log_error=log_error)
 
 #
 # Test logging / output functions
@@ -189,7 +189,14 @@ def remove_tmpdir(tmpdir):
     shutil.rmtree(tmpdir)
     info("Temporary directory %s removed" % tmpdir)
 
-def do_run_cmd(cmd_list, cmd_string, show_output=None, return_rc=False, cwd=None):
+def cmd_failed_msg(cmd_string, rc, stdout, stderr):
+    msg = "%s command failed with return code %d" % (cmd_string, rc)
+    error(msg)
+    info("Command stdout:\n%s" % stdout, timestamp=False)
+    info("Command stderr:\n%s" % stderr, timestamp=False)
+    return msg
+
+def do_run_cmd(cmd_list, cmd_string, show_output=None, return_rc=False, cwd=None, env_var=None):
     """ 
     Runs the specified command, then displays, logs, and returns the output
     """
@@ -200,6 +207,8 @@ def do_run_cmd(cmd_list, cmd_string, show_output=None, return_rc=False, cwd=None
         "stdout": subprocess.PIPE,
         "stderr": subprocess.PIPE,
         "check": not return_rc }
+    if env_var != None:
+        run_kwargs['env'] = env_var
     if cwd != None:
         run_kwargs["cwd"] = cwd
     if show_output:
@@ -218,12 +227,12 @@ def do_run_cmd(cmd_list, cmd_string, show_output=None, return_rc=False, cwd=None
             return { "rc": cmdrc, "out": cmdout, "err": cmderr }
         return { "out": cmdout }
     except subprocess.CalledProcessError as e:
-        msg = "%s command failed with return code %d" % (
-            cmd_string, e.returncode)
-        error(msg)
-        info("Command stdout:\n%s" % e.stdout.decode(), timestamp=False)
-        info("Command stderr:\n%s" % e.stderr.decode(), timestamp=False)
-        raise_test_error(msg)
+        msg = cmd_failed_msg(
+            cmd_string=cmd_string, 
+            rc=e.returncode, 
+            stdout=e.stdout.decode(), 
+            stderr=e.stderr.decode())
+        raise CMSTestError(msg, log_error=False) from e
 
 def run_cmd_list(cmd_list, **kwargs):
     """
