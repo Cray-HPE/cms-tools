@@ -9,8 +9,7 @@ Source: %{name}-%{version}.tar.bz2
 Vendor: Cray Inc.
 BuildRequires: make
 BuildRequires: go >= 1.13
-Requires: cray-crayctl
-Requires: kubernetes-crayctldeploy
+Requires: python3 >= 3.6
 
 %description
 Cray CMS tests and tools
