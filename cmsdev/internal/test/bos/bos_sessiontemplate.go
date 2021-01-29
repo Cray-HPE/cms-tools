@@ -5,7 +5,7 @@ package bos
  *
  * bos sessiontemplate tests
  *
- * Copyright 2019-2020 Hewlett Packard Enterprise Development LP
+ * Copyright 2019-2021 Hewlett Packard Enterprise Development LP
  */
 
 import (
@@ -84,7 +84,7 @@ func sessionTemplateTestsAPI() bool {
 func sessionTemplateTestsCLI() bool {
 	// test #1, list session templates
 	common.Infof("Getting list of all BOS session templates via CLI")
-	cmdOut := test.RunCLICommand("cray bos v1 sessiontemplate list --format json")
+	cmdOut := test.RunCLICommand("bos v1 sessiontemplate list --format json")
 	if cmdOut == nil {
 		return false
 	}
@@ -129,7 +129,7 @@ func sessionTemplateTestsCLI() bool {
 	}
 
 	common.Infof("Describing BOS session template %s via CLI", sessionTemplateId)
-	cmdString := fmt.Sprintf("cray bos v1 sessiontemplate describe %s --format json", sessionTemplateId)
+	cmdString := fmt.Sprintf("bos v1 sessiontemplate describe %s --format json", sessionTemplateId)
 	cmdOut = test.RunCLICommand(cmdString)
 	if cmdOut == nil {
 		return false

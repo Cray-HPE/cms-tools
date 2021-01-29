@@ -411,7 +411,7 @@ func getIMSImageRecordsAPI() []IMSImageRecord {
 // Return a list of all image records in IMS
 func getIMSImageRecordsCLI() []IMSImageRecord {
 	common.Infof("Getting list of all image records in IMS via CLI")
-	cmdOut := test.RunCLICommand("cray ims images list --format json")
+	cmdOut := test.RunCLICommand("ims images list --format json")
 	if cmdOut == nil {
 		return nil
 	}
@@ -456,7 +456,7 @@ func getIMSJobRecordsAPI() []IMSJobRecord {
 // Return a list of all job records in IMS
 func getIMSJobRecordsCLI() []IMSJobRecord {
 	common.Infof("Getting list of all job records in IMS via CLI")
-	cmdOut := test.RunCLICommand("cray ims jobs list --format json")
+	cmdOut := test.RunCLICommand("ims jobs list --format json")
 	if cmdOut == nil {
 		return nil
 	}
@@ -502,7 +502,7 @@ func getIMSPublicKeyRecordsAPI() []IMSPublicKeyRecord {
 // Return a list of all public key records in IMS
 func getIMSPublicKeyRecordsCLI() []IMSPublicKeyRecord {
 	common.Infof("Getting list of all public key records in IMS via CLI")
-	cmdOut := test.RunCLICommand("cray ims public-keys list --format json")
+	cmdOut := test.RunCLICommand("ims public-keys list --format json")
 	if cmdOut == nil {
 		return nil
 	}
@@ -548,7 +548,7 @@ func getIMSRecipeRecordsAPI() []IMSRecipeRecord {
 // Return a list of all recipe records in IMS
 func getIMSRecipeRecordsCLI() []IMSRecipeRecord {
 	common.Infof("Getting list of all recipe records in IMS via CLI")
-	cmdOut := test.RunCLICommand("cray ims recipes list --format json")
+	cmdOut := test.RunCLICommand("ims recipes list --format json")
 	if cmdOut == nil {
 		return nil
 	}

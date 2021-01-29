@@ -5,7 +5,7 @@ package bos
  *
  * bos session tests
  *
- * Copyright 2019-2020 Hewlett Packard Enterprise Development LP
+ * Copyright 2019-2021 Hewlett Packard Enterprise Development LP
  */
 
 import (
@@ -58,7 +58,7 @@ func sessionTestsAPI() bool {
 func sessionTestsCLI() bool {
 	// test #1, list session
 	common.Infof("Getting list of all BOS sessions via CLI")
-	cmdOut := test.RunCLICommand("cray bos v1 session list --format json")
+	cmdOut := test.RunCLICommand("bos v1 session list --format json")
 	if cmdOut == nil {
 		return false
 	}
