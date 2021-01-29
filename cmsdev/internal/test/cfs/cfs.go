@@ -5,7 +5,7 @@ package cfs
  *
  * cfs commons file
  *
- * Copyright 2019-2020 Hewlett Packard Enterprise Development LP
+ * Copyright 2019-2021 Hewlett Packard Enterprise Development LP
  */
 
 import (
@@ -28,79 +28,66 @@ var cfsEndpoints = []string{
 	"sessions",
 }
 
-func IsCFSRunning(local, smoke, ct bool, crayctlStage string) (passed bool) {
+func IsCFSRunning() (passed bool) {
 	passed = true
-	switch crayctlStage {
-	case "1", "2", "3":
-		common.Infof("Nothing to run for this stage")
-		return
-	case "4", "5":
-		// 2 pods minimum since we expect both an api and operator pod
-		podNames, ok := test.GetPodNamesByPrefixKey("cfs", 2, -1)
-		if !ok {
-			passed = false
-		}
-		common.Infof("Found %d cfs pods", len(podNames))
-		apiPodName, operatorPodName := "", ""
-		for _, podName := range podNames {
-			// CFS is running if there is operator and api pod
-			// we can ignore the state of cfs-jobs or cfs-db pods
-			re := regexp.MustCompile(common.PodServiceNamePrefixes["cfsServices"])
-			if re.MatchString(podName) {
-				if strings.HasPrefix(podName, common.PodServiceNamePrefixes["cfs-api"]) {
-					apiPodName = podName
-					common.Infof("Found apiPod=%s", podName)
-				} else if strings.HasPrefix(podName, common.PodServiceNamePrefixes["cfs-operator"]) {
-					operatorPodName = podName
-					common.Infof("Found operatorPod=%s", podName)
-				}
-			}
-			if re.MatchString(podName) {
-				common.Infof("checking pod status for %s expecting %s", podName, "Running")
-			} else {
-				common.Infof("checking pod status for %s expecting %s", podName, "N/A")
-			}
-			status, err := k8s.GetPodStatus(common.NAMESPACE, podName)
-			if err != nil {
-				common.VerboseFailedf(err.Error())
-				passed = false
-				continue
-			}
-			common.Infof("Pod status is %s", status)
-			if re.MatchString(podName) {
-				if status != "Running" {
-					common.VerboseFailedf("expected status=Running, found status=%s for podName=%s", status, podName)
-					passed = false
-				} else {
-					common.VerboseOkay()
-				}
-			}
-		}
-		if len(apiPodName) == 0 {
-			common.Errorf("No apiPod found")
-			passed = false
-		}
-		if len(operatorPodName) == 0 {
-			common.Errorf("No operatorPod found")
-			passed = false
-		}
-		if !testCFSAPI() {
-			passed = false
-		}
-		if !testCFSCLI() {
-			passed = false
-		}
-		if !passed {
-			common.ArtifactsPods(podNames)
-		}
-		return
-	default:
-		common.Errorf("Invalid stage for this test")
+	// 2 pods minimum since we expect both an api and operator pod
+	podNames, ok := test.GetPodNamesByPrefixKey("cfs", 2, -1)
+	if !ok {
 		passed = false
-		return
 	}
-	common.Errorf("Programming logic error: this line should never be reached")
-	passed = false
+	common.Infof("Found %d cfs pods", len(podNames))
+	apiPodName, operatorPodName := "", ""
+	for _, podName := range podNames {
+		// CFS is running if there is operator and api pod
+		// we can ignore the state of cfs-jobs or cfs-db pods
+		re := regexp.MustCompile(common.PodServiceNamePrefixes["cfsServices"])
+		if re.MatchString(podName) {
+			if strings.HasPrefix(podName, common.PodServiceNamePrefixes["cfs-api"]) {
+				apiPodName = podName
+				common.Infof("Found apiPod=%s", podName)
+			} else if strings.HasPrefix(podName, common.PodServiceNamePrefixes["cfs-operator"]) {
+				operatorPodName = podName
+				common.Infof("Found operatorPod=%s", podName)
+			}
+		}
+		if re.MatchString(podName) {
+			common.Infof("checking pod status for %s expecting %s", podName, "Running")
+		} else {
+			common.Infof("checking pod status for %s expecting %s", podName, "N/A")
+		}
+		status, err := k8s.GetPodStatus(common.NAMESPACE, podName)
+		if err != nil {
+			common.VerboseFailedf(err.Error())
+			passed = false
+			continue
+		}
+		common.Infof("Pod status is %s", status)
+		if re.MatchString(podName) {
+			if status != "Running" {
+				common.VerboseFailedf("expected status=Running, found status=%s for podName=%s", status, podName)
+				passed = false
+			} else {
+				common.VerboseOkay()
+			}
+		}
+	}
+	if len(apiPodName) == 0 {
+		common.Errorf("No apiPod found")
+		passed = false
+	}
+	if len(operatorPodName) == 0 {
+		common.Errorf("No operatorPod found")
+		passed = false
+	}
+	if !testCFSAPI() {
+		passed = false
+	}
+	if !testCFSCLI() {
+		passed = false
+	}
+	if !passed {
+		common.ArtifactsPods(podNames)
+	}
 	return
 }
 
