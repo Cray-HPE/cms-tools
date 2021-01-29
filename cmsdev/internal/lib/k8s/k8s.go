@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Hewlett Packard Enterprise Development LP
+ * Copyright 2020-2021 Hewlett Packard Enterprise Development LP
  */
 
 package k8s
@@ -36,7 +36,7 @@ type ContainerEnvVar struct {
 	Name, Value string
 }
 
-var KubectlPath string
+var KubectlPath, VcsUser, VcsPass string
 
 func getKubeConfig() (*rest.Config, error) {
 	kubeconfig := os.Getenv("KUBECONFIG")
@@ -98,6 +98,13 @@ func RunCommandInContainer(podName, namespace, containerName string, cmdStrings 
 
 func GetVcsUsernamePassword() (vcsUsername, vcsPassword string, err error) {
 	// TODO: clean this up. remove exec.Command and replace with clientgo
+	if len(VcsUser) != 0 && len(VcsPass) != 0 {
+		common.Infof("Using cached values of vcs user and password")
+		vcsUsername = VcsUser
+		vcsPassword = VcsPass
+		return
+	}
+
 	var cmdOut []byte
 	var cmd *exec.Cmd
 
@@ -157,6 +164,8 @@ func GetVcsUsernamePassword() (vcsUsername, vcsPassword string, err error) {
 	}
 	vcsPassword = strings.TrimSpace(string(decodedBytes))
 	common.Infof("Decoded vcs password = \"%s\"", vcsPassword)
+	VcsUser = vcsUsername
+	VcsPass = vcsPassword
 	return
 }
 

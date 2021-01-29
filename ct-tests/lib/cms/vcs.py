@@ -1,4 +1,4 @@
-# Copyright 2020 Hewlett Packard Enterprise Development LP
+# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
 
 """
 VCS-related test helper functions for CMS tests
@@ -10,6 +10,7 @@ from .helpers import debug, info, raise_test_exception_error, run_cmd_list
 def clone_vcs_repo(tmpdir):
     """
     Clone the config-management vcs repo into the specified temporary directory.
+    Sets user.name and user.email for that repo.
     Returns the repo directory.
     """
     try:
@@ -21,6 +22,10 @@ def clone_vcs_repo(tmpdir):
         cwd=tmpdir)
     git_repo_dir="%s/config-management" % tmpdir
     info("Cloned vcs repo to directory %s" % git_repo_dir)
+    run_cmd_list(["git", "-C", git_repo_dir, "config", "user.email", "catfood@dogfood.mil"])
+    debug("Set user.email for cloned repo")
+    run_cmd_list(["git", "-C", git_repo_dir, "config", "user.name", "Rear Admiral Joseph Catfood"])
+    debug("Set user.name for cloned repo")
     return git_repo_dir
 
 def create_vcs_branch(repo_dir, branchname, base_branch="master"):
