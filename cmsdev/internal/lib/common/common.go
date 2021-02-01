@@ -696,7 +696,7 @@ func CreateDirectoryIfNeeded(path string) error {
 
 // create log file and directory provided by path if one does not exist
 // if no path is provided, use DEFAULT_LOG_FILE_DIR
-func CreateLogFile(path, service string, logs, noRetry, retry, quiet, verbose bool) {
+func CreateLogFile(path, service string, logs, retry, quiet, verbose bool) {
 	var err error
 	if verbose {
 		PrintVerbose = true
@@ -721,9 +721,6 @@ func CreateLogFile(path, service string, logs, noRetry, retry, quiet, verbose bo
 	}
 	Log.SetOutput(f)
 	args := make([]string, 0, 5)
-	if noRetry {
-		args = append(args, "no-retry")
-	}
 	if retry {
 		args = append(args, "retry")
 	}
