@@ -21,20 +21,24 @@ import (
 const VCSURL = common.BASEURL + "/vcs/api/v1"
 
 // Perform a VCS request of the specified type to the specified uri, with the specified JSON data (if any)
+// If the request fails, it is retried with authentication disabled.
 // Verify that the request succeeded and that the response had the expected status code
 // Log any errors found
-// If no errors are found, passed is set to true and the value of fatal is meaningless
-// If the request fails but works if tried without authentication, then passed is
-// set to false, but fatal is also set to false. This means the test can continue to run, since the
-// request did work, but ultimately the test will be logged as a failure.
-// Otherwise passed is set to false and fatal is set to true
-func vcsRequest(requestType, requestUri, jsonString string, expectedStatusCode int) (passed, fatal bool) {
+
+// requestOk is set to true if the request worked as expected (either originally or on unauthenticated retry)
+// Otherwise it is set to false
+// errorsFound is set to false if there were no errors, otherwise it is set to true.
+// This is of course the case if the request didn't work,
+// but it is also the case if the request only worked after being retried without authentication.
+// The latter case means the test can continue to run, since therequest did work, but ultimately the test will
+// be logged as a failure.
+func vcsRequest(requestType, requestUri, jsonString string, expectedStatusCode int) (requestOk, errorsFound bool) {
 	var resp *resty.Response
 	var dataArray []byte
 	var insecure = false
 
-	passed = false
-	fatal = true
+	requestOk = false
+	errorsFound = true
 
 	// Get vcs user and password
 	common.Infof("Getting vcs user and password")
@@ -99,13 +103,11 @@ func vcsRequest(requestType, requestUri, jsonString string, expectedStatusCode i
 	if resp.StatusCode() != expectedStatusCode {
 		common.Errorf("%s %s: expected status code %d, got %d", requestType, requestUrl, expectedStatusCode, resp.StatusCode())
 		return
-	} else {
-		common.Infof("%s %s: expected status code %d and got it", requestType, requestUrl, expectedStatusCode)
 	}
-	if insecure {
-		fatal = false
-	} else {
-		passed = true
+	common.Infof("%s %s: expected status code %d and got it", requestType, requestUrl, expectedStatusCode)
+	requestOk = true
+	if !insecure {
+		errorsFound = false
 	}
 	return
 }
@@ -141,6 +143,7 @@ func vcsPost(requestUri, jsonString string) (bool, bool) {
 // 10) Queries the new org via API to verify it is not found
 func repoTest() (passed bool) {
 	var repoUrl, vcsUser, vcsPass string
+	var requestOk, errorsFound bool
 
 	passed = true
 
@@ -150,24 +153,27 @@ func repoTest() (passed bool) {
 	orgDataJsonString := fmt.Sprintf(
 		`{ "username": "%s", "visibility": "public", "description": "Test org created by cmsdev" }`,
 		orgName)
-	if ok, fatal := vcsPost("/orgs", orgDataJsonString); !ok {
-		passed = false
-		if fatal {
-			return
-		}
+	requestOk, errorsFound = vcsPost("/orgs", orgDataJsonString)
+	passed = passed && requestOk && !errorsFound
+	if requestOk {
+		common.Infof("Org created successfully")
+	} else {
+		common.Errorf("Failed to create vcs organization")
+		return
 	}
-	common.Infof("Org created successfully")
 
 	// Query new org
 	orgUri := "/orgs/" + orgName
 	common.Infof("Query new vcs org")
-	if ok, fatal := vcsGet(orgUri, http.StatusOK); !ok {
-		passed = false
-		if fatal {
-			return
-		}
+	requestOk, errorsFound = vcsGet(orgUri, http.StatusOK)
+	passed = passed && requestOk && !errorsFound
+	if requestOk {
+		common.Infof("Successfully queried new vcs org")
+	} else {
+		common.Errorf("Failed to query vcs organization")
+		// Despite the query failure, we will proceed with the test, since the
+		// create request did appear to work
 	}
-	common.Infof("Successfully queried new vcs org")
 
 	// Attempt to create a repo in our org
 	repoName := "harf-" + common.AlnumString(8)
@@ -175,24 +181,29 @@ func repoTest() (passed bool) {
 	repoDataJsonString := fmt.Sprintf(
 		`{ "name": "%s", "auto_init": null, "description": "Test repo created by cmsdev", "gitignores": null, "license": null, "private": false, "readme": null }`,
 		repoName)
-	if ok, fatal := vcsPost("/org/"+orgName+"/repos", repoDataJsonString); !ok {
-		passed = false
-		if fatal {
-			return
-		}
+	requestOk, errorsFound = vcsPost("/org/"+orgName+"/repos", repoDataJsonString)
+	passed = passed && requestOk && !errorsFound
+	if requestOk {
+		common.Infof("Repo created successfully")
+	} else {
+		common.Errorf("Failed to create vcs repo")
+		common.Infof("Try to delete org")
+		vcsDelete(orgUri)
+		return
 	}
-	common.Infof("Repo created successfully")
 
 	// Verify we can query new repo via API
 	repoUri := "/repos/" + orgName + "/" + repoName
 	common.Infof("Query new vcs repo")
-	if ok, fatal := vcsGet(repoUri, http.StatusOK); !ok {
-		passed = false
-		if fatal {
-			return
-		}
+	requestOk, errorsFound = vcsGet(repoUri, http.StatusOK)
+	passed = passed && requestOk && !errorsFound
+	if requestOk {
+		common.Infof("Successfully queried new vcs repo")
+	} else {
+		common.Errorf("Failed to query vcs repo")
+		// Despite the query failure, we will proceed with the test, since the
+		// create request did appear to work
 	}
-	common.Infof("Successfully queried new vcs repo")
 
 	// Get vcs user and password
 	common.Infof("Getting vcs user and password")
@@ -209,25 +220,28 @@ func repoTest() (passed bool) {
 
 	// Delete repo
 	common.Infof("Delete repo %s", repoName)
-	if ok, fatal := vcsDelete(repoUri); !ok {
-		passed = false
-		if fatal {
-			common.Infof("Try to delete org")
-			vcsDelete(orgUri)
-			return
-		}
+	requestOk, errorsFound = vcsDelete(repoUri)
+	passed = passed && requestOk && !errorsFound
+	if requestOk {
+		common.Infof("Successfully deleted vcs repo")
+	} else {
+		common.Errorf("Failed to delete vcs repo")
+		common.Infof("Try to delete org anyway")
+		vcsDelete(orgUri)
+		return
 	}
-	common.Infof("Repo deleted successfully")
 
 	// Try API query to verify that it fails
 	common.Infof("Verify that API query of repo now returns not found status")
-	if ok, fatal := vcsGet(repoUri, http.StatusNotFound); !ok && fatal {
-		passed = false
-	} else {
+	requestOk, errorsFound = vcsGet(repoUri, http.StatusNotFound)
+	passed = passed && requestOk && !errorsFound
+	if requestOk {
 		common.Infof("Deleted repo not found by API query, as expected")
-		if !ok {
-			passed = false
-		}
+	} else {
+		common.Errorf("Deleted repo was found by API query")
+		common.Infof("Try to delete org anyway")
+		vcsDelete(orgUri)
+		return
 	}
 
 	// Try a clone to verify that it now fails
@@ -237,23 +251,24 @@ func repoTest() (passed bool) {
 
 	// Delete vcs org
 	common.Infof("Delete org %s", orgName)
-	if ok, fatal := vcsDelete(orgUri); !ok {
-		passed = false
-		if fatal {
-			return
-		}
+	requestOk, errorsFound = vcsDelete(orgUri)
+	passed = passed && requestOk && !errorsFound
+	if requestOk {
+		common.Infof("Successfully deleted vcs org")
+	} else {
+		common.Errorf("Failed to delete vcs org")
+		return
 	}
-	common.Infof("Org deleted successfully")
 
 	// Try API query to verify that it fails
 	common.Infof("Verify that API query of org now returns not found status")
-	if ok, fatal := vcsGet(orgUri, http.StatusNotFound); !ok {
-		passed = false
-		if fatal {
-			return
-		}
+	requestOk, errorsFound = vcsGet(orgUri, http.StatusNotFound)
+	passed = passed && requestOk && !errorsFound
+	if requestOk {
+		common.Infof("Deleted org not found by API query, as expected")
+	} else {
+		common.Errorf("Deleted org was found by API query")
 	}
-	common.Infof("Deleted repo not found by API query, as expected")
 
 	return
 }
@@ -298,7 +313,7 @@ func runCmd(shouldPass bool, cmdName string, cmdArgs ...string) bool {
 	if len(cmdOut) > 0 {
 		common.Infof("Command output: %s", cmdOut)
 	} else {
-		common.Infof("No output from command %s", cmdOut)
+		common.Infof("No output from command")
 	}
 	if err != nil {
 		if shouldPass {
