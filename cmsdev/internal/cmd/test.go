@@ -128,7 +128,8 @@ cmsdev test cfs -r --verbose
 		logs := !noLogs
 
 		// create log file if logs, ignore logsDir if !logs
-		common.CreateLogFile(logsDir, service, logs, retry, quiet, verbose)
+		// cmsdevVersion is found in version.go
+		common.CreateLogFile(logsDir, service, cmsdevVersion, logs, retry, quiet, verbose)
 
 		// Initialize variables related to saving CT test artifacts
 		common.InitArtifacts(service)
