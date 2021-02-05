@@ -37,7 +37,7 @@ var TestTimeouts = map[string]int64{
 
 // Default test timeout (in seconds)
 // This value is used if service is not listed in previous map
-const DefaultTestTimeout int64 = 60
+const DefaultTestTimeout int64 = 120
 
 // Run the specified test
 func RunTest(service string) bool {
@@ -101,12 +101,11 @@ Example Commands:
 
 cmsdev test conman
   # runs conman tests
-cmsdev test tftp --logs -q
-  # runs tftp tests in quiet mode with logging enabled
-cmsdev test cfs -n --verbose
-  # runs cfs tests with verbosity and no retry on failure`,
+cmsdev test tftp --no-log -q
+  # runs tftp tests in quiet mode with logging disabled
+cmsdev test cfs -r --verbose
+  # runs cfs tests with verbosity and retry on failure`,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		// TODO: add custom flag validation
 		if len(args) < 1 {
 			common.Usagef("argument required, provide cms service name: %s\n", strings.Join(common.CMSServices, " "))
@@ -114,34 +113,28 @@ cmsdev test cfs -n --verbose
 		service := strings.TrimSpace(args[0])
 
 		// TODO: pass these flags as args in a more elegant way
-		logs, _ := cmd.Flags().GetBool("logs")
-		logsDir, _ := cmd.Flags().GetString("output")
-		noRetry, _ := cmd.Flags().GetBool("no-retry")
+		noLogs, _ := cmd.Flags().GetBool("no-log")
+		logsDir, _ := cmd.Flags().GetString("log-dir")
 		retry, _ := cmd.Flags().GetBool("retry")
 		quiet, _ := cmd.Flags().GetBool("quiet")
 		verbose, _ := cmd.Flags().GetBool("verbose")
 
-		// create log file if logs, ignore logsDir if !logs
-		common.CreateLogFile(logsDir, service, logs, noRetry, retry, quiet, verbose)
-
 		// do some command line args checking
 		if validService := common.StringInArray(service, common.CMSServices); !validService {
 			common.Usagef("supported cms services are %s", strings.Join(common.CMSServices, " "))
-		} else if retry && noRetry {
-			common.Usagef("--no-retry and --retry are mutually exclusive")
 		} else if quiet && verbose {
 			common.Usagef("--quiet and --verbose are mutually exclusive")
 		}
+		logs := !noLogs
 
-		// If no-retry is specified, then retry must be false after previous check
-		// If no-retry is not specified, then we will still not retry, unless retry is set to true
-		// So this should get us what we want:
-		noRetry = !retry
+		// create log file if logs, ignore logsDir if !logs
+		// cmsdevVersion is found in version.go
+		common.CreateLogFile(logsDir, service, cmsdevVersion, logs, retry, quiet, verbose)
 
 		// Initialize variables related to saving CT test artifacts
 		common.InitArtifacts(service)
 
-		if noRetry {
+		if !retry {
 			if RunTest(service) {
 				common.Success()
 			} else {
@@ -184,10 +177,9 @@ cmsdev test cfs -n --verbose
 
 func init() {
 	rootCmd.AddCommand(testCmd)
-	testCmd.Flags().BoolP("logs", "", false, "enable logging to file")
-	testCmd.Flags().BoolP("no-retry", "n", false, "no retry on failure (default)")
+	testCmd.Flags().StringP("log-dir", "", "", "specify log directory")
+	testCmd.Flags().BoolP("no-log", "", false, "do not log to a file")
 	testCmd.Flags().BoolP("retry", "r", false, "retry on failure")
-	testCmd.Flags().StringP("output", "o", "", "specify log directory (requires --logs)")
 	testCmd.Flags().BoolP("quiet", "q", false, "quiet mode")
 	testCmd.Flags().BoolP("verbose", "v", false, "verbose mode")
 }
