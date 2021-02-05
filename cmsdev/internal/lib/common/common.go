@@ -696,7 +696,7 @@ func CreateDirectoryIfNeeded(path string) error {
 
 // create log file and directory provided by path if one does not exist
 // if no path is provided, use DEFAULT_LOG_FILE_DIR
-func CreateLogFile(path, service string, logs, noRetry, retry, quiet, verbose bool) {
+func CreateLogFile(path, service, version string, logs, retry, quiet, verbose bool) {
 	var err error
 	if verbose {
 		PrintVerbose = true
@@ -721,9 +721,6 @@ func CreateLogFile(path, service string, logs, noRetry, retry, quiet, verbose bo
 	}
 	Log.SetOutput(f)
 	args := make([]string, 0, 5)
-	if noRetry {
-		args = append(args, "no-retry")
-	}
 	if retry {
 		args = append(args, "retry")
 	}
@@ -735,9 +732,9 @@ func CreateLogFile(path, service string, logs, noRetry, retry, quiet, verbose bo
 	}
 	RunBaseTag = AlnumString(5)
 	RunTag = RunBaseTag
-	TestLog = Log.WithFields(logrus.Fields{"service": service, "args": strings.Join(args, ",")})
+	TestLog = Log.WithFields(logrus.Fields{"version": version, "service": service, "args": strings.Join(args, ",")})
 	Infof("cmsdev starting")
-	fmt.Printf("Starting main run, tag: %s\n", RunTag)
+	fmt.Printf("Starting main run, version: %s, tag: %s\n", version, RunTag)
 }
 
 func InitArtifacts(service string) {

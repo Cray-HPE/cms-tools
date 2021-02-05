@@ -18,6 +18,8 @@ Cray CMS tests and tools
 %setup -q
 
 %build
+# Update the version string in the cmsdev source code
+./update-cmsdev-version.sh "%{version}" cmsdev/internal/cmd/version.go
 pushd cmsdev
 make build
 popd

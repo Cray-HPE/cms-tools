@@ -46,13 +46,13 @@ cmsdev test cfs
    # runs cfs tests
 cmsdev test conman -q -r
    # runs conman tests quietly, retrying on failure
-cmsdev test ims -v --logs
-   # runs ims tests verbosely with logging enabled
+cmsdev test ims -v --no-log
+   # runs ims tests verbosely with logging disabled
      default=/opt/cray/tests/cmsdev.log, --output to override default
-IMS_RECIPE_NAME=uan-recipe cmsdev test ims --logs -v
+IMS_RECIPE_NAME=uan-recipe cmsdev test ims --no-log -v
    # same as previous, but also verifies that an IMS recipe with the specified name exists
    # (with distro type of sles15, by default)
-IMS_RECIPE_NAME=uan-recipe IMS_RECIPE_DISTRO=centos cmsdev test ims --logs -v
+IMS_RECIPE_NAME=uan-recipe IMS_RECIPE_DISTRO=centos cmsdev test ims --no-log -v
    # same as previous, but with the distro type specified as well
 ```
 
