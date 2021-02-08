@@ -9,11 +9,9 @@ package test
  */
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/k8s"
 	"strings"
@@ -79,32 +77,18 @@ func MakeConfigFile() string {
 }
 
 func RunCLICommand(cmd string) []byte {
+	var cmdOutBytes, cmdErrBytes []byte
 	var cmdStr, tmpCliConfigFile string
+	var err error
 
 	accessFile := GetAccessFile()
 	baseCmdStr := fmt.Sprintf("CRAY_CREDENTIALS=%s %s %s", accessFile, cray_cli, cmd)
 	if len(CliConfigFile) == 0 {
-		var stdout, stderr bytes.Buffer
-		var rc int
-		cmd := exec.Command("bash", "-c", baseCmdStr)
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
-		common.Infof("Running command: %s", baseCmdStr)
-		err := cmd.Run()
-		if err != nil {
-			if exitError, ok := err.(*exec.ExitError); ok {
-				rc = exitError.ExitCode()
-			}
-		} else {
-			rc = 0
+		cmdOutBytes, cmdErrBytes, _, err = common.RunNameBytes("bash", "-c", baseCmdStr)
+		if err == nil {
+			return cmdOutBytes
 		}
-		outStr, errStr := string(stdout.Bytes()), string(stderr.Bytes())
-		common.Infof("CLI command return code: %d", rc)
-		common.Infof("CLI command stdout:\n%s", outStr)
-		common.Infof("CLI command stderr:\n%s", errStr)
-		if rc == 0 {
-			return stdout.Bytes()
-		}
+		errStr := string(cmdErrBytes)
 		configError := false
 		for _, cstr := range ConfigErrorStrings {
 			if strings.Contains(errStr, cstr) {
@@ -126,15 +110,14 @@ func RunCLICommand(cmd string) []byte {
 		cmdStr = "CRAY_CONFIG=" + CliConfigFile + " " + baseCmdStr
 	}
 	common.Infof("Running command: %s", cmdStr)
-	cmdOut, err := exec.Command("bash", "-c", cmdStr).Output()
+	cmdOutBytes, _, _, err = common.RunNameBytes("bash", "-c", cmdStr)
 	if err != nil {
 		common.Error(err)
 		return nil
-	} else {
-		if len(tmpCliConfigFile) > 0 {
-			// Remember the CLI config file for future CLI calls
-			CliConfigFile = tmpCliConfigFile
-		}
-		return cmdOut
 	}
+	if len(tmpCliConfigFile) > 0 {
+		// Remember the CLI config file for future CLI calls
+		CliConfigFile = tmpCliConfigFile
+	}
+	return cmdOutBytes
 }
