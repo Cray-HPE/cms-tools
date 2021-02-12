@@ -1,4 +1,4 @@
-# Copyright 2020 Hewlett Packard Enterprise Development LP
+# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
 
 """
 Kubernetes-related CMS test helper functions
@@ -11,6 +11,7 @@ import warnings
 import yaml
 
 saved_k8s_client = None
+saved_csm_private_key = None
 
 def k8s_client():
     """
@@ -53,3 +54,21 @@ def get_vcs_username_password():
     password = base64.b64decode(pass64).decode("ascii").rstrip()
     debug("Decoded username is %s, password is %s" % (username, password))
     return username, password
+
+def get_csm_private_key():
+    """
+    If it has previously been retrieved, return it, otherwise 
+    retrieve (and save for future calls) the CSM private key for use when
+    sshing to compute nodes
+    """
+    global saved_csm_private_key
+    if saved_csm_private_key == None:
+        debug("Getting CSM private key from kubernetes")
+        k8s_secret = k8s_client().read_namespaced_secret(name="csm-private-key", namespace="services")
+        csmpk64 = k8s_secret.data["value"]
+        debug("CSM private key (base 64) is %s" % csmpk64)
+        debug('Decoding from base64')
+        csmpk = base64.b64decode(csmpk64).decode("ascii").rstrip()
+        debug("Decoded CSM private key is %s" % csmpk)
+        saved_csm_private_key = csmpk
+    return saved_csm_private_key
