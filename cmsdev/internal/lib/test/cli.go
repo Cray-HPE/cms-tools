@@ -77,19 +77,23 @@ func MakeConfigFile() string {
 }
 
 func RunCLICommand(cmd string) []byte {
-	var cmdOutBytes, cmdErrBytes []byte
+	var cmdResult *common.CommandResult
 	var cmdStr, tmpCliConfigFile string
 	var err error
 
 	accessFile := GetAccessFile()
 	baseCmdStr := fmt.Sprintf("CRAY_CREDENTIALS=%s %s %s", accessFile, cray_cli, cmd)
 	if len(CliConfigFile) == 0 {
-		cmdOutBytes, cmdErrBytes, _, err = common.RunNameBytes("bash", "-c", baseCmdStr)
-		if err == nil {
-			return cmdOutBytes
+		cmdResult, err = common.RunName("bash", "-c", baseCmdStr)
+		if err != nil {
+			common.Error(err)
+			common.Errorf("Error running CLI command")
+			return nil
+		} else if cmdResult.Rc == 0 {
+			return cmdResult.OutBytes
 		}
-		errStr := string(cmdErrBytes)
 		configError := false
+		errStr := cmdResult.ErrString()
 		for _, cstr := range ConfigErrorStrings {
 			if strings.Contains(errStr, cstr) {
 				configError = true
@@ -97,8 +101,7 @@ func RunCLICommand(cmd string) []byte {
 			}
 		}
 		if !configError {
-			common.Error(err)
-			common.Infof("CLI error does not look like a CLI config issue")
+			common.Errorf("CLI command failed (and does not look like a CLI config issue)")
 			return nil
 		}
 		common.Infof("CLI command failure looks like it may be a CLI config issue")
@@ -110,14 +113,18 @@ func RunCLICommand(cmd string) []byte {
 		cmdStr = "CRAY_CONFIG=" + CliConfigFile + " " + baseCmdStr
 	}
 	common.Infof("Running command: %s", cmdStr)
-	cmdOutBytes, _, _, err = common.RunNameBytes("bash", "-c", cmdStr)
+	cmdResult, err = common.RunName("bash", "-c", cmdStr)
 	if err != nil {
 		common.Error(err)
+		common.Errorf("Error running CLI command")
+		return nil
+	} else if cmdResult.Rc != 0 {
+		common.Errorf("CLI command failed")
 		return nil
 	}
 	if len(tmpCliConfigFile) > 0 {
 		// Remember the CLI config file for future CLI calls
 		CliConfigFile = tmpCliConfigFile
 	}
-	return cmdOutBytes
+	return cmdResult.OutBytes
 }
