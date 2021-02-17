@@ -9,47 +9,14 @@ package bos
  */
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"reflect"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/test"
 )
 
-func getFirstSessionTemplateId(listCmdOut []byte) (sessionTemplateId string, err error) {
-	var m interface{}
-	var idFound bool
-	sessionTemplateId = ""
-
-	err = json.Unmarshal(listCmdOut, &m)
-	if err != nil {
-		return
-	}
-	p, ok := m.([]interface{})
-	if !ok {
-		err = fmt.Errorf("JSON response object is not a list")
-		return
-	} else if len(p) == 0 {
-		// List is empty -- no session template ID to find
-		return
-	}
-
-	// The list is not empty -- get name field from the first entry
-	idFound = false
-	for k, v := range p[0].(map[string]interface{}) {
-		if reflect.TypeOf(k).String() == "string" && k == "name" {
-			sessionTemplateId = v.(string)
-			idFound = true
-			break
-		}
-	}
-	if !idFound {
-		err = fmt.Errorf("No name field found in first list item")
-	} else if len(sessionTemplateId) == 0 {
-		err = fmt.Errorf("name field of first list item is blank")
-	}
-	return
+func getFirstSessionTemplateId(listCmdOut []byte) (string, error) {
+	return common.GetStringFieldFromFirstItem("name", listCmdOut)
 }
 
 // sessiontemplate tests

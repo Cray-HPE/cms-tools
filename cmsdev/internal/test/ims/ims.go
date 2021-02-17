@@ -10,6 +10,7 @@ package ims
 
 import (
 	"encoding/json"
+	"fmt"
 	coreV1 "k8s.io/api/core/v1"
 	"net/http"
 	"os"
@@ -74,7 +75,7 @@ var pvcNames = []string{
 var endpoints map[string]map[string]*common.Endpoint = common.GetEndpoints()
 
 func IsIMSRunning() (passed bool) {
-	var found, artifactsCollected bool
+	var ok, found, artifactsCollected bool
 	var expectedRecipes []Recipe
 	passed = true
 	artifactsCollected = false
@@ -183,8 +184,8 @@ func IsIMSRunning() (passed bool) {
 	}
 
 	// Get all recipe records from IMS
-	imsRecipeList := getIMSRecipeRecordsAPI()
-	if imsRecipeList == nil {
+	imsRecipeList, ok := getIMSRecipeRecordsAPI()
+	if !ok {
 		passed = false
 	} else {
 		common.Infof("Found %d recipe records in IMS", len(imsRecipeList))
@@ -193,23 +194,121 @@ func IsIMSRunning() (passed bool) {
 			if !verifyDefaultRecipes(expectedRecipes, imsRecipeList) {
 				passed = false
 			}
+
+			// Validate that we can retrieve a specific recipe via API
+			_, ok = getIMSRecipeRecordAPI(imsRecipeList[0].Id)
+			if !ok {
+				passed = false
+			}
 		}
 	}
 
 	// Do a few basic API and CLI tests
-	checkIMSLivenessProbe()
-	checkIMSReadinessProbe()
-	ver := getIMSVersion()
-	common.Infof("IMS version is reported to be %s", ver)
-	getIMSImageRecordsAPI()
-	getIMSJobRecordsAPI()
-	getIMSPublicKeyRecordsAPI()
+	if !checkIMSLivenessProbe() {
+		passed = false
+	}
+	if !checkIMSReadinessProbe() {
+		passed = false
+	}
+	ver, ok := getIMSVersion()
+	if !ok {
+		passed = false
+	} else {
+		common.Infof("IMS version is reported to be %s", ver)
+	}
+
+	imsImageList, ok := getIMSImageRecordsAPI()
+	if !ok {
+		passed = false
+	} else {
+		common.Infof("Found %d IMS image records via API", len(imsImageList))
+		if len(imsImageList) > 0 {
+			_, ok = getIMSImageRecordAPI(imsImageList[0].Id)
+			if !ok {
+				passed = false
+			}
+		}
+	}
+
+	imsJobList, ok := getIMSJobRecordsAPI()
+	if !ok {
+		passed = false
+	} else {
+		common.Infof("Found %d IMS job records via API", len(imsJobList))
+		if len(imsJobList) > 0 {
+			_, ok = getIMSJobRecordAPI(imsJobList[0].Id)
+			if !ok {
+				passed = false
+			}
+		}
+	}
+
+	imsPkeyList, ok := getIMSPublicKeyRecordsAPI()
+	if !ok {
+		passed = false
+	} else {
+		common.Infof("Found %d IMS public key records via API", len(imsPkeyList))
+		if len(imsPkeyList) > 0 {
+			_, ok = getIMSPublicKeyRecordAPI(imsPkeyList[0].Id)
+			if !ok {
+				passed = false
+			}
+		}
+	}
+
 	// We don't get the recipes via API as we have done so already earlier in this test
 
-	getIMSImageRecordsCLI()
-	getIMSJobRecordsCLI()
-	getIMSPublicKeyRecordsCLI()
-	getIMSRecipeRecordsCLI()
+	imsImageList, ok = getIMSImageRecordsCLI()
+	if !ok {
+		passed = false
+	} else {
+		common.Infof("Found %d IMS image records via CLI", len(imsImageList))
+		if len(imsImageList) > 0 {
+			_, ok = getIMSImageRecordCLI(imsImageList[0].Id)
+			if !ok {
+				passed = false
+			}
+		}
+	}
+
+	imsJobList, ok = getIMSJobRecordsCLI()
+	if !ok {
+		passed = false
+	} else {
+		common.Infof("Found %d IMS job records via CLI", len(imsJobList))
+		if len(imsJobList) > 0 {
+			_, ok = getIMSJobRecordCLI(imsJobList[0].Id)
+			if !ok {
+				passed = false
+			}
+		}
+	}
+
+	imsPkeyList, ok = getIMSPublicKeyRecordsCLI()
+	if !ok {
+		passed = false
+	} else {
+		common.Infof("Found %d IMS public key records via CLI", len(imsPkeyList))
+		if len(imsPkeyList) > 0 {
+			_, ok = getIMSPublicKeyRecordCLI(imsPkeyList[0].Id)
+			if !ok {
+				passed = false
+			}
+		}
+	}
+
+	imsRecipeList, ok = getIMSRecipeRecordsCLI()
+	if !ok {
+		passed = false
+	} else {
+		common.Infof("Found %d IMS recipe records via CLI", len(imsRecipeList))
+		if len(imsRecipeList) > 0 {
+			_, ok = getIMSRecipeRecordCLI(imsRecipeList[0].Id)
+			if !ok {
+				passed = false
+			}
+		}
+	}
 
 	if !passed && !artifactsCollected {
 		common.ArtifactsPodsPvcs(podNames, pvcNames)
@@ -381,187 +480,396 @@ func getRecipeEnvVars(pod coreV1.Pod) (recipe Recipe, okay bool) {
 	return
 }
 
-// Return a list of all image records in IMS
-func getIMSImageRecordsAPI() []IMSImageRecord {
+// Return specific image record in IMS via API
+func getIMSImageRecordAPI(imageId string) (imageRecord IMSImageRecord, ok bool) {
 	var baseurl string = common.BASEURL
+	ok = false
+
+	common.Infof("Getting image record %s in IMS via API", imageId)
+	params := test.GetAccessTokenParams()
+	if params == nil {
+		return
+	}
+	url := baseurl + endpoints["ims"]["images"].Url + "/" + imageId
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	if err != nil {
+		common.Error(err)
+		return
+	}
+
+	// Extract image record from response
+	common.Infof("Decoding JSON in response body")
+	if err := json.Unmarshal(resp.Body(), &imageRecord); err != nil {
+		common.Error(err)
+		return
+	}
+	ok = true
+
+	return
+}
+
+// Return a list of all image records in IMS via API
+func getIMSImageRecordsAPI() (recordList []IMSImageRecord, ok bool) {
+	var baseurl string = common.BASEURL
+	ok = false
 
 	common.Infof("Getting list of all image records in IMS via API")
 	params := test.GetAccessTokenParams()
 	if params == nil {
-		return nil
+		return
 	}
 	url := baseurl + endpoints["ims"]["images"].Url
 	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
-		return nil
+		return
 	}
 
 	// Extract list of image records from response
-	var recordList []IMSImageRecord
 	common.Infof("Decoding JSON in response body")
 	if err := json.Unmarshal(resp.Body(), &recordList); err != nil {
 		common.Error(err)
-		return nil
+		return
 	}
+	ok = true
 
-	return recordList
+	return
 }
 
-// Return a list of all image records in IMS
-func getIMSImageRecordsCLI() []IMSImageRecord {
+// Return specific image record in IMS via CLI
+func getIMSImageRecordCLI(imageId string) (imageRecord IMSImageRecord, ok bool) {
+	ok = false
+
+	common.Infof("Getting image record %s in IMS via CLI", imageId)
+	cmdString := fmt.Sprintf("ims images describe %s --format json", imageId)
+	cmdOut := test.RunCLICommand(cmdString)
+	if cmdOut == nil {
+		return
+	}
+
+	// Extract image record from command output
+	common.Infof("Decoding JSON in command output")
+	if err := json.Unmarshal(cmdOut, &imageRecord); err != nil {
+		common.Error(err)
+		return
+	}
+	ok = true
+	return
+}
+
+// Return a list of all image records in IMS via CLI
+func getIMSImageRecordsCLI() (recordList []IMSImageRecord, ok bool) {
+	ok = false
+
 	common.Infof("Getting list of all image records in IMS via CLI")
 	cmdOut := test.RunCLICommand("ims images list --format json")
 	if cmdOut == nil {
-		return nil
+		return
 	}
 
 	// Extract list of image records from command output
-	var recordList []IMSImageRecord
 	common.Infof("Decoding JSON in command output")
 	if err := json.Unmarshal(cmdOut, &recordList); err != nil {
 		common.Error(err)
-		return nil
+		return
 	}
-	return recordList
+	ok = true
+	return
 }
 
-// Return a list of all job records in IMS
-func getIMSJobRecordsAPI() []IMSJobRecord {
+// Return specific job record in IMS via API
+func getIMSJobRecordAPI(jobId string) (jobRecord IMSJobRecord, ok bool) {
 	var baseurl string = common.BASEURL
+	ok = false
+
+	common.Infof("Getting job record %s in IMS via API", jobId)
+	params := test.GetAccessTokenParams()
+	if params == nil {
+		return
+	}
+	url := baseurl + endpoints["ims"]["jobs"].Url + "/" + jobId
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	if err != nil {
+		common.Error(err)
+		return
+	}
+
+	// Extract job record from response
+	common.Infof("Decoding JSON in response body")
+	if err := json.Unmarshal(resp.Body(), &jobRecord); err != nil {
+		common.Error(err)
+		return
+	}
+	ok = true
+
+	return
+}
+
+// Return a list of all job records in IMS via API
+func getIMSJobRecordsAPI() (recordList []IMSJobRecord, ok bool) {
+	var baseurl string = common.BASEURL
+	ok = false
 
 	common.Infof("Getting list of all job records in IMS via API")
 	params := test.GetAccessTokenParams()
 	if params == nil {
-		return nil
+		return
 	}
 	url := baseurl + endpoints["ims"]["jobs"].Url
 	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
-		return nil
+		return
 	}
 
 	// Extract list of job records from response
-	var recordList []IMSJobRecord
 	common.Infof("Decoding JSON in response body")
 	if err := json.Unmarshal(resp.Body(), &recordList); err != nil {
 		common.Error(err)
-		return nil
+		return
 	}
+	ok = true
 
-	return recordList
+	return
 }
 
-// Return a list of all job records in IMS
-func getIMSJobRecordsCLI() []IMSJobRecord {
+// Return specific job record in IMS via CLI
+func getIMSJobRecordCLI(jobId string) (jobRecord IMSJobRecord, ok bool) {
+	ok = false
+
+	common.Infof("Getting job record %s in IMS via CLI", jobId)
+	cmdString := fmt.Sprintf("ims jobs describe %s --format json", jobId)
+	cmdOut := test.RunCLICommand(cmdString)
+	if cmdOut == nil {
+		return
+	}
+
+	// Extract job records from command output
+	common.Infof("Decoding JSON in command output")
+	if err := json.Unmarshal(cmdOut, &jobRecord); err != nil {
+		common.Error(err)
+		return
+	}
+	ok = true
+
+	return
+}
+
+// Return a list of all job records in IMS via CLI
+func getIMSJobRecordsCLI() (recordList []IMSJobRecord, ok bool) {
+	ok = false
+
 	common.Infof("Getting list of all job records in IMS via CLI")
 	cmdOut := test.RunCLICommand("ims jobs list --format json")
 	if cmdOut == nil {
-		return nil
+		return
 	}
 
 	// Extract list of job records from command output
-	var recordList []IMSJobRecord
 	common.Infof("Decoding JSON in command output")
 	if err := json.Unmarshal(cmdOut, &recordList); err != nil {
 		common.Error(err)
-		return nil
+		return
 	}
+	ok = true
 
-	return recordList
+	return
 }
 
-// Return a list of all public key records in IMS
-func getIMSPublicKeyRecordsAPI() []IMSPublicKeyRecord {
+// Return specific public key record in IMS via API
+func getIMSPublicKeyRecordAPI(pkeyId string) (pkeyRecord IMSPublicKeyRecord, ok bool) {
 	var baseurl string = common.BASEURL
+	ok = false
+
+	common.Infof("Getting public key record %s in IMS via API", pkeyId)
+	params := test.GetAccessTokenParams()
+	if params == nil {
+		return
+	}
+	url := baseurl + endpoints["ims"]["public_keys"].Url + "/" + pkeyId
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	if err != nil {
+		common.Error(err)
+		return
+	}
+
+	// Extract public key record from response
+	common.Infof("Decoding JSON in response body")
+	if err := json.Unmarshal(resp.Body(), &pkeyRecord); err != nil {
+		common.Error(err)
+		return
+	}
+	ok = true
+
+	return
+}
+
+// Return a list of all public key records in IMS via API
+func getIMSPublicKeyRecordsAPI() (recordList []IMSPublicKeyRecord, ok bool) {
+	var baseurl string = common.BASEURL
+	ok = false
 
 	common.Infof("Getting list of all public key records in IMS via API")
 	params := test.GetAccessTokenParams()
 	if params == nil {
-		return nil
+		return
 	}
 	url := baseurl + endpoints["ims"]["public_keys"].Url
 	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
-		return nil
+		return
 	}
 
 	// Extract list of public key records from response
-	var recordList []IMSPublicKeyRecord
 	common.Infof("Decoding JSON in response body")
 	if err := json.Unmarshal(resp.Body(), &recordList); err != nil {
 		common.Error(err)
-		return nil
+		return
 	}
+	ok = true
 
-	return recordList
+	return
 }
 
-// Return a list of all public key records in IMS
-func getIMSPublicKeyRecordsCLI() []IMSPublicKeyRecord {
+// Return specific public key record in IMS via CLI
+func getIMSPublicKeyRecordCLI(pkeyId string) (pkeyRecord IMSPublicKeyRecord, ok bool) {
+	ok = false
+
+	common.Infof("Getting public key record %s in IMS via CLI", pkeyId)
+	cmdString := fmt.Sprintf("ims public-keys describe %s --format json", pkeyId)
+	cmdOut := test.RunCLICommand(cmdString)
+	if cmdOut == nil {
+		return
+	}
+
+	// Extract public key record from command output
+	common.Infof("Decoding JSON in command output")
+	if err := json.Unmarshal(cmdOut, &pkeyRecord); err != nil {
+		common.Error(err)
+		return
+	}
+	ok = true
+
+	return
+}
+
+// Return a list of all public key records in IMS via CLI
+func getIMSPublicKeyRecordsCLI() (recordList []IMSPublicKeyRecord, ok bool) {
+	ok = false
+
 	common.Infof("Getting list of all public key records in IMS via CLI")
 	cmdOut := test.RunCLICommand("ims public-keys list --format json")
 	if cmdOut == nil {
-		return nil
+		return
 	}
 
 	// Extract list of public key records from command output
-	var recordList []IMSPublicKeyRecord
 	common.Infof("Decoding JSON in command output")
 	if err := json.Unmarshal(cmdOut, &recordList); err != nil {
 		common.Error(err)
-		return nil
+		return
 	}
+	ok = true
 
-	return recordList
+	return
 }
 
-// Return a list of all recipe records in IMS
-func getIMSRecipeRecordsAPI() []IMSRecipeRecord {
+// Return a specific recipe record in IMS via API
+func getIMSRecipeRecordAPI(recipeId string) (recipeRecord IMSRecipeRecord, ok bool) {
+	ok = false
 	var baseurl string = common.BASEURL
+
+	common.Infof("Describing recipe record %s in IMS via API", recipeId)
+	params := test.GetAccessTokenParams()
+	if params == nil {
+		return
+	}
+
+	url := baseurl + endpoints["ims"]["recipes"].Url + "/" + recipeId
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	if err != nil {
+		return
+	}
+
+	// Extract recipe record from command output
+	common.Infof("Decoding JSON in command output")
+	err = json.Unmarshal(resp.Body(), &recipeRecord)
+	if err != nil {
+		return
+	}
+	ok = true
+	return
+}
+
+// Return a list of all recipe records in IMS via API
+func getIMSRecipeRecordsAPI() (recordList []IMSRecipeRecord, ok bool) {
+	var baseurl string = common.BASEURL
+	ok = false
 
 	common.Infof("Getting list of all recipe records in IMS via API")
 	params := test.GetAccessTokenParams()
 	if params == nil {
-		return nil
+		return
 	}
 	url := baseurl + endpoints["ims"]["recipes"].Url
 	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
-		return nil
+		return
 	}
 
 	// Extract list of recipe records from response
-	var recordList []IMSRecipeRecord
 	common.Infof("Decoding JSON in response body")
 	if err := json.Unmarshal(resp.Body(), &recordList); err != nil {
 		common.Error(err)
-		return nil
+		return
 	}
+	ok = true
 
-	return recordList
+	return
 }
 
-// Return a list of all recipe records in IMS
-func getIMSRecipeRecordsCLI() []IMSRecipeRecord {
+// Return a specific recipe record in IMS via CLI
+func getIMSRecipeRecordCLI(recipeId string) (recipeRecord IMSRecipeRecord, ok bool) {
+	ok = false
+
+	common.Infof("Describing recipe record %s in IMS via CLI", recipeId)
+	cmdString := fmt.Sprintf("ims recipes describe %s --format json", recipeId)
+	cmdOut := test.RunCLICommand(cmdString)
+	if cmdOut == nil {
+		return
+	}
+
+	// Extract recipe record from command output
+	common.Infof("Decoding JSON in command output")
+	if err := json.Unmarshal(cmdOut, &recipeRecord); err != nil {
+		return
+	}
+	ok = true
+	return
+}
+
+// Return a list of all recipe records in IMS via CLI
+func getIMSRecipeRecordsCLI() (recordList []IMSRecipeRecord, ok bool) {
+	ok = false
+
 	common.Infof("Getting list of all recipe records in IMS via CLI")
 	cmdOut := test.RunCLICommand("ims recipes list --format json")
 	if cmdOut == nil {
-		return nil
+		return
 	}
 
 	// Extract list of recipe records from command output
-	var recordList []IMSRecipeRecord
 	common.Infof("Decoding JSON in command output")
-	if err := json.Unmarshal(cmdOut, &recordList); err != nil {
+	err := json.Unmarshal(cmdOut, &recordList)
+	if err != nil {
 		common.Error(err)
-		return nil
+		return
 	}
+	ok = true
 
-	return recordList
+	return
 }
 
 // Check IMS liveness probe. Returns True if live, False otherwise
@@ -574,8 +882,7 @@ func checkIMSLivenessProbe() bool {
 		return false
 	}
 	url := baseurl + endpoints["ims"]["live"].Url
-	_, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
-	if err != nil {
+	if _, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK); err != nil {
 		common.Error(err)
 		return false
 	}
@@ -592,28 +899,28 @@ func checkIMSReadinessProbe() bool {
 		return false
 	}
 	url := baseurl + endpoints["ims"]["ready"].Url
-	_, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
-	if err != nil {
+	if _, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK); err != nil {
 		common.Error(err)
 		return false
 	}
 	return true
 }
 
-// Return IMS version. Returns an empty string if error.
-func getIMSVersion() string {
+// Return IMS version
+func getIMSVersion() (ver string, ok bool) {
 	var baseurl string = common.BASEURL
+	ok = false
 
 	common.Infof("Getting IMS version")
 	params := test.GetAccessTokenParams()
 	if params == nil {
-		return ""
+		return
 	}
 	url := baseurl + endpoints["ims"]["version"].Url
 	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
-		return ""
+		return
 	}
 
 	// Extract version record from response
@@ -621,8 +928,13 @@ func getIMSVersion() string {
 	common.Infof("Decoding JSON in response body")
 	if err := json.Unmarshal(resp.Body(), &record); err != nil {
 		common.Error(err)
-		return ""
+		return
+	} else if len(record.Version) == 0 {
+		common.Errorf("IMS version string is empty")
+		return
 	}
+	ok = true
+	ver = record.Version
 
-	return record.Version
+	return
 }

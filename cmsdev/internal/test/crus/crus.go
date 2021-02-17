@@ -9,11 +9,8 @@ package crus
  */
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"os/exec"
-	"reflect"
 	"regexp"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/k8s"
@@ -169,39 +166,8 @@ func mungeSecretPresent() bool {
 	return true
 }
 
-func getFirstUpgradeId(listCmdOut []byte) (upgradeId string, err error) {
-	var m interface{}
-	var idFound bool
-	upgradeId = ""
-
-	err = json.Unmarshal(listCmdOut, &m)
-	if err != nil {
-		return
-	}
-	p, ok := m.([]interface{})
-	if !ok {
-		err = fmt.Errorf("JSON response object is not a list")
-		return
-	} else if len(p) == 0 {
-		// List is empty -- no upgrade_id to find
-		return
-	}
-
-	// The list is not empty -- get upgrade_id from the first entry
-	idFound = false
-	for k, v := range p[0].(map[string]interface{}) {
-		if reflect.TypeOf(k).String() == "string" && k == "upgrade_id" {
-			upgradeId = v.(string)
-			idFound = true
-			break
-		}
-	}
-	if !idFound {
-		err = fmt.Errorf("No upgrade_id field found in first list item")
-	} else if len(upgradeId) == 0 {
-		err = fmt.Errorf("upgrade_id of first list item is blank")
-	}
-	return
+func getFirstUpgradeId(listCmdOut []byte) (string, error) {
+	return common.GetStringFieldFromFirstItem("upgrade_id", listCmdOut)
 }
 
 // Make basic CRUS CLI call, checking only status code at this point
