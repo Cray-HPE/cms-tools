@@ -9,8 +9,11 @@ package crus
  */
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"os/exec"
+	"reflect"
 	"regexp"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/k8s"
@@ -166,10 +169,62 @@ func mungeSecretPresent() bool {
 	return true
 }
 
-// Make basic CRUS API call, checking only status code at this point
+func getFirstUpgradeId(listCmdOut []byte) (upgradeId string, err error) {
+	var m interface{}
+	var idFound bool
+	upgradeId = ""
+
+	err = json.Unmarshal(listCmdOut, &m)
+	if err != nil {
+		return
+	}
+	p, ok := m.([]interface{})
+	if !ok {
+		err = fmt.Errorf("JSON response object is not a list")
+		return
+	} else if len(p) == 0 {
+		// List is empty -- no upgrade_id to find
+		return
+	}
+
+	// The list is not empty -- get upgrade_id from the first entry
+	idFound = false
+	for k, v := range p[0].(map[string]interface{}) {
+		if reflect.TypeOf(k).String() == "string" && k == "upgrade_id" {
+			upgradeId = v.(string)
+			idFound = true
+			break
+		}
+	}
+	if !idFound {
+		err = fmt.Errorf("No upgrade_id field found in first list item")
+	} else if len(upgradeId) == 0 {
+		err = fmt.Errorf("upgrade_id of first list item is blank")
+	}
+	return
+}
+
+// Make basic CRUS CLI call, checking only status code at this point
 func testCRUSCLI() bool {
-	common.Infof("Checking CRUS CLI list sessions")
-	cmdOut := test.RunCLICommand("crus session list --format json -vvv")
+	common.Infof("CLI: List CRUS sessions")
+	cmdOut := test.RunCLICommand("crus session list --format json")
+	if cmdOut == nil {
+		return false
+	}
+
+	// If any CRUS sessions were listed, use the upgrade_id of the first one found
+	// to test the describe CLI option
+	upgradeId, err := getFirstUpgradeId(cmdOut)
+	if err != nil {
+		common.Error(err)
+		return false
+	} else if len(upgradeId) == 0 {
+		common.Infof("No CRUS sessions listed -- skipping CLI describe {upgrade_id} test")
+		return true
+	}
+
+	common.Infof("CLI: Describe CRUS session %s", upgradeId)
+	cmdOut = test.RunCLICommand("crus session describe " + upgradeId + " --format json -vvv")
 	if cmdOut == nil {
 		return false
 	}
@@ -186,9 +241,28 @@ func testCRUSAPI() bool {
 		return false
 	}
 
-	common.Infof("API: Listing CRUS sessions")
+	common.Infof("API: List CRUS sessions")
 	url := baseurl + endpoints["crus"]["session"].Url
-	_, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	if err != nil {
+		common.Error(err)
+		return false
+	}
+
+	// If any CRUS sessions were listed, use the upgrade_id of the first one found
+	// to test the describe CLI option
+	upgradeId, err := getFirstUpgradeId(resp.Body())
+	if err != nil {
+		common.Error(err)
+		return false
+	} else if len(upgradeId) == 0 {
+		common.Infof("No CRUS sessions listed -- skipping API GET {upgrade_id} test")
+		return true
+	}
+
+	url = baseurl + endpoints["crus"]["session"].Url + "/" + upgradeId
+	common.Infof("API: Get CRUS session %s", upgradeId)
+	_, err = test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
 		return false
