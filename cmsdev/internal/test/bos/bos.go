@@ -84,19 +84,26 @@ func IsBOSRunning() (passed bool) {
 	}
 
 	// Run basic API and CLI tests
+	// For CLI test both with and without specifying the version
 	if !versionTests() {
 		passed = false
 	}
 	if !sessionTemplateTestsAPI() {
 		passed = false
 	}
-	if !sessionTemplateTestsCLI() {
+	if !sessionTemplateTestsCLI(0) {
+		passed = false
+	}
+	if !sessionTemplateTestsCLI(1) {
 		passed = false
 	}
 	if !sessionTestsAPI() {
 		passed = false
 	}
-	if !sessionTestsCLI() {
+	if !sessionTestsCLI(0) {
+		passed = false
+	}
+	if !sessionTestsCLI(1) {
 		passed = false
 	}
 
