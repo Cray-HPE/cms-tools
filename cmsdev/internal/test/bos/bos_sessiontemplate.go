@@ -63,18 +63,29 @@ func sessionTemplateTestsAPI() bool {
 		return false
 	}
 
-	// test #1, list session templates
-	url := baseurl + endpoints["bos"]["sessiontemplate"].Url
+	// test #1, get session template template
+	url := baseurl + endpoints["bos"]["sessiontemplatetemplate"].Url
+	numTests++
+	test.RestfulTestHeader("GET sessiontemplatetemplate", numTests, totalNumTests)
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	if err != nil {
+		common.Error(err)
+		numTestsFailed++
+	}
+	// TODO: deeper validation of returned response
+
+	// test #2, list session templates
+	url = baseurl + endpoints["bos"]["sessiontemplate"].Url
 	numTests++
 	test.RestfulTestHeader("GET sessiontemplate", numTests, totalNumTests)
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err = test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
 		return false
 	}
 	// TODO: deeper validation of returned response
 
-	// test #2, list sessiontemplate with session_template_id
+	// test #3, list sessiontemplate with session_template_id
 	// use results from previous tests, grab the first sessiontemplate
 	sessionTemplateId, err := getFirstSessionTemplateId(resp.Body())
 	if err != nil {
@@ -84,7 +95,7 @@ func sessionTemplateTestsAPI() bool {
 		common.VerbosePrintDivider()
 		common.Infof("skipping test GET /sessiontemplate/{session_template_id}")
 		common.Infof("results from previous test is []")
-		return true
+		return numTestsFailed == 0
 	}
 
 	// a session_template_id is available
@@ -103,6 +114,7 @@ func sessionTemplateTestsAPI() bool {
 
 func sessionTemplateTestsCLI(vnum int) bool {
 	var cmdString, verString string
+	var numTestsFailed = 0
 
 	if vnum == 0 {
 		verString = "bos"
@@ -112,17 +124,25 @@ func sessionTemplateTestsCLI(vnum int) bool {
 		common.Errorf("PROGRAMMING LOGIC ERROR: sessionTestCLI: Negative vnum value (%d)", vnum)
 	}
 
-	// test #1, list session templates
+	// test #1, get example session template
+	common.Infof("Getting example BOS session template via CLI")
+	cmdString = fmt.Sprintf("%s sessiontemplatetemplate list --format json", verString)
+	cmdOut := test.RunCLICommand(cmdString)
+	if cmdOut == nil {
+		numTestsFailed++
+	}
+	// TODO: deeper validation of returned response
+
+	// test #2, list session templates
 	common.Infof("Getting list of all BOS session templates via CLI")
 	cmdString = fmt.Sprintf("%s sessiontemplate list --format json", verString)
-	cmdOut := test.RunCLICommand(cmdString)
+	cmdOut = test.RunCLICommand(cmdString)
 	if cmdOut == nil {
 		return false
 	}
-
 	// TODO: deeper validation of returned response
 
-	// test #2, list sessiontemplate with session_template_id
+	// test #3, list sessiontemplate with session_template_id
 	// use results from previous tests, grab the first sessiontemplate
 	sessionTemplateId, err := getFirstSessionTemplateId(cmdOut)
 	if err != nil {
@@ -132,7 +152,7 @@ func sessionTemplateTestsCLI(vnum int) bool {
 		common.VerbosePrintDivider()
 		common.Infof("skipping test CLI describe sessiontemplate {session_template_id}")
 		common.Infof("results from previous test is []")
-		return true
+		return numTestsFailed == 0
 	}
 
 	// a session_template_id is available
@@ -144,5 +164,5 @@ func sessionTemplateTestsCLI(vnum int) bool {
 	}
 
 	// TODO: deeper validation of returned response
-	return true
+	return numTestsFailed == 0
 }
