@@ -376,7 +376,8 @@ def is_pingable(target):
     ping_cmd_resp = run_cmd_list(ping_cmd_list, return_rc=True)
     return ping_cmd_resp["rc"] == 0
 
-def run_scp(local_file, target_host, remote_target=None, scp_arg_list=None):
+def run_scp(local_file, target_host, remote_target=None, scp_arg_list=None, user="root", 
+            identity_file=None, port=None, strict_host_key_check=False):
     """
     Runs the necessary scp command to copy the local file to the specified
     remote destination. If remote_target is not specified, it will be
@@ -389,22 +390,36 @@ def run_scp(local_file, target_host, remote_target=None, scp_arg_list=None):
     if scp_arg_list != None:
         debug("Extra scp args = %s" % str(scp_arg_list))
         scp_command_list.extend(scp_arg_list)
-    scp_command_list.extend(["-o", "StrictHostKeyChecking=no", 
-                             local_file,
-                             "root@%s:%s" % (target_host, remote_target)])
+    if identity_file:
+        scp_command_list.extend([ "-i", identity_file ])
+    if port:
+        scp_command_list.extend([ "-p", str(port) ])
+    if not strict_host_key_check:
+        scp_command_list.extend(["-o", "StrictHostKeyChecking=no" ])
+    scp_command_list.extend([
+        local_file, 
+        "%s@%s:%s" % (user, target_host, remote_target)])
     run_cmd_list(scp_command_list, return_rc=False)
 
-def run_command_via_ssh(target, cmdstring, **kwargs):
+def run_command_via_ssh(target, cmdstring, user="root", identity_file=None, port=None, 
+                        strict_host_key_check=False, **kwargs):
     """
     Runs the necessary ssh command to run the specified command on the specified target.
     """
-    ssh_cmd_list = [ "ssh", "-o", "StrictHostKeyChecking=no", "root@%s" % target, cmdstring ]
+    ssh_cmd_list = [ "ssh" ]
+    if identity_file:
+        ssh_cmd_list.extend([ "-i", identity_file ])
+    if port:
+        ssh_cmd_list.extend([ "-p", str(port) ])
+    if not strict_host_key_check:
+        ssh_cmd_list.extend([ "-o", "StrictHostKeyChecking=no"])
+    ssh_cmd_list.extend([ "%s@%s" % (user, target), cmdstring ])
     return run_cmd_list(ssh_cmd_list, **kwargs)
 
-def ssh_command_passes(target, cmdstring):
+def ssh_command_passes(target, cmdstring, **kwargs):
     """
     Runs the specified command via ssh on the specified target. 
     Returns True if this succeeds (both the ssh and the command), False otherwise.
     """
-    ssh_cmd_resp = run_command_via_ssh(target, cmdstring, return_rc=True)
+    ssh_cmd_resp = run_command_via_ssh(target, cmdstring, return_rc=True, **kwargs)
     return ssh_cmd_resp["rc"] == 0
