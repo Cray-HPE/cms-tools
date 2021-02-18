@@ -28,6 +28,12 @@ var cfsEndpoints = []string{
 	"sessions",
 }
 
+var cfsEndpointIdFieldName = map[string]string{
+	"components":     "id",
+	"configurations": "name",
+	"sessions":       "name",
+}
+
 func IsCFSRunning() (passed bool) {
 	passed = true
 	// 2 pods minimum since we expect both an api and operator pod
@@ -97,8 +103,35 @@ func testCFSCLI() (passed bool) {
 
 	common.Infof("Checking CFS CLI endpoints")
 	for _, cfsEndpoint := range cfsEndpoints {
-		cmdString := fmt.Sprintf("cfs %s list --format json -vvv", cfsEndpoint)
+		common.Infof("CLI: Listing CFS %s", cfsEndpoint)
+		cmdString := fmt.Sprintf("cfs %s list --format json", cfsEndpoint)
 		cmdOut := test.RunCLICommand(cmdString)
+		if cmdOut == nil {
+			passed = false
+			continue
+		}
+
+		idFieldName, ok := cfsEndpointIdFieldName[cfsEndpoint]
+		if !ok {
+			// This endpoint has no GET/describe command
+			continue
+		}
+
+		// If our list has any entries, let's get the ID field of the
+		// first entry. Then we can do a GET/describe on that object
+		idValue, err := common.GetStringFieldFromFirstItem(idFieldName, cmdOut)
+		if err != nil {
+			common.Error(err)
+			passed = false
+			continue
+		} else if len(idValue) == 0 {
+			common.Infof("No CFS %s listed -- skipping CLI describe test", cfsEndpoint)
+			continue
+		}
+
+		common.Infof("CLI: Describing CFS %s %s", cfsEndpoint, idValue)
+		cmdString = fmt.Sprintf("cfs %s describe %s --format json", cfsEndpoint, idValue)
+		cmdOut = test.RunCLICommand(cmdString)
 		if cmdOut == nil {
 			passed = false
 		}
@@ -108,6 +141,7 @@ func testCFSCLI() (passed bool) {
 
 // Make basic CFS API calls, checking only status code at this point
 func testCFSAPI() (passed bool) {
+	var url string
 	var baseurl string = common.BASEURL
 
 	passed = false
@@ -119,7 +153,7 @@ func testCFSAPI() (passed bool) {
 	passed = true
 
 	common.Infof("API: Checking CFS service health")
-	url := baseurl + endpoints["cfs"]["healthz"].Url
+	url = baseurl + endpoints["cfs"]["healthz"].Url
 	_, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
@@ -128,8 +162,35 @@ func testCFSAPI() (passed bool) {
 
 	for _, cfsEndpoint := range cfsEndpoints {
 		common.Infof("API: Listing CFS %s", cfsEndpoint)
-		url := baseurl + endpoints["cfs"][cfsEndpoint].Url
-		_, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+		url = baseurl + endpoints["cfs"][cfsEndpoint].Url
+		resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+		if err != nil {
+			common.Error(err)
+			passed = false
+			continue
+		}
+
+		idFieldName, ok := cfsEndpointIdFieldName[cfsEndpoint]
+		if !ok {
+			// This endpoint has no GET/describe command
+			continue
+		}
+
+		// If our list has any entries, let's get the ID field of the
+		// first entry. Then we can do a GET/describe on that object
+		idValue, err := common.GetStringFieldFromFirstItem(idFieldName, resp.Body())
+		if err != nil {
+			common.Error(err)
+			passed = false
+			continue
+		} else if len(idValue) == 0 {
+			common.Infof("No CFS %s listed -- skipping API GET specific %s test", cfsEndpoint, cfsEndpoint)
+			continue
+		}
+
+		common.Infof("API: Getting CFS %s %s", cfsEndpoint, idValue)
+		url += "/" + idValue
+		_, err = test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 		if err != nil {
 			common.Error(err)
 			passed = false
