@@ -1,4 +1,4 @@
-# Copyright 2020 Hewlett Packard Enterprise Development LP
+# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
 
 """
 CMS test helper functions that
@@ -12,6 +12,10 @@ from .helpers import CMSTestError, debug, error, info, raise_test_error, \
                      run_cmd_list, is_pingable, run_command_via_ssh, \
                      run_scp, ssh_command_passes
 from .hsm import get_hsm_xname_list
+from .k8s import get_csm_private_key
+import os
+import stat
+import tempfile
 
 def get_bss_hsm_compute_nodes(use_api):
     """
@@ -91,7 +95,7 @@ def node_hostname(xname):
     """
     Return the hostname for the specified xname
     """
-    return "%sh0" % xname
+    return xname
     
 def validate_node_hostname(nid, xname):
     """
@@ -117,24 +121,55 @@ def is_xname_pingable(xname):
     """
     return is_pingable(node_hostname(xname))
 
-def run_command_on_xname_via_ssh(xname, cmdstring, **kwargs):
+def csm_key_tmpfile(dir=None):
+    """
+    Helper function for the following ssh/scp functions.
+    Returns a NamedTemporaryFile which they can use to write the CSM private key data
+    """
+    csm_key = get_csm_private_key()
+    f = tempfile.NamedTemporaryFile(mode="wt", encoding="ascii", dir=dir, prefix="csm-key-", 
+                                    suffix=".tmp", delete=True)
+    debug("Writing CSM private key to temporary file %s" % f.name)
+    f.write("%s\n" % csm_key)
+    f.flush()
+    debug("Setting 600 permissions on temporary file %s" % f.name)
+    try:
+        os.chmod(f.name, stat.S_IRUSR|stat.S_IWUSR)
+    except (FileNotFoundError, PermissionError) as e:
+        raise CMSTestError("Unable to set file permissions on %s" % f.name, log_error=False) from e
+    return f
+
+def run_command_on_xname_via_ssh(xname, cmdstring, use_csm_key=True, tmpdir=None, **kwargs):
     """
     Determines the hostname for the specified xname, then
     runs the specified command via ssh on it.
     Returns True if this succeeds (both the ssh and the command), False otherwise.
     """
+    if use_csm_key:
+        with csm_key_tmpfile(dir=tmpdir) as f:
+            return run_command_on_xname_via_ssh(xname=xname, cmdstring=cmdstring, use_csm_key=False, 
+                                                identity_file=f.name, **kwargs)
     return run_command_via_ssh(node_hostname(xname), cmdstring, **kwargs)
 
-def ssh_command_passes_on_xname(xname, cmdstring):
+def ssh_command_passes_on_xname(xname, cmdstring, use_csm_key=True, tmpdir=None, **kwargs):
     """
     Determines the hostname for the specified xname, then
     runs the specified command via ssh on it.
     Returns True if this succeeds (both the ssh and the command), False otherwise.
     """
-    return ssh_command_passes(node_hostname(xname), cmdstring)
+    if use_csm_key:
+        with csm_key_tmpfile(dir=tmpdir) as f:
+            return ssh_command_passes_on_xname(xname=xname, cmdstring=cmdstring, use_csm_key=False, 
+                                               identity_file=f.name, **kwargs)
+    return ssh_command_passes(node_hostname(xname), cmdstring, **kwargs)
 
-def scp_to_xname(local_file, xname, **kwargs):
+def scp_to_xname(local_file, xname, use_csm_key=True, tmpdir=None, **kwargs):
     """
     Determines the hostname for the specified xname, then calls run_scp using it
     """
+    if use_csm_key:
+        with csm_key_tmpfile(dir=tmpdir) as f:
+            scp_to_xname(local_file=local_file, xname=xname, use_csm_key=False, 
+                         identity_file=f.name, **kwargs)
+        return
     run_scp(local_file=local_file, target_host=node_hostname(xname), **kwargs)

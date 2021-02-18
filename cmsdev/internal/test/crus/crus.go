@@ -166,10 +166,31 @@ func mungeSecretPresent() bool {
 	return true
 }
 
-// Make basic CRUS API call, checking only status code at this point
+func getFirstUpgradeId(listCmdOut []byte) (string, error) {
+	return common.GetStringFieldFromFirstItem("upgrade_id", listCmdOut)
+}
+
+// Make basic CRUS CLI call, checking only status code at this point
 func testCRUSCLI() bool {
-	common.Infof("Checking CRUS CLI list sessions")
-	cmdOut := test.RunCLICommand("crus session list --format json -vvv")
+	common.Infof("CLI: List CRUS sessions")
+	cmdOut := test.RunCLICommand("crus session list --format json")
+	if cmdOut == nil {
+		return false
+	}
+
+	// If any CRUS sessions were listed, use the upgrade_id of the first one found
+	// to test the describe CLI option
+	upgradeId, err := getFirstUpgradeId(cmdOut)
+	if err != nil {
+		common.Error(err)
+		return false
+	} else if len(upgradeId) == 0 {
+		common.Infof("No CRUS sessions listed -- skipping CLI describe {upgrade_id} test")
+		return true
+	}
+
+	common.Infof("CLI: Describe CRUS session %s", upgradeId)
+	cmdOut = test.RunCLICommand("crus session describe " + upgradeId + " --format json -vvv")
 	if cmdOut == nil {
 		return false
 	}
@@ -186,9 +207,28 @@ func testCRUSAPI() bool {
 		return false
 	}
 
-	common.Infof("API: Listing CRUS sessions")
+	common.Infof("API: List CRUS sessions")
 	url := baseurl + endpoints["crus"]["session"].Url
-	_, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	if err != nil {
+		common.Error(err)
+		return false
+	}
+
+	// If any CRUS sessions were listed, use the upgrade_id of the first one found
+	// to test the describe CLI option
+	upgradeId, err := getFirstUpgradeId(resp.Body())
+	if err != nil {
+		common.Error(err)
+		return false
+	} else if len(upgradeId) == 0 {
+		common.Infof("No CRUS sessions listed -- skipping API GET {upgrade_id} test")
+		return true
+	}
+
+	url = baseurl + endpoints["crus"]["session"].Url + "/" + upgradeId
+	common.Infof("API: Get CRUS session %s", upgradeId)
+	_, err = test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
 		return false

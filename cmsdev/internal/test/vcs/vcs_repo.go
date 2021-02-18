@@ -277,15 +277,20 @@ func repoTest() (passed bool) {
 // Logs errors if any
 // Returns true if no errors, false otherwise
 func runCmd(shouldPass bool, cmdName string, cmdArgs ...string) bool {
-	var cmdRc int
+	var cmdResult *common.CommandResult
 	var err error
 	if !shouldPass {
 		common.Infof("WE EXPECT THE FOLLOWING %s COMMAND TO FAIL", cmdName)
 	}
-	_, _, cmdRc, err = common.RunNameStrings(cmdName, cmdArgs...)
+	cmdResult, err = common.RunName(cmdName, cmdArgs...)
 	if err != nil {
-		if (cmdRc == common.CmdRcDidNotRun) || shouldPass {
+		common.Error(err)
+		common.Errorf("Error attempting to run command")
+		return false
+	} else if cmdResult.Rc != 0 {
+		if !cmdResult.Ran || shouldPass {
 			common.Error(err)
+			common.Errorf("Command failed")
 			return false
 		} else {
 			return true
@@ -301,7 +306,7 @@ func runCmd(shouldPass bool, cmdName string, cmdArgs ...string) bool {
 // When running git commands, just like with the vcs requests we want to retry them insecurely
 // if needed
 func runGitCmd(shouldPass bool, cmdArgs ...string) bool {
-	var cmdErr string
+	var cmdResult *common.CommandResult
 	var err error
 	var tryInsecure bool
 	var newCmdArgs []string
@@ -318,17 +323,22 @@ func runGitCmd(shouldPass bool, cmdArgs ...string) bool {
 		newCmdArgs = append(append(newCmdArgs, "-c", "http.sslVerify=false"), cmdArgs...)
 		return runCmd(shouldPass, "git", newCmdArgs...)
 	} else if !useInsecure {
-		_, cmdErr, _, err = common.RunNameStrings("git", cmdArgs...)
-		if err == nil {
+		cmdResult, err = common.RunName("git", cmdArgs...)
+		if err != nil {
+			common.Error(err)
+			common.Errorf("Error attempting to run command")
+			return false
+		} else if cmdResult.Rc == 0 {
 			return true
 		}
 		// Check to see if this may be an SSL error
-		if strings.Contains(cmdErr, "SSL") {
+		if strings.Contains(cmdResult.ErrString(), "SSL") {
 			common.Infof("Command failure may be an SSL issue. Will retry insecurely.")
 			common.Infof("Important: This means the overall test will fail even if this command works on retry!")
 			tryInsecure = true
 		} else {
 			common.Error(err)
+			common.Errorf("Command failed")
 			return false
 		}
 	}
@@ -356,7 +366,7 @@ func runGitCmd(shouldPass bool, cmdArgs ...string) bool {
 // Returns true if no errors, false otherwise
 func cloneTest(repoName, repoUrl string) bool {
 	var baseLsPath, repoDir, repoLsPath string
-	var ok bool
+	var err error
 
 	repoDir = fmt.Sprintf("/tmp/%s", repoName)
 
@@ -375,8 +385,9 @@ func cloneTest(repoName, repoUrl string) bool {
 		return false
 	}
 
-	baseLsPath, ok = common.GetPath("ls")
-	if !ok {
+	baseLsPath, err = common.GetPath("ls")
+	if err != nil {
+		common.Error(err)
 		runCmd(true, "rm", "-r", repoDir)
 		return false
 	}
