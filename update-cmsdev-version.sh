@@ -42,7 +42,7 @@ function update_cmsdev_version
     GOFILE=$(check_var "$2") ||
         err_exit "path to version go file may not be blank"
 
-    echo "$CMSDEV_VERSION" | grep -q "^[0-9][1-9]*[.][0-9][1-9]*[.][0-9][1-9]*$" ||
+    echo "$CMSDEV_VERSION" | grep -Eq "^(0|[1-9][0-9]*)[.](0|[1-9][0-9]*)[.](0|[1-9][0-9]*)$" ||
         err_exit "Invalid format of cmsdev version string: \"$CMSDEV_VERSION\""
 
     check_file "$GOFILE"

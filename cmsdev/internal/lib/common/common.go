@@ -386,6 +386,13 @@ func GetEndpoints() map[string]map[string]*Endpoint {
 		Url:     "/apis/bos/v1/sessiontemplate/{session_template_id}",
 		Version: "v1",
 	}
+	endpoints["bos"]["sessiontemplatetemplate"] = &Endpoint{
+		Methods: map[string]*endpointMethod{
+			"GET": newMethodEndpoint("", "Get example session template", []int{200}),
+		},
+		Url:     "/apis/bos/v1/sessiontemplatetemplate",
+		Version: "v1",
+	}
 	endpoints["bos"]["session"] = &Endpoint{
 		Methods: map[string]*endpointMethod{
 			"GET":  newMethodEndpoint("", "List sessions", []int{200}),

@@ -17,103 +17,124 @@ import (
 var CommandPaths = map[string]string{}
 
 const CmdRcCannotGet = -1
-const CmdRcDidNotRun = -2
 
-// Looks up the path of the specified command
-// Logs errors, if any
-// Returns the path and true if successful, empty string and false otherwise
-func GetPath(cmdName string) (string, bool) {
-	path, ok := CommandPaths[cmdName]
-	if ok {
-		Infof("Using cached value of %s path: %s", cmdName, path)
-		return path, true
-	}
-	Infof("Looking up path of %s", cmdName)
-	path, err := exec.LookPath(cmdName)
-	if err != nil {
-		Error(err)
-		return "", false
-	} else if len(path) == 0 {
-		Errorf("Empty path found for %s", cmdName)
-		return "", false
-	}
-	Infof("Found path of %s: %s", cmdName, path)
-	CommandPaths[cmdName] = path
-	return path, true
+// Ran is set to true if the Run command was called on the
+// Cmd object. It does not mean that the command itself actually
+// was run necessarily
+type CommandResult struct {
+	CmdPath, CmdString string
+	CmdArgs            []string
+	CmdErr             error
+	ExecCmd            *exec.Cmd
+	Rc                 int
+	OutBytes, ErrBytes []byte
+	Ran                bool
 }
 
-// Wrapper that runs the command and returns the outputs, return code, and error object
-func RunPathBytes(cmdPath string, cmdArgs ...string) (cmdOutBytes, cmdErrBytes []byte, cmdRc int, err error) {
-	var cmd *exec.Cmd
+func (cmdResult *CommandResult) Init(cmdPath string, cmdArgs ...string) error {
+	if len(cmdPath) == 0 {
+		Infof("DEBUG: CommandResult init(): cmdArgs = %v", cmdArgs)
+		return fmt.Errorf("CommandResult init(): cmdPath may not be empty")
+	}
+	cmdResult.CmdPath = cmdPath
+	cmdResult.CmdArgs = cmdArgs
+	return nil
+}
+
+func (cmdResult *CommandResult) OutString() string {
+	return string(cmdResult.OutBytes)
+}
+
+func (cmdResult *CommandResult) ErrString() string {
+	return string(cmdResult.ErrBytes)
+}
+
+// The command returning non-0 does NOT constitute an error -- that
+// is communicated back via the command return code, and the calling
+// function is responsible for determining how to handle that
+func (cmdResult *CommandResult) Run() (err error) {
 	var stdout, stderr bytes.Buffer
 
-	cmd = exec.Command(cmdPath, cmdArgs...)
-	Infof("Running command: %s", cmd)
+	cmdResult.ExecCmd = exec.Command(cmdResult.CmdPath, cmdResult.CmdArgs...)
+	cmdResult.CmdString = fmt.Sprintf("%s", cmdResult.ExecCmd)
+	Infof("Running command: %s", cmdResult.CmdString)
 
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	cmdResult.ExecCmd.Stdout = &stdout
+	cmdResult.ExecCmd.Stderr = &stderr
 
-	cmdRc = CmdRcDidNotRun
-
-	err = cmd.Run()
-	if err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			cmdRc = exitError.ExitCode()
+	cmdResult.CmdErr = cmdResult.ExecCmd.Run()
+	cmdResult.Ran = true
+	if cmdResult.CmdErr != nil {
+		if exitError, ok := cmdResult.CmdErr.(*exec.ExitError); ok {
+			cmdResult.Rc = exitError.ExitCode()
 		} else {
-			cmdRc = CmdRcCannotGet
+			cmdResult.Rc = CmdRcCannotGet
+			Error(cmdResult.CmdErr)
+			err = fmt.Errorf("Unable to determine command return code")
 		}
 	} else {
-		cmdRc = 0
+		cmdResult.Rc = 0
 	}
-	cmdOutBytes, cmdErrBytes = stdout.Bytes(), stderr.Bytes()
-	cmdOutString, cmdErrString := string(cmdOutBytes), string(cmdErrBytes)
-	if err != nil {
-		Infof("Error running command: %s", err.Error())
+	cmdResult.OutBytes, cmdResult.ErrBytes = stdout.Bytes(), stderr.Bytes()
+	if cmdResult.Rc != CmdRcCannotGet {
+		Infof("Command return code: %d", cmdResult.Rc)
 	}
-	if cmdRc == CmdRcCannotGet {
-		Infof("WARNING: Unable to determine command return code")
-	} else {
-		Infof("Command return code: %d", cmdRc)
-	}
-	if len(cmdOutString) > 0 {
-		Infof("Command stdout:\n%s", cmdOutString)
+	if len(cmdResult.OutString()) > 0 {
+		Infof("Command stdout:\n%s", cmdResult.OutString())
 	} else {
 		Infof("No stdout from command")
 	}
-	if len(cmdErrString) > 0 {
-		Infof("Command stderr:\n%s", cmdErrString)
+	if len(cmdResult.ErrString()) > 0 {
+		Infof("Command stderr:\n%s", cmdResult.ErrString())
 	} else {
 		Infof("No stderr from command")
 	}
 	return
 }
 
-// Wrapper to RunPathBytes that determines the command path for you first
-func RunNameBytes(cmdName string, cmdArgs ...string) (cmdOutBytes, cmdErrBytes []byte, cmdRc int, err error) {
-	cmdRc = CmdRcDidNotRun
-	cmdPath, ok := GetPath(cmdName)
-	if !ok {
-		err = fmt.Errorf("Cannot determine path of bash binary")
+// Looks up the path of the specified command
+// Logs errors, if any
+func GetPath(cmdName string) (path string, err error) {
+	path, ok := CommandPaths[cmdName]
+	if ok {
+		Infof("Using cached value of %s path: %s", cmdName, path)
 		return
 	}
-	return RunPathBytes(cmdPath, cmdArgs...)
-}
-
-// Wrapper to RunPathBytes that returns the command outputs as strings rather than bytes
-func RunPathStrings(cmdPath string, cmdArgs ...string) (cmdOutString, cmdErrString string, cmdRc int, err error) {
-	cmdRc = CmdRcDidNotRun
-	cmdOutBytes, cmdErrBytes, cmdRc, err := RunPathBytes(cmdPath, cmdArgs...)
-	cmdOutString, cmdErrString = string(cmdOutBytes), string(cmdErrBytes)
+	Infof("Looking up path of %s", cmdName)
+	path, err = exec.LookPath(cmdName)
+	if err != nil {
+		return
+	} else if len(path) == 0 {
+		err = fmt.Errorf("Empty path found for %s", cmdName)
+		return
+	}
+	Infof("Found path of %s: %s", cmdName, path)
+	CommandPaths[cmdName] = path
 	return
 }
 
-// Wrapper to RunPathStrings that determines the command path for you first
-func RunNameStrings(cmdName string, cmdArgs ...string) (cmdOutString, cmdErrString string, cmdRc int, err error) {
-	cmdRc = CmdRcDidNotRun
-	cmdPath, ok := GetPath(cmdName)
-	if !ok {
-		err = fmt.Errorf("Cannot determine path of bash binary")
+// The command returning non-0 does NOT constitute an error -- that
+// is communicated back via the command return code, and the calling
+// function is responsible for determining how to handle that
+func RunPath(cmdPath string, cmdArgs ...string) (cmdResult *CommandResult, err error) {
+	cmdResult = new(CommandResult)
+	err = cmdResult.Init(cmdPath, cmdArgs...)
+	if err != nil {
 		return
 	}
-	return RunPathStrings(cmdPath, cmdArgs...)
+	err = cmdResult.Run()
+	return
+}
+
+// The command returning non-0 does NOT constitute an error -- that
+// is communicated back via the command return code, and the calling
+// function is responsible for determining how to handle that
+func RunName(cmdName string, cmdArgs ...string) (cmdResult *CommandResult, err error) {
+	cmdResult = new(CommandResult)
+	cmdPath, err := GetPath(cmdName)
+	if err != nil {
+		return
+	}
+	cmdResult, err = RunPath(cmdPath, cmdArgs...)
+	return
 }
