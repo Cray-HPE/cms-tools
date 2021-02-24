@@ -1,5 +1,5 @@
 /*
-Copyright 2019-2020, Cray Inc.
+Copyright 2019-2021 Hewlett Packard Enterprise Development LP
 */
 package common
 
@@ -8,13 +8,16 @@ import (
 	"time"
 )
 
-const alphaLowerChars = "abcdefghijklmnopqrstuvwxyz"
-const alphaUpperChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const numberChars = "0123456789"
-const alphaChars = alphaLowerChars + alphaUpperChars
-const alnumLowerChars = alphaLowerChars + numberChars
-const alnumUpperChars = alphaUpperChars + numberChars
-const alnumChars = alphaChars + numberChars
+const AlphaLowerChars = "abcdefghijklmnopqrstuvwxyz"
+const AlphaUpperChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const NumberChars = "0123456789"
+const PunctuationChars = ".,:;<>/?[]{}\\|=+-_)(*&^%$#@!~`'\""
+const WhitespaceChars = " \t"
+const AlphaChars = AlphaLowerChars + AlphaUpperChars
+const AlnumLowerChars = AlphaLowerChars + NumberChars
+const AlnumUpperChars = AlphaUpperChars + NumberChars
+const AlnumChars = AlphaChars + NumberChars
+const TextChars = PunctuationChars + WhitespaceChars + AlnumChars
 
 var myRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
@@ -22,6 +25,14 @@ var myRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 // functions, only using the instance of rand we created and seeded above
 func Intn(n int) int {
 	return myRand.Intn(n)
+}
+
+// Returns an integer in [min, max]
+func IntInRange(min, max int) int {
+	if min > max || min < 0 {
+		return 0
+	}
+	return Intn(max+1-min) + min
 }
 
 func Float32() float32 {
@@ -44,29 +55,37 @@ func StringFromChars(length int, chars string) string {
 }
 
 func AlnumString(length int) string {
-	return StringFromChars(length, alnumChars)
+	return StringFromChars(length, AlnumChars)
 }
 
 func AlphaString(length int) string {
-	return StringFromChars(length, alphaChars)
+	return StringFromChars(length, AlphaChars)
 }
 
 func AlnumLowerString(length int) string {
-	return StringFromChars(length, alnumLowerChars)
+	return StringFromChars(length, AlnumLowerChars)
 }
 
 func AlphaLowerString(length int) string {
-	return StringFromChars(length, alphaLowerChars)
+	return StringFromChars(length, AlphaLowerChars)
 }
 
 func AlnumUpperString(length int) string {
-	return StringFromChars(length, alnumUpperChars)
+	return StringFromChars(length, AlnumUpperChars)
 }
 
 func AlphaUpperString(length int) string {
-	return StringFromChars(length, alphaUpperChars)
+	return StringFromChars(length, AlphaUpperChars)
 }
 
 func NumberString(length int) string {
-	return StringFromChars(length, numberChars)
+	return StringFromChars(length, NumberChars)
+}
+
+func TextString(length int) string {
+	return StringFromChars(length, TextChars)
+}
+
+func TextStringWithNewlines(length int) string {
+	return StringFromChars(length, TextChars+"\n\r")
 }
