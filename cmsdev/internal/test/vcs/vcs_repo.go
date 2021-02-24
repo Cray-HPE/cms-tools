@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"github.com/go-resty/resty"
 	"net/http"
+	"os"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/k8s"
 	"strings"
@@ -365,7 +366,7 @@ func runGitCmd(shouldPass bool, cmdArgs ...string) bool {
 // Logs errors if any
 // Returns true if no errors, false otherwise
 func cloneTest(repoName, repoUrl string) bool {
-	var baseLsPath, repoDir, repoLsPath string
+	var repoDir string
 	var err error
 
 	repoDir = fmt.Sprintf("/tmp/%s", repoName)
@@ -385,56 +386,74 @@ func cloneTest(repoName, repoUrl string) bool {
 		return false
 	}
 
-	baseLsPath, err = common.GetPath("ls")
+	// Generate text file
+	textFileBase := fmt.Sprintf("vcs_repo_test_textfile.%d.%d.txt", common.Intn(1000000), common.Intn(1000000))
+	textFile := "/tmp/" + textFileBase
+	textFileSizeBytes := common.IntInRange(1, 20*1024)
+	common.Infof("Creating file to put in new repo: %s", textFile)
+	f, err := os.Create(textFile)
 	if err != nil {
 		common.Error(err)
 		runCmd(true, "rm", "-r", repoDir)
 		return false
 	}
-	// Copy ls file into repo
-	if !runCmd(true, "cp", baseLsPath, repoDir) {
+	defer f.Close()
+
+	common.Infof("Writing %d characters to %s", textFileSizeBytes, textFile)
+	_, err = f.WriteString(common.TextStringWithNewlines(textFileSizeBytes))
+	if err != nil {
+		common.Error(err)
 		runCmd(true, "rm", "-r", repoDir)
+		return false
+	}
+	f.Sync()
+
+	// Copy text file into repo
+	if !runCmd(true, "cp", textFile, repoDir) {
+		runCmd(true, "rm", "-r", repoDir, textFile)
 		return false
 	}
 
 	// git add
 	if !runGitCmd(true, "-C", repoDir, "add", ".") {
-		runCmd(true, "rm", "-r", repoDir)
+		runCmd(true, "rm", "-r", repoDir, textFile)
 		return false
 	}
 
 	// git commit
 	if !runGitCmd(true, "-C", repoDir, "commit", "-m", "Test commit") {
-		runCmd(true, "rm", "-r", repoDir)
+		runCmd(true, "rm", "-r", repoDir, textFile)
 		return false
 	}
 
 	// git push
 	if !runGitCmd(true, "-C", repoDir, "push") {
-		runCmd(true, "rm", "-r", repoDir)
+		runCmd(true, "rm", "-r", repoDir, textFile)
 		return false
 	}
 
 	// Remove the cloned directory
 	if !runCmd(true, "rm", "-r", repoDir) {
+		runCmd(true, "rm", textFile)
 		return false
 	}
 
 	// Clone into new directory
 	repoDir = fmt.Sprintf("/tmp/%s-take2", repoName)
 	if !runGitCmd(true, "clone", repoUrl, repoDir) {
+		runCmd(true, "rm", textFile)
 		return false
 	}
 
-	// Compare the existing ls file to the one in the repo
-	repoLsPath = fmt.Sprintf("%s/ls", repoDir)
-	if !runCmd(true, "cmp", baseLsPath, repoLsPath) {
-		runCmd(true, "rm", "-r", repoDir)
+	// Compare the existing text file to the one in the repo
+	repoFilePath := fmt.Sprintf("%s/%s", repoDir, textFileBase)
+	if !runCmd(true, "cmp", textFile, repoFilePath) {
+		runCmd(true, "rm", "-r", repoDir, textFile)
 		return false
 	}
 
 	// Remove the repo dir
-	if !runCmd(true, "rm", "-r", repoDir) {
+	if !runCmd(true, "rm", "-r", repoDir, textFile) {
 		return false
 	}
 	return true
