@@ -726,6 +726,10 @@ func CreateLogFile(path, service, version string, logs, retry, quiet, verbose bo
 	if err != nil {
 		panic(err)
 	}
+	// We want nanosecond precision in log file entries
+	Log.SetFormatter(&logrus.TextFormatter{
+		TimestampFormat: time.RFC3339Nano,
+	})
 	Log.SetOutput(f)
 	args := make([]string, 0, 5)
 	if retry {
