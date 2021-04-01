@@ -1,7 +1,7 @@
 # Copyright 2019-2021 Hewlett Packard Enterprise Development LP
 Name: cray-cmstools-crayctldeploy
-License: Cray Software License Agreement
-Summary: Cray CMS deployment tools 
+License: MIT
+Summary: Cray CMS tests and tools
 Group: System/Management
 Version: %(cat .rpm_version_cray-cmstools-crayctldeploy)
 Release: %(echo ${BUILD_METADATA})
