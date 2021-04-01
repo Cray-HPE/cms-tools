@@ -1,7 +1,7 @@
-# Copyright 2020 Hewlett Packard Enterprise Development LP
+# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
 
 Name: cray-cmstools-crayctldeploy-test
-License: Cray Software License Agreement
+License: MIT
 Summary: Cray CMS common test libraries for post-install tests
 Group: System/Management
 Version: %(cat .rpm_version_cray-cmstools-crayctldeploy-test)
