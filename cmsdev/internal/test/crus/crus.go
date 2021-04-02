@@ -170,10 +170,23 @@ func getFirstUpgradeId(listCmdOut []byte) (string, error) {
 	return common.GetStringFieldFromFirstItem("upgrade_id", listCmdOut)
 }
 
+func runCLICommand(cmdArgs ...string) []byte {
+	return test.RunCLICommandJSON("crus", cmdArgs...)
+}
+
+func validateUpgradeId(mapCmdOut []byte, expectedUpgradeId string) bool {
+	err := common.ValidateStringFieldValue("CRUS session", "upgrade_id", expectedUpgradeId, mapCmdOut)
+	if err != nil {
+		common.Error(err)
+		return false
+	}
+	return true
+}
+
 // Make basic CRUS CLI call, checking only status code at this point
 func testCRUSCLI() bool {
 	common.Infof("CLI: List CRUS sessions")
-	cmdOut := test.RunCLICommand("crus session list --format json")
+	cmdOut := runCLICommand("session", "list")
 	if cmdOut == nil {
 		return false
 	}
@@ -190,10 +203,13 @@ func testCRUSCLI() bool {
 	}
 
 	common.Infof("CLI: Describe CRUS session %s", upgradeId)
-	cmdOut = test.RunCLICommand("crus session describe " + upgradeId + " --format json -vvv")
+	cmdOut = runCLICommand("session", "describe", upgradeId)
 	if cmdOut == nil {
 		return false
+	} else if !validateUpgradeId(cmdOut, upgradeId) {
+		return false
 	}
+
 	return true
 }
 
@@ -228,9 +244,13 @@ func testCRUSAPI() bool {
 
 	url = baseurl + endpoints["crus"]["session"].Url + "/" + upgradeId
 	common.Infof("API: Get CRUS session %s", upgradeId)
-	_, err = test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err = test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
+		return false
+	}
+	// Validate that our CRUS session has the ID that we expect
+	if !validateUpgradeId(resp.Body(), upgradeId) {
 		return false
 	}
 	return true

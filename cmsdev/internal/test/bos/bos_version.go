@@ -5,7 +5,7 @@ package bos
  *
  * bos version tests
  *
- * Copyright 2019-2020 Hewlett Packard Enterprise Development LP
+ * Copyright 2019-2021 Hewlett Packard Enterprise Development LP
  */
 
 import (
@@ -30,10 +30,17 @@ func versionTests() bool {
 	url := baseurl + endpoints["bos"]["version"].Url
 	numTests++
 	test.RestfulTestHeader("GET /version", numTests, totalNumTests)
-	_, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
 		numTestsFailed++
+	} else {
+		// Validate that object can be decoded into a string map at least
+		_, err = common.DecodeJSONIntoStringMap(resp.Body())
+		if err != nil {
+			common.Error(err)
+			numTestsFailed++
+		}
 	}
 	test.RestfulTestResultSummary(numTestsFailed, numTests)
 	return numTestsFailed == 0

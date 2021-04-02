@@ -9,7 +9,6 @@ package bos
  */
 
 import (
-	"fmt"
 	"net/http"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/test"
@@ -17,6 +16,15 @@ import (
 
 func getFirstSessionTemplateId(listCmdOut []byte) (string, error) {
 	return common.GetStringFieldFromFirstItem("name", listCmdOut)
+}
+
+func ValidateSessionTemplateId(mapCmdOut []byte, expectedName string) bool {
+	err := common.ValidateStringFieldValue("BOS sessiontemplate", "name", expectedName, mapCmdOut)
+	if err != nil {
+		common.Error(err)
+		return false
+	}
+	return true
 }
 
 // sessiontemplate tests
@@ -38,8 +46,15 @@ func sessionTemplateTestsAPI() bool {
 	if err != nil {
 		common.Error(err)
 		numTestsFailed++
+	} else {
+		// Validate that we can decode it into a map object
+		_, err = common.DecodeJSONIntoStringMap(resp.Body())
+		if err != nil {
+			common.Error(err)
+			numTestsFailed++
+		}
+		// TODO: deeper validation of returned response
 	}
-	// TODO: deeper validation of returned response
 
 	// test #2, list session templates
 	url = baseurl + endpoints["bos"]["sessiontemplate"].Url
@@ -69,41 +84,41 @@ func sessionTemplateTestsAPI() bool {
 	url = baseurl + endpoints["bos"]["sessiontemplate"].Url + "/" + sessionTemplateId
 	numTests++
 	test.RestfulTestHeader("GET session_template_id", numTests, totalNumTests)
-	_, err = test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err = test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
 		numTestsFailed++
+	} else if !ValidateSessionTemplateId(resp.Body(), sessionTemplateId) {
+		numTestsFailed++
 	}
+
 	// TODO: deeper validation of returned response
 
 	return numTestsFailed == 0
 }
 
 func sessionTemplateTestsCLI(vnum int) bool {
-	var cmdString, verString string
+	var err error
 	var numTestsFailed = 0
-
-	if vnum == 0 {
-		verString = "bos"
-	} else if vnum > 0 {
-		verString = fmt.Sprintf("bos v%d", vnum)
-	} else {
-		common.Errorf("PROGRAMMING LOGIC ERROR: sessionTestCLI: Negative vnum value (%d)", vnum)
-	}
 
 	// test #1, get example session template
 	common.Infof("Getting example BOS session template via CLI")
-	cmdString = fmt.Sprintf("%s sessiontemplatetemplate list --format json", verString)
-	cmdOut := test.RunCLICommand(cmdString)
+	cmdOut := runCLICommand(vnum, "sessiontemplatetemplate", "list")
 	if cmdOut == nil {
 		numTestsFailed++
+	} else {
+		// Validate that we can decode it into a map object
+		_, err = common.DecodeJSONIntoStringMap(cmdOut)
+		if err != nil {
+			common.Error(err)
+			numTestsFailed++
+		}
+		// TODO: deeper validation of returned response
 	}
-	// TODO: deeper validation of returned response
 
 	// test #2, list session templates
 	common.Infof("Getting list of all BOS session templates via CLI")
-	cmdString = fmt.Sprintf("%s sessiontemplate list --format json", verString)
-	cmdOut = test.RunCLICommand(cmdString)
+	cmdOut = runCLICommand(vnum, "sessiontemplate", "list")
 	if cmdOut == nil {
 		return false
 	}
@@ -124,9 +139,10 @@ func sessionTemplateTestsCLI(vnum int) bool {
 
 	// a session_template_id is available
 	common.Infof("Describing BOS session template %s via CLI", sessionTemplateId)
-	cmdString = fmt.Sprintf("%s sessiontemplate describe %s --format json", verString, sessionTemplateId)
-	cmdOut = test.RunCLICommand(cmdString)
+	cmdOut = runCLICommand(vnum, "sessiontemplate", "describe", sessionTemplateId)
 	if cmdOut == nil {
+		return false
+	} else if !ValidateSessionTemplateId(cmdOut, sessionTemplateId) {
 		return false
 	}
 

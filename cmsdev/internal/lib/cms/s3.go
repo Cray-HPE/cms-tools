@@ -5,12 +5,11 @@ package cms
  *
  * s3 function library
  *
- * © Copyright 2019-2021 Hewlett Packard Enterprise Development LP
+ * Copyright 2019-2021 Hewlett Packard Enterprise Development LP
  */
 
 import (
 	"encoding/json"
-	"fmt"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/test"
 )
@@ -27,27 +26,28 @@ type ArtifactRecord struct {
 
 // Get a list of S3 buckets via CLI.
 // If error, logs it and returns nil.
-func GetBuckets() (bucketList []string) {
+func GetBuckets() []string {
 	common.Infof("Getting list of all S3 buckets via CLI")
-	cmdOut := test.RunCLICommand("artifacts buckets list --format json")
+	cmdOut := test.RunCLICommandJSON("artifacts", "buckets", "list")
 	if cmdOut == nil {
 		return nil
 	}
 
 	// Extract list of buckets from command output
 	common.Infof("Decoding JSON in command output")
-	if err := json.Unmarshal(cmdOut, &bucketList); err != nil {
+	bucketList, err := common.DecodeJSONIntoStringList(cmdOut)
+	if err != nil {
 		common.Error(err)
 		return nil
 	}
-	return
+	return bucketList
 }
 
 // Get a list of artifacts in the specified S3 bucket (via CLI).
 // If error, logs it and returns nil.
 func GetArtifactsInBucket(bucket string) []ArtifactRecord {
 	common.Infof("Getting list of all S3 artifacts in %s bucket via CLI", bucket)
-	cmdOut := test.RunCLICommand(fmt.Sprintf("artifacts list %s --format json", bucket))
+	cmdOut := test.RunCLICommandJSON("artifacts", "list", bucket)
 	if cmdOut == nil {
 		return nil
 	}
