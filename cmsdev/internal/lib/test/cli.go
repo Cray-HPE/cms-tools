@@ -76,13 +76,22 @@ func MakeConfigFile() string {
 	return tmpFile
 }
 
-func RunCLICommand(cmd string) []byte {
+func RunCLICommandJSON(baseCmdString string, cmdArgs ...string) []byte {
+	cmdList := append([]string{baseCmdString}, cmdArgs...)
+	cmdList = append(cmdList, "--format", "json")
+	return RunCLICommand(cmdList...)
+}
+
+func RunCLICommand(cmdList ...string) []byte {
 	var cmdResult *common.CommandResult
 	var cmdStr, tmpCliConfigFile string
 	var err error
 
 	accessFile := GetAccessFile()
-	baseCmdStr := fmt.Sprintf("CRAY_CREDENTIALS=%s %s %s", accessFile, cray_cli, cmd)
+	baseCmdStr := fmt.Sprintf("CRAY_CREDENTIALS=%s '%s'", accessFile, cray_cli)
+	for _, cliArg := range cmdList {
+		baseCmdStr = fmt.Sprintf("%s '%s'", baseCmdStr, cliArg)
+	}
 	if len(CliConfigFile) == 0 {
 		cmdResult, err = common.RunName("bash", "-c", baseCmdStr)
 		if err != nil {

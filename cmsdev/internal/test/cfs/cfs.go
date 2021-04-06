@@ -9,7 +9,6 @@ package cfs
  */
 
 import (
-	"fmt"
 	"net/http"
 	"regexp"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
@@ -97,6 +96,21 @@ func IsCFSRunning() (passed bool) {
 	return
 }
 
+func runCLICommand(cmdArgs ...string) []byte {
+	return test.RunCLICommandJSON("cfs", cmdArgs...)
+}
+
+func checkIDField(mapCmdOut []byte, cfsEndpoint, idFieldName, expectedIdValue string) bool {
+	// The endpoint names are plural ending in s -- this makes it singular
+	objectName := "CFS " + cfsEndpoint[:len(cfsEndpoint)-1]
+	err := common.ValidateStringFieldValue(objectName, idFieldName, expectedIdValue, mapCmdOut)
+	if err != nil {
+		common.Error(err)
+		return false
+	}
+	return true
+}
+
 // Make basic CFS API calls, checking only status code at this point
 func testCFSCLI() (passed bool) {
 	passed = true
@@ -104,8 +118,7 @@ func testCFSCLI() (passed bool) {
 	common.Infof("Checking CFS CLI endpoints")
 	for _, cfsEndpoint := range cfsEndpoints {
 		common.Infof("CLI: Listing CFS %s", cfsEndpoint)
-		cmdString := fmt.Sprintf("cfs %s list --format json", cfsEndpoint)
-		cmdOut := test.RunCLICommand(cmdString)
+		cmdOut := runCLICommand(cfsEndpoint, "list")
 		if cmdOut == nil {
 			passed = false
 			continue
@@ -130,9 +143,14 @@ func testCFSCLI() (passed bool) {
 		}
 
 		common.Infof("CLI: Describing CFS %s %s", cfsEndpoint, idValue)
-		cmdString = fmt.Sprintf("cfs %s describe %s --format json", cfsEndpoint, idValue)
-		cmdOut = test.RunCLICommand(cmdString)
+		cmdOut = runCLICommand(cfsEndpoint, "describe", idValue)
 		if cmdOut == nil {
+			passed = false
+			continue
+		}
+
+		// Validate that we find the expected ID field value
+		if !checkIDField(cmdOut, cfsEndpoint, idFieldName, idValue) {
 			passed = false
 		}
 	}
@@ -154,10 +172,17 @@ func testCFSAPI() (passed bool) {
 
 	common.Infof("API: Checking CFS service health")
 	url = baseurl + endpoints["cfs"]["healthz"].Url
-	_, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
 		passed = false
+	} else {
+		// At least verify that the response object is a string map as we expect
+		_, err = common.DecodeJSONIntoStringMap(resp.Body())
+		if err != nil {
+			common.Error(err)
+			passed = false
+		}
 	}
 
 	for _, cfsEndpoint := range cfsEndpoints {
@@ -190,9 +215,15 @@ func testCFSAPI() (passed bool) {
 
 		common.Infof("API: Getting CFS %s %s", cfsEndpoint, idValue)
 		url += "/" + idValue
-		_, err = test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+		resp, err = test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 		if err != nil {
 			common.Error(err)
+			passed = false
+			continue
+		}
+
+		// Validate that we find the expected ID field value
+		if !checkIDField(resp.Body(), cfsEndpoint, idFieldName, idValue) {
 			passed = false
 		}
 	}
