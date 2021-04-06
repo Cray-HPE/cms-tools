@@ -1,11 +1,30 @@
 # Copyright 2020-2021 Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
 
 """
 CMS test helper functions for CLI
 """
 
 from .api import get_auth_token
-from .helpers import cmd_failed_msg, info, raise_test_exception_error, run_cmd_list, warn
+from .helpers import cmd_failed_msg, info, raise_test_error, \
+                     raise_test_exception_error, run_cmd_list, warn
 import json
 import os
 import tempfile
@@ -111,23 +130,25 @@ def run_cli_cmd(cmdlist, parse_json_output=True, return_rc=False, return_json_ou
                     info("CLI command failed even using our CLI config file.")
                     # No need to continue using our config file                    
                     config_tempfile = None
+                    if not return_rc:
+                        msg = cmd_failed_msg(
+                            cmd_string=" ".join(run_cmdlist), 
+                            rc=cmdresp["rc"], 
+                            stdout=cmdresp["out"], 
+                            stderr=cmdresp["err"])
+                        raise_test_error(msg, log_error=False)
+                elif not return_rc:
+                    # Command passed but user did not request return code in the response, so let's remove it
+                    del cmdresp["rc"]
+            else:
+                info("CLI command failed and does not appear to be obviously related to the CLI config")
+                if not return_rc:
                     msg = cmd_failed_msg(
                         cmd_string=" ".join(run_cmdlist), 
                         rc=cmdresp["rc"], 
                         stdout=cmdresp["out"], 
                         stderr=cmdresp["err"])
                     raise_test_error(msg, log_error=False)
-                elif not return_rc:
-                    # Command passed but user did not request return code in the response, so let's remove it
-                    del cmdresp["rc"]
-            else:
-                info("CLI command failed and does not appear to be obviously related to the CLI config")
-                msg = cmd_failed_msg(
-                    cmd_string=" ".join(run_cmdlist), 
-                    rc=cmdresp["rc"], 
-                    stdout=cmdresp["out"], 
-                    stderr=cmdresp["err"])
-                raise_test_error(msg, log_error=False)
         elif not return_rc:
             # Command passed but user did not request return code in the response, so let's remove it
             del cmdresp["rc"]
