@@ -1,4 +1,22 @@
 # Copyright 2020-2021 Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
 
 """
 General CMS test helper functions
@@ -69,6 +87,10 @@ def debug(msg, timestamp=True):
     logger.debug(msg)
     if verbose_output:
         print(_timestamped(msg, timestamp))
+
+def debug_logvar(caller, varname, varvalue, timestamp=True):
+    debug("%s: variable %s, type %s, value: %s" % (caller, varname, str(type(varvalue)), str(varvalue)), 
+          timestamp=timestamp)
 
 def warn(msg, prefix=True, timestamp=True):
     logger.warn(msg)
@@ -423,3 +445,56 @@ def ssh_command_passes(target, cmdstring, **kwargs):
     """
     ssh_cmd_resp = run_command_via_ssh(target, cmdstring, return_rc=True, **kwargs)
     return ssh_cmd_resp["rc"] == 0
+
+def run_git_cmd_in_repo(repo_dir, *git_cmd_args, **run_cmd_list_kwargs):
+    """
+    Just a wrapper that appends "git -C repo_dir" in front of the git command
+    kwargs are passed to run_cmd_list uninspected
+    """
+    return run_cmd_list([ "git", "-C", repo_dir ] + list(git_cmd_args), **run_cmd_list_kwargs)
+
+def git_create_branch(repo_dir, branch_name, base_branch="main", pull=True):
+    """
+    In the specified repo dir:
+    1) checkout the base branch (if specified)
+    2) pull (if pull is True)
+    3) create and checkout a new branch with the specified name
+    """
+    if base_branch:
+        debug("Checking out %s branch" % base_branch)
+        run_git_cmd_in_repo(repo_dir, "checkout", base_branch)
+    if pull:
+        debug("Pulling latest updates (if any)")
+        run_git_cmd_in_repo(repo_dir, "pull")
+    debug("Creating branch %s" % branch_name)
+    run_git_cmd_in_repo(repo_dir, "checkout", "-b", branch_name)
+
+def git_commit(repo_dir, git_add=True, commit_msg=None):
+    """
+    If git_add is true, does a git add in the repo dir.
+    If a commit message is set, does a git commit in the repo with that message
+    If git add is true but no commit message is set, a git commit is done with a
+    generic message.
+    """
+    if git_add:
+        debug("git add in %s" % repo_dir)
+        run_git_cmd_in_repo(repo_dir, "add", ".")
+    if commit_msg == None:
+        commit_msg = "CMS tests are the best"
+    debug("git commit in %s" % repo_dir)
+    run_git_cmd_in_repo(repo_dir, "commit", "-m", commit_msg)
+
+def git_push(repo_dir, origin_branch=None, git_add=True, commit_msg=None):
+    """
+    Calls git_commit with repo_dir, git_add, and commit_msg arguments
+    Does a git push in the specified repo
+    If origin branch is set, then the push will include a set-upstream argument
+    for that branch. Otherwise the push is done without arguments.
+    """
+    git_commit(repo_dir=repo_dir, git_add=git_add, commit_msg=commit_msg)
+    debug("git push in %s" % repo_dir)
+    if origin_branch == None:
+        run_git_cmd_in_repo(repo_dir, "push")
+    else:
+        run_git_cmd_in_repo(repo_dir, "push", "--set-upstream", "origin", origin_branch)
+
