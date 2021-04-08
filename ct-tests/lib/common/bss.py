@@ -1,4 +1,22 @@
-# Copyright 2020 Hewlett Packard Enterprise Development LP
+# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
 
 """
 BSS-related CMS test helper functions
@@ -103,6 +121,12 @@ def bss_host_xname(host):
     """
     return host["ID"]
 
+def bss_host_role(host):
+    """
+    Retrieves the xname from the BSS host object
+    """
+    return host["Role"]
+
 def get_bss_nodes_by_role(use_api, role, enabled_only=True):
     """
     List all bss host entries, validate that they look legal, and returns a list of the
@@ -137,6 +161,18 @@ def verify_bss_bootparameters_list(response_object, xname_to_nid):
     if xnames_to_find:
         raise_test_error("Did not find bootparameter entries for the following nids/xnames: %s" % ", ".join(
             ["%d/%s" % (xname_to_nid[xname], xname) for xname in xnames_to_find]))
+
+def list_all_bss_bootparameters(use_api):
+    """
+    Returns list of all BSS bootparameters
+    """
+    if use_api:
+        params={'mac': None, 'name': None, 'nid': None}
+        response_object = requests_get(BSS_BOOTPARAMETERS_URL, params=params)
+    else:
+        response_object = run_cli_cmd(["bss", "bootparameters", "list"])
+    verify_bss_bootparameters_list(response_object, dict())
+    return response_object
 
 def list_bss_bootparameters(use_api, nid, xname):
     """

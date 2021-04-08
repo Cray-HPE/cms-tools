@@ -1,4 +1,22 @@
-# Copyright 2020 Hewlett Packard Enterprise Development LP
+# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
 
 """
 CMS test helper functions for API calls
@@ -6,19 +24,33 @@ CMS test helper functions for API calls
 
 from .helpers import debug, info, raise_test_error, raise_test_exception_error
 from .k8s import get_k8s_secret
+import copy
 import requests
+import time
 import warnings
 
-URL_BASE = "https://api-gw-service-nmn.local"
-API_URL_BASE = "%s/apis" % URL_BASE
+API_HOSTNAME = "api-gw-service-nmn.local"
+URL_BASE = "https://" + API_HOSTNAME
+API_URL_BASE = URL_BASE + "/apis"
 
-token_url="%s/keycloak/realms/shasta/protocol/openid-connect/token" % URL_BASE
+token_url = URL_BASE + "/keycloak/realms/shasta/protocol/openid-connect/token"
 
 saved_auth_token = None
+
+HEADER_CONTENT_TYPE = "Content-Type"
+CONTENT_TYPE_JSON = "application/json"
 
 #
 # API utility functions
 #
+
+def json_content_headers(headers=None, overwrite_content_type=False):
+    if headers == None:
+        return { HEADER_CONTENT_TYPE: CONTENT_TYPE_JSON }
+    new_headers = copy.deepcopy(headers)
+    if overwrite_content_type or HEADER_CONTENT_TYPE not in new_headers:
+        new_headers[HEADER_CONTENT_TYPE] = CONTENT_TYPE_JSON
+    return new_headers
 
 def show_response(resp):
     """
@@ -30,14 +62,14 @@ def show_response(resp):
         if val:
             debug("API response %s: %s" % (field, str(val)))
 
-def do_request(method, url, **kwargs):
+def do_request(method, url, max_retries_on_5xx=3, **kwargs):
     """
     Wrapper for call to requests functions. Displays, logs, and makes the request,
     then displays, logs, and returns the response.
     """
-    req_args = { "verify": False, "timeout": 30 }
+    req_args = { "verify": False, "timeout": 120 }
     req_args.update(kwargs)
-    debug("Sending %s request to %s with following arguments" % (method.__name__, url))
+    debug("Sending %s request to %s with following arguments" % (method.__name__.upper(), url))
     for k in req_args:
         debug("%s = %s" % (k, str(req_args[k])))
     with warnings.catch_warnings():
@@ -46,22 +78,33 @@ def do_request(method, url, **kwargs):
         try:
             resp = method(url=url, **req_args)
             show_response(resp)
+            if max_retries_on_5xx > 0 and 500 <= resp.status_code <= 599:
+                info("Received status code %d; waiting 2 seconds and retrying request" % resp.status_code)
+                time.sleep(2)
+                return do_request(method=method, url=url, max_retries_on_5xx=max_retries_on_5xx-1, **kwargs)
             return resp
         except Exception as e:
             raise_test_exception_error(e, "API request")
 
+def get_response_json(resp):
+    """
+    Return the JSON object from the response or raise an error
+    """
+    try:
+        return resp.json()
+    except Exception as e:
+        raise_test_exception_error(e, "to decode JSON object in response body")
+
 def check_response(resp, expected_sc=200, return_json=False):
     """
     Checks to make sure the response has the expected status code. If requested,
-    returns the JSON object from thje response.
+    returns the JSON object from the response.
     """
     if resp.status_code != expected_sc:
         raise_test_error("Request status code expected to be %d, but was not" % expected_sc)
     if return_json:
-        try:
-            return resp.json()
-        except Exception as e:
-            raise_test_exception_error(e, "to decode JSON object in response body")
+        return get_response_json(resp)
+    return resp
 
 #
 # Auth functions
@@ -132,17 +175,22 @@ def do_request_with_auth_retry(url, method, expected_sc, return_json=None, **kwa
             return_json = True
         else:
             return_json = False
+    if 500 <= expected_sc <= 599 and "max_retries_on_5xx" not in kwargs:
+        # If our expected status code is in the 500 range then we don't want to
+        # do any automatic retries if we get it
+        kwargs["max_retries_on_5xx"] = 0
     if "json" in kwargs:
         try:
-            if "Content-Type" not in kwargs["headers"]:
-                kwargs["headers"]["Content-Type"] = "application/json"
+            headers = kwargs["headers"]
         except KeyError:
-            kwargs["headers"] = { "Content-Type": "application/json" }
+            headers = None
+        kwargs["headers"] = json_content_headers(headers=headers)
     auth_token = get_auth_token()
     try:
         kwargs["headers"]["Authorization"] = "Bearer %s" % auth_token["access_token"]
     except KeyError:
         kwargs["headers"] = { "Authorization": "Bearer %s" % auth_token["access_token"] }
+    debug("kwargs = %s" % str(kwargs))
     resp = do_request(method=method, url=url, **kwargs)
     if resp.status_code != 401 or expected_sc == 401:
         if return_json:
@@ -194,3 +242,8 @@ def requests_post(url, expected_sc=201, **kwargs):
     """
     return do_request_with_auth_retry(url=url, method=requests.post, expected_sc=expected_sc, **kwargs)
 
+def requests_put(url, expected_sc=200, **kwargs):
+    """
+    Calls our above requests wrapper for a PUT request, and sets the default expected status code to 200.
+    """
+    return do_request_with_auth_retry(url=url, method=requests.put, expected_sc=expected_sc, **kwargs)

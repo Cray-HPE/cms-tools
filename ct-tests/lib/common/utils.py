@@ -1,4 +1,22 @@
 # Copyright 2020-2021 Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
 
 """
 CMS test helper functions that
@@ -8,16 +26,20 @@ or
 """
 
 from .bss import bss_host_nid, bss_host_xname, get_bss_compute_nodes
-from .helpers import CMSTestError, debug, error, info, raise_test_error, \
-                     run_cmd_list, is_pingable, run_command_via_ssh, \
-                     run_scp, ssh_command_passes
+from .capmc import get_capmc_node_status
+from .helpers import CMSTestError, debug, error, \
+                     git_create_branch, git_push, \
+                     info, is_pingable, raise_test_error, \
+                     run_cmd_list, run_git_cmd_in_repo, \
+                     run_command_via_ssh, run_scp, ssh_command_passes
 from .hsm import get_hsm_xname_list
 from .k8s import get_csm_private_key
 import os
+import random
 import stat
 import tempfile
 
-def get_bss_hsm_compute_nodes(use_api):
+def get_bss_hsm_compute_nodes(use_api, bss_hosts=None):
     """
     Return BSS host entries for all compute nodes that are Enabled in BSS
     and listed in HSM with Status Populated
@@ -26,7 +48,10 @@ def get_bss_hsm_compute_nodes(use_api):
     debug("Found the following xnames for Populated nodes in hsm: %s" % str(hsm_node_xnames))
     if not hsm_node_xnames:
         raise_test_error("No nodes found in HSM inventory with Status Populated")
-    bss_compute_nodes = get_bss_compute_nodes(use_api)
+    if bss_hosts == None:
+        bss_compute_nodes = get_bss_compute_nodes(use_api)
+    else:
+        bss_compute_nodes = bss_hosts
     debug("Found the following Enabled Compute nodes in BSS: %s" % str(bss_compute_nodes))
     filtered_list = [ host for host in bss_compute_nodes if bss_host_xname(host) in hsm_node_xnames ]
     debug("So the intersection is: %s" % str(filtered_list))
@@ -34,7 +59,7 @@ def get_bss_hsm_compute_nodes(use_api):
         raise_test_error("No compute nodes found that both have Status Populated in HSM and are Enabled in BSS")
     return filtered_list
 
-def get_compute_nids_xnames(use_api, nids=None, xnames=None, groups=None, min_required=0):
+def get_compute_nids_xnames(use_api, nids=None, xnames=None, groups=None, min_required=0, bss_hosts=None):
     """
     First, from BSS and HSM, generate a list of compute nodes.
     From that, generate a map between compute node NIDs and xnames.
@@ -50,7 +75,7 @@ def get_compute_nids_xnames(use_api, nids=None, xnames=None, groups=None, min_re
     Verify that the resulting mapping contains at least the minimum required
     number of nodes. Then return nid -> xname and xname -> nid mappings.
     """
-    bss_hsm_compute_nodes = get_bss_hsm_compute_nodes(use_api)
+    bss_hsm_compute_nodes = get_bss_hsm_compute_nodes(use_api=use_api, bss_hosts=bss_hosts)
     bss_hsm_nids_to_xnames = { bss_host_nid(host): bss_host_xname(host) for host in bss_hsm_compute_nodes }
     if nids or xnames or groups:
         if xnames:
@@ -173,3 +198,76 @@ def scp_to_xname(local_file, xname, use_csm_key=True, tmpdir=None, **kwargs):
                          identity_file=f.name, **kwargs)
         return
     run_scp(local_file=local_file, target_host=node_hostname(xname), **kwargs)
+
+CFS_MOTD_PLAYBOOK_FILE_TEXT = """\
+# CMS test append MOTD play
+---
+- hosts: Compute
+  any_errors_fatal: true
+  roles:
+  - motd
+"""
+
+CFS_MOTD_TASK_FILE_DIR="roles/motd/tasks"
+CFS_MOTD_TASK_FILE_NAME="main.yml"
+
+CFS_MOTD_TASK_FILE_TEXT = """\
+# CMS test append MOTD task
+---
+- name: Append CMS test motd content
+  lineinfile:
+    backup: yes
+    create: yes
+    state: present
+    path: /etc/motd
+    insertafter: EOF
+    line: "%s"
+"""
+
+def _write_and_view_textfile(filepath, filecontents):
+    with open(filepath, "wt+") as f:
+        f.write(filecontents)
+    debug("View file contents")
+    run_cmd_list(["cat", filepath])    
+
+def create_cfs_ansible_motd_playbook_in_repo(repo_dir, playbook_name, motd_string):
+    """
+    In repo_dir:
+     - Creates main ansible playbook file with specified name
+     - Creates motd role main task file, substituting in the specified motd_string
+    """
+    playbook_file_path = repo_dir + "/" + playbook_name
+    debug("Writing motd ansible playbook to %s" % playbook_file_path)
+    _write_and_view_textfile(playbook_file_path, CFS_MOTD_PLAYBOOK_FILE_TEXT)
+
+    task_file_dir = repo_dir + "/" + CFS_MOTD_TASK_FILE_DIR
+    task_file_path = task_file_dir + "/" + CFS_MOTD_TASK_FILE_NAME
+    task_file_contents = CFS_MOTD_TASK_FILE_TEXT % motd_string
+    
+    debug("Creating motd task directory %s" % task_file_dir)
+    run_cmd_list(["mkdir", "-pv", task_file_dir])
+
+    debug("Writing motd ansible task to %s" % task_file_path)
+    _write_and_view_textfile(task_file_path, task_file_contents)
+
+def create_ansible_motd_repo_branch(repo_dir, motd_string, playbook_name, **git_create_branch_kwargs):
+    """
+    Creates a new branch with the specified name in repo_dir off the specified base branch
+    In that branch it creates an ansible playbook with the specified name, that updates the
+    host motd to include a string our tests look for to verify that this config was applied.
+    Adds, commits, and pushes the commit to remote.
+    Returns the commit id of this commit.
+    """
+    git_create_branch(repo_dir, motd_string, **git_create_branch_kwargs)
+    create_cfs_ansible_motd_playbook_in_repo(repo_dir=repo_dir, playbook_name=playbook_name, 
+                                             motd_string=motd_string)
+    git_push(repo_dir=repo_dir, origin_branch=motd_string, git_add=True, 
+             commit_msg="Create %s playbook" % playbook_name)
+    # Show the latest commit to the repo
+    # -1 shows only the latest commit
+    run_git_cmd_in_repo(repo_dir, "log", "-1")
+    # Now just get the commit ID
+    # --pretty=%H shows just the commit id
+    commit_id = run_git_cmd_in_repo(repo_dir, "log", "-1", "--pretty=%H")["out"].strip()
+    debug("commit id is %s" % commit_id)
+    return commit_id
