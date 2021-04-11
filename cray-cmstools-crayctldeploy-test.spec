@@ -22,7 +22,9 @@ Name: cray-cmstools-crayctldeploy-test
 License: MIT
 Summary: Cray CMS common test libraries for post-install tests
 Group: System/Management
-Version: %(cat .rpm_version_cray-cmstools-crayctldeploy-test)
+# The placeholder version string will be replaced at repo build time by
+# the runBuildPrep.sh script
+Version: @VERSION@
 Release: %(echo ${BUILD_METADATA})
 Source: %{name}-%{version}.tar.bz2
 Vendor: Cray Inc.
