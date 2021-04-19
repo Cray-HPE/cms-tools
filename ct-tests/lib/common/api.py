@@ -22,7 +22,7 @@
 CMS test helper functions for API calls
 """
 
-from .helpers import debug, info, raise_test_error, raise_test_exception_error
+from .helpers import CMSTestError, debug, info, raise_test_error, raise_test_exception_error
 from .k8s import get_k8s_secret
 import copy
 import requests
@@ -39,6 +39,16 @@ saved_auth_token = None
 
 HEADER_CONTENT_TYPE = "Content-Type"
 CONTENT_TYPE_JSON = "application/json"
+
+class CMSTestApiError(CMSTestError):
+    pass
+
+class CMSTestApiUnexpectedStatusCodeError(CMSTestApiError):
+    def __init__(self, expected_sc, actual_sc, **kwargs):
+        msg = "Expected status code %d in response but received %d" % (expected_sc, actual_sc)
+        self.expected_sc = expected_sc
+        self.actual_sc = actual_sc
+        super(CMSTestApiUnexpectedStatusCodeError, self).__init__(msg, **kwargs)
 
 #
 # API utility functions
@@ -101,7 +111,7 @@ def check_response(resp, expected_sc=200, return_json=False):
     returns the JSON object from the response.
     """
     if resp.status_code != expected_sc:
-        raise_test_error("Request status code expected to be %d, but was not" % expected_sc)
+        raise CMSTestApiUnexpectedStatusCodeError(expected_sc=expected_sc, actual_sc=resp.status_code)
     if return_json:
         return get_response_json(resp)
     return resp
@@ -201,7 +211,7 @@ def do_request_with_auth_retry(url, method, expected_sc, return_json=None, **kwa
         json_obj = check_response(resp=resp, expected_sc=401, return_json=True)
     try:
         if json_obj["exp"] != "token expired":
-            raise_test_error("Expected response with status code %d" % expected_sc)
+            raise CMSTestApiUnexpectedStatusCodeError(expected_sc=expected_sc, actual_sc=resp.status_code)
     except KeyError:
         raise_test_error("Expected response with status code %d" % expected_sc)
     debug("Received token expired response (status code 401). Will attempt to refresh auth token and retry request")
