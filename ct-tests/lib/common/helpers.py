@@ -51,11 +51,11 @@ class CMSTestError(Exception):
             error(msg)
         super(CMSTestError, self).__init__(msg)
 
-def raise_test_error(msg, log_error=True):
+def raise_test_error(msg, log_error=True, error_class=CMSTestError):
     """
     Raise a CMSTestError with the specified message.
     """
-    raise CMSTestError(msg, log_error=log_error)
+    raise error_class(msg, log_error=log_error)
 
 #
 # Test logging / output functions
@@ -68,43 +68,57 @@ def _timestamped(msg, timestamp=True):
         return msg
 
 def info(msg, timestamp=True):
+    # timestamp argument is deprecated and have no effects
     logger.info(msg)
-    print(_timestamped(msg, timestamp))
 
 def section(sname):
     divstr="#"*80
-    print("")
-    print(divstr)
+    print("", flush=True)
+    print(divstr, flush=True)
     info(sname, timestamp=False)
-    print(datetime.datetime.now())
-    print(divstr)
-    print("")
+    print(datetime.datetime.now(), flush=True)
+    print(divstr, flush=True)
+    print("", flush=True)
 
 def subtest(sname):
     section("Subtest: %s" % sname)
 
 def debug(msg, timestamp=True):
     logger.debug(msg)
-    if verbose_output:
-        print(_timestamped(msg, timestamp))
 
 def debug_logvar(caller, varname, varvalue, timestamp=True):
     debug("%s: variable %s, type %s, value: %s" % (caller, varname, str(type(varvalue)), str(varvalue)), 
           timestamp=timestamp)
 
 def warn(msg, prefix=True, timestamp=True):
+    # prefix and timestamp arguments are deprecated and have no effects
     logger.warn(msg)
-    if prefix:
-        print(_timestamped("WARNING: %s" % msg, timestamp))
-    else:
-        print(_timestamped(msg, timestamp))
 
 def error(msg, prefix=True, timestamp=True):
+    # prefix and timestamp arguments are deprecated and have no effects
     logger.error(msg)
-    if prefix:
-        sys.stderr.write(_timestamped("ERROR: %s\n" % msg, timestamp))
-    else:
-        sys.stderr.write(_timestamped("%s\n" % msg, timestamp))
+
+logfile_format_string = "#LOG#|%(asctime)s|%(levelname)s|%(message)s"
+
+class FormatterWithMicrosecondTime(logging.Formatter):
+    converter = datetime.datetime.fromtimestamp
+    def __init__(self):
+        super(FormatterWithMicrosecondTime, self).__init__(fmt=logfile_format_string)
+    def formatTime(self, record, datefmt=None):
+        ct = self.converter(record.created)
+        if not datefmt:
+            datefmt="%Y-%m-%d_%H:%M:%S.%f"
+        return ct.strftime(datefmt)
+
+class ConsoleFormatterWithMicrosecondTime(FormatterWithMicrosecondTime):
+    def format(self, record):
+        if record.levelno >= logging.ERROR:
+            self._style._fmt = "%(asctime)s ERROR: %(message)s"
+        elif record.levelno >= logging.WARNING:
+            self._style._fmt = "%(asctime)s WARNING: %(message)s"
+        else:
+            self._style._fmt = "%(asctime)s %(message)s"
+        return super(ConsoleFormatterWithMicrosecondTime, self).format(record)
 
 def init_logger(test_name, logfile_directory=DEFAULT_LOGFILE_DIRECTORY, verbose=False):
     global logfile_path, verbose_output
@@ -113,18 +127,37 @@ def init_logger(test_name, logfile_directory=DEFAULT_LOGFILE_DIRECTORY, verbose=
     if not os.path.isdir(logfile_directory):
         if os.path.exists(logfile_directory):
             raise_test_error("Logfile directory (%s) exists but is not a directory" % logfile_directory)
-        print(_timestamped("Logfile directory (%s) does not exist -- creating it" % logfile_directory))
+        print(_timestamped("Logfile directory (%s) does not exist -- creating it" % logfile_directory), flush=True)
         os.makedirs(logfile_directory)
     logfile_path = "%s/%s.log" % (
         logfile_directory,
         datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S.%f"))
     logfile_handler = logging.FileHandler(filename=logfile_path)
     logger.addHandler(logfile_handler)
-    logfile_formatter = logging.Formatter(fmt="#LOG#|%(asctime)s.%(msecs)03d|%(levelname)s|%(message)s",datefmt="%Y-%m-%d_%H:%M:%S")
+    logfile_formatter = FormatterWithMicrosecondTime()
     logfile_handler.setFormatter(logfile_formatter)
-    print(_timestamped("Logging to: %s" % logfile_path))
+    print(_timestamped("Logging to: %s" % logfile_path), flush=True)
+
+    console_stdout_handler = logging.StreamHandler(sys.stdout)
+    logger.addHandler(console_stdout_handler)
+    console_formatter = ConsoleFormatterWithMicrosecondTime()
+    console_stdout_handler.setFormatter(console_formatter)
+    # For stdout, we don't want to show warnings or higher -- those
+    # go to stderr
+    console_stdout_handler.addFilter(lambda record: record.levelno < logging.WARN)
     if verbose_output:
-        print(_timestamped("Verbose output enabled"))
+        console_stdout_handler.setLevel(logging.DEBUG)
+        debug("Verbose output enabled")
+    else:
+        console_stdout_handler.setLevel(logging.INFO)
+
+    # stderr is the default for StreamHandler, but no harm in being specific
+    console_stderr_handler = logging.StreamHandler(sys.stderr)
+    logger.addHandler(console_stderr_handler)
+    console_formatter = ConsoleFormatterWithMicrosecondTime()
+    console_stderr_handler.setFormatter(console_formatter)
+    # For stderr we only show warnings or higher
+    console_stderr_handler.setLevel(logging.WARNING)
 
 #
 # Test fatal exit functions
@@ -132,7 +165,7 @@ def init_logger(test_name, logfile_directory=DEFAULT_LOGFILE_DIRECTORY, verbose=
 
 def exit_test(rc=0):
     if logfile_path:
-        print(_timestamped("Test logfile: %s" % logfile_path))
+        print(_timestamped("Test logfile: %s" % logfile_path), flush=True)
     sys.exit(rc)
 
 def error_exit(msg="Error encountered. Exiting.", log_error=True):
@@ -399,7 +432,7 @@ def is_pingable(target):
     return ping_cmd_resp["rc"] == 0
 
 def run_scp(local_file, target_host, remote_target=None, scp_arg_list=None, user="root", 
-            identity_file=None, port=None, strict_host_key_check=False):
+            null_known_hosts=True, identity_file=None, port=None, strict_host_key_check=False):
     """
     Runs the necessary scp command to copy the local file to the specified
     remote destination. If remote_target is not specified, it will be
@@ -418,17 +451,21 @@ def run_scp(local_file, target_host, remote_target=None, scp_arg_list=None, user
         scp_command_list.extend([ "-p", str(port) ])
     if not strict_host_key_check:
         scp_command_list.extend(["-o", "StrictHostKeyChecking=no" ])
+    if null_known_hosts:
+        scp_command_list.extend(["-o", "UserKnownHostsFile=/dev/null"])
     scp_command_list.extend([
         local_file, 
         "%s@%s:%s" % (user, target_host, remote_target)])
     run_cmd_list(scp_command_list, return_rc=False)
 
 def run_command_via_ssh(target, cmdstring, user="root", identity_file=None, port=None, 
-                        strict_host_key_check=False, **kwargs):
+                        null_known_hosts=True, strict_host_key_check=False, **kwargs):
     """
     Runs the necessary ssh command to run the specified command on the specified target.
     """
     ssh_cmd_list = [ "ssh" ]
+    if null_known_hosts:
+        ssh_cmd_list.extend(["-o", "UserKnownHostsFile=/dev/null"])
     if identity_file:
         ssh_cmd_list.extend([ "-i", identity_file ])
     if port:
