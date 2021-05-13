@@ -18,6 +18,10 @@
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
+#
+# (MIT License)
 
-./update_versions.sh || exit 1
+./install_cms_meta_tools.sh || exit 1
+./cms_meta_tools/update_versions/update_versions.sh || exit 1
+rm -rf ./cms_meta_tools
 exit 0

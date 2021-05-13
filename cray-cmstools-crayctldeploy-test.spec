@@ -17,14 +17,14 @@
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
+#
+# (MIT License)
 
 Name: cray-cmstools-crayctldeploy-test
 License: MIT
 Summary: Cray CMS common test libraries for post-install tests
 Group: System/Management
-# The placeholder version string will be replaced at repo build time by
-# the runBuildPrep.sh script
-Version: @VERSION@
+Version: %(cat .version)
 Release: %(echo ${BUILD_METADATA})
 Source: %{name}-%{version}.tar.bz2
 Vendor: Cray Inc.
