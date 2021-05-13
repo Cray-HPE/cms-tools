@@ -1,6 +1,5 @@
-#!/bin/sh
-#
-# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
+#!/bin/bash
+# Copyright 2021 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,32 +21,7 @@
 #
 # (MIT License)
 
-UPLOAD_FILE=$1
-PVC_HOST=`kubectl get pods -n services -l app.kubernetes.io/instance=cms-ipxe -o custom-columns=NS:.metadata.name --no-headers`
-PVC_PATH="/shared_tftp"
-
-usage()
-{
-  echo "Usage:"
-  echo "$0: <upload-file>"
-}
-
-if [ -z $UPLOAD_FILE ]; then
-    echo "No file given to upload. Exiting."
-    usage
-    exit 1
-fi
-
-if [ -f $UPLOAD_FILE ]; then
-    echo "Uploading file: $UPLOAD_FILE"
-    kubectl cp $UPLOAD_FILE services/$PVC_HOST:$PVC_PATH
-else
-    echo "$UPLOAD_FILE is not a file. Exiting."
-    exit 1
-fi
-if [ $? -ne 0 ]; then
-    echo "Failed to upload $UPLOAD_FILE - error code = $?"
-    exit $?
-else
-    echo "Successfully uploaded $UPLOAD_FILE!"
-fi
+./install_cms_meta_tools.sh || exit 1
+./cms_meta_tools/update_versions/update_versions.sh || exit 1
+rm -rf ./cms_meta_tools
+exit 0
