@@ -11,10 +11,10 @@
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included
  * in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
@@ -22,7 +22,7 @@
  * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
- * 
+ *
  * (MIT License)
  */
 
@@ -71,18 +71,21 @@ type Params struct {
 
 // pod name prefixes
 var PodServiceNamePrefixes = map[string]string{
-	"bos":          "cray-bos",
-	"bosPvc":       "cray-bos-etcd",
-	"cfs":          "cray-cfs",
-	"cfs-api":      "cray-cfs-api",
-	"cfs-operator": "cray-cfs-operator",
-	"cfsServices":  "^(cray-cfs-operator|cray-cfs-api)",
-	"conman":       "cray-conman",
-	"crus":         "cray-crus",
-	"ims":          "cray-ims",
-	"ipxe":         "cray-ipxe",
-	"tftp":         "cray-tftp",
-	"vcs":          "gitea-vcs",
+	"bos":              "cray-bos",
+	"bosPvc":           "cray-bos-etcd",
+	"cfs":              "cray-cfs",
+	"cfs-api":          "cray-cfs-api",
+	"cfs-operator":     "cray-cfs-operator",
+	"cfsServices":      "^(cray-cfs-operator|cray-cfs-api)",
+	"console":          "cray-console",
+	"console-data":     "cray-console-data",
+	"console-node":     "cray-console-node",
+	"console-operator": "cray-console-operator",
+	"crus":             "cray-crus",
+	"ims":              "cray-ims",
+	"ipxe":             "cray-ipxe",
+	"tftp":             "cray-tftp",
+	"vcs":              "gitea-vcs",
 }
 
 // list of CMS services
