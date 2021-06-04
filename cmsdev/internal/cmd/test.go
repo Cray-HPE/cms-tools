@@ -112,6 +112,45 @@ func GetSleepDuration(attempt int, stopTime, timeout int64) time.Duration {
 	return time.Duration(sleepSeconds) * time.Second
 }
 
+func DoTestWithRetry(service string) bool {
+	testPassed, finalTry := false, false
+	timeout := GetTimeout(service)
+	common.Infof("Test retry timeout for this service test is %d seconds", timeout)
+	stopTime := timeout + time.Now().Unix()
+	for n := 1; ; n++ {
+		if (time.Now().Unix() + 1) >= stopTime {
+			common.Infof("Final attempt")
+			finalTry = true
+		} else {
+			common.Infof("Attempt #%d", n)
+		}
+		common.SetRunSubTag(strconv.Itoa(n))
+		testPassed = RunTest(service)
+		common.UnsetRunSubTag()
+		if testPassed {
+			return true
+		} else if finalTry {
+			return false
+		} else if time.Now().Unix() >= (stopTime + 30) {
+			common.Infof("Not retrying because stop time has already been exceeded by at least 30 seconds")
+			return false
+		}
+		sleepDuration := GetSleepDuration(n, stopTime, timeout)
+		common.Infof("Attempt failed; waiting %v before retrying", sleepDuration)
+		time.Sleep(sleepDuration)
+	}
+	common.Errorf("PROGRAMMING LOGIC ERROR: DoTestWithRetry: This line should never be reached")
+	return false
+}
+
+func DoTest(service string, retry bool) bool {
+	if retry {
+		return DoTestWithRetry(service)
+	} else {
+		return RunTest(service)
+	}
+}
+
 // testCmd command functions
 var testCmd = &cobra.Command{
 	Use:   "test",
@@ -128,9 +167,8 @@ cmsdev test cfs -r --verbose
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO: add custom flag validation
 		if len(args) < 1 {
-			common.Usagef("argument required, provide cms service name: %s\n", strings.Join(common.CMSServices, " "))
+			common.Usagef("argument required, provide 'all' or at least one cms service name: %s\n", strings.Join(common.CMSServices, " "))
 		}
-		service := strings.TrimSpace(args[0])
 
 		// TODO: pass these flags as args in a more elegant way
 		noLogs, _ := cmd.Flags().GetBool("no-log")
@@ -139,58 +177,76 @@ cmsdev test cfs -r --verbose
 		quiet, _ := cmd.Flags().GetBool("quiet")
 		verbose, _ := cmd.Flags().GetBool("verbose")
 
-		// do some command line args checking
-		if validService := common.StringInArray(service, common.CMSServices); !validService {
-			common.Usagef("supported cms services are %s", strings.Join(common.CMSServices, " "))
-		} else if quiet && verbose {
+		if quiet && verbose {
 			common.Usagef("--quiet and --verbose are mutually exclusive")
 		}
+
+		var s string
+		allServices := false
+		services := make([]string, 0)
+		for _, a := range args {
+			s = strings.TrimSpace(a)
+			// do some command line args checking
+			if s == "all" {
+				allServices = true
+			} else if !common.StringInArray(s, common.CMSServices) {
+				common.Usagef("supported cms services are 'all' or any of the following: %s", strings.Join(common.CMSServices, " "))
+			} else if !allServices {
+				services = append(services, s)
+			}
+		}
+		if allServices {
+			services = make([]string, 0)
+			for _, s = range common.CMSServices {
+				if common.StringInArray(s, common.CMSServicesDuplicates) {
+					// Skip this one, as it is a duplicate of another one
+					continue
+				}
+				services = append(services, s)
+			}
+		} else if len(services) == 0 {
+			common.Usagef("Either 'all' or at least one CMS service must be specified: %s", strings.Join(common.CMSServices, " "))
+		}
+
 		logs := !noLogs
 
 		// create log file if logs, ignore logsDir if !logs
 		// cmsdevVersion is found in version.go
-		common.CreateLogFile(logsDir, service, cmsdevVersion, logs, retry, quiet, verbose)
+		common.CreateLogFile(logsDir, cmsdevVersion, logs, retry, quiet, verbose)
 
 		// Initialize variables related to saving CT test artifacts
-		common.InitArtifacts(service)
+		common.InitArtifacts()
 
-		if !retry {
-			if RunTest(service) {
+		if len(services) == 1 {
+			common.SetTestService(services[0])
+			ok := DoTest(services[0], retry)
+			common.UnsetTestService()
+			if ok {
 				common.Success()
 			} else {
 				common.Failure()
 			}
 		}
 
-		// We will sleep between retries until the test passes or we exceed the maximum
-		// retry time for that test.
-		testPassed, finalTry := false, false
-		timeout := GetTimeout(service)
-		common.Infof("Test retry timeout is %d seconds", timeout)
-		stopTime := timeout + time.Now().Unix()
-		for n := 1; ; n++ {
-			if (time.Now().Unix() + 1) >= stopTime {
-				common.Infof("Final attempt")
-				finalTry = true
+		// Testing multiple services
+		var passed, failed []string
+		for _, s = range services {
+			common.SetTestService(s)
+			if DoTest(s, retry) {
+				passed = append(passed, s)
 			} else {
-				common.Infof("Attempt #%d", n)
+				failed = append(failed, s)
 			}
-			common.SetRunSubTag(strconv.Itoa(n))
-			testPassed = RunTest(service)
-			common.UnsetRunSubTag()
-			if testPassed {
-				common.Success()
-			} else if finalTry {
-				common.Failure()
-			} else if time.Now().Unix() >= (stopTime + 30) {
-				common.Failuref("Not retrying because stop time has already been exceeded by at least 30 seconds")
-			}
-			sleepDuration := GetSleepDuration(n, stopTime, timeout)
-			common.Infof("Attempt failed; waiting %v before retrying", sleepDuration)
-			time.Sleep(sleepDuration)
+			common.UnsetTestService()
+		}
+		if len(failed) > 0 {
+			common.Failuref("%d service tests FAILED (%s), %d passed (%s)", len(failed), strings.Join(failed, ", "),
+				len(passed), strings.Join(passed, ", "))
+		} else {
+			common.Successf("All %d service tests passed: %s", len(passed), strings.Join(passed, ", "))
 		}
 
-		common.Errorf("PROGRAMMING LOGIC ERROR: This line should never be reached")
+		common.Errorf("PROGRAMMING LOGIC ERROR: test.go: This line should never be reached")
 		return
 	},
 }
