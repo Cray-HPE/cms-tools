@@ -37,8 +37,10 @@ Noteworthy files in the repo:
 ### Tests
 
 ```bash
-cmsdev test cfs
-   # runs cfs tests
+cmsdev test -q all
+   # runs all CMS CT tests with minimal output
+cmsdev test bos cfs
+   # runs bos and cfs tests
 cmsdev test conman -q -r
    # runs conman tests quietly, retrying on failure
 cmsdev test ims -v --no-log
