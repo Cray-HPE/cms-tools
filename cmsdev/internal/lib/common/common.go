@@ -101,47 +101,62 @@ var CMSServices = []string{
 	"vcs",
 }
 
+// List of services which are just aliases for other
+// services, as far as cmsdev testing is concerned.
+// Note that if service a, b, and c are identical
+// to cmsdev, all but one of them should be listed here.
+// That is, do not list all three of them here. It doesn't
+// matter which one you omit.
+var CMSServicesDuplicates = []string{
+	"gitea",
+	"ipxe",
+}
+
 // log file handle
-var Log *logrus.Logger
-var TestLog *logrus.Entry
-var PrintInfo, PrintWarn, PrintError, PrintResults, PrintVerbose bool
-var RunTag, RunBaseTag string
-var artifactDirectory, artifactFilePrefix string
+var logFile *logrus.Logger
+var testLog *logrus.Entry
+var printInfo, printWarn, printError, printResults, printVerbose bool
+var runTags []string
+var runStartTimes []time.Time
+var artifactDirectory, artifactFilePrefix, runTag, testService string
 
 // Set and unset the run sub-tag
 func SetRunSubTag(tag string) {
-	RunTag = fmt.Sprintf("%s-%s", RunBaseTag, tag)
-	fmt.Printf("Starting sub-run, tag: %s\n", RunTag)
+	if len(runTags) < 1 {
+		return
+	}
+	runStartTimes = append(runStartTimes, time.Now())
+	runTags = append(runTags, tag)
+	runTag = strings.Join(runTags, "-")
+	fmt.Printf("Starting sub-run, tag: %s\n", runTag)
 }
 
 func UnsetRunSubTag() {
-	fmt.Printf("Ended sub-run, tag: %s\n", RunTag)
-	RunTag = RunBaseTag
+	if len(runTags) <= 1 {
+		return
+	}
+	fmt.Printf("Ended sub-run, tag: %s (duration: %v)\n", runTag, time.Since(runStartTimes[len(runStartTimes)-1]))
+	runStartTimes = runStartTimes[:len(runStartTimes)-1]
+	runTags = runTags[:len(runTags)-1]
+	runTag = strings.Join(runTags, "-")
+}
+
+func ChangeRunSubTag(tag string) {
+	UnsetRunSubTag()
+	SetRunSubTag(tag)
 }
 
 // Wrappers to Infof,  Warnf, and Errorf test log functions
 func TestLogInfof(format string, a ...interface{}) {
-	if RunTag == "" {
-		TestLog.Infof(format, a...)
-	} else {
-		TestLog.WithFields(logrus.Fields{"run": RunTag}).Infof(format, a...)
-	}
+	testLog.WithFields(logrus.Fields{"run": runTag, "service": testService}).Infof(format, a...)
 }
 
 func TestLogWarnf(format string, a ...interface{}) {
-	if RunTag == "" {
-		TestLog.Warnf(format, a...)
-	} else {
-		TestLog.WithFields(logrus.Fields{"run": RunTag}).Warnf(format, a...)
-	}
+	testLog.WithFields(logrus.Fields{"run": runTag, "service": testService}).Warnf(format, a...)
 }
 
 func TestLogErrorf(format string, a ...interface{}) {
-	if RunTag == "" {
-		TestLog.Errorf(format, a...)
-	} else {
-		TestLog.WithFields(logrus.Fields{"run": RunTag}).Errorf(format, a...)
-	}
+	testLog.WithFields(logrus.Fields{"run": runTag, "service": testService}).Errorf(format, a...)
 }
 
 // Wrapper for default print function, in case we want to do anything in the future to
@@ -152,35 +167,43 @@ func Printf(format string, a ...interface{}) {
 
 // print and/or log messages to the appropriate level
 func Infof(format string, a ...interface{}) {
-	if PrintInfo {
+	if printInfo {
 		fmt.Printf(format+"\n", a...)
 	}
-	if TestLog != nil {
+	if testLog != nil {
 		TestLogInfof(format, a...)
 	}
 }
 
 func InfoOverridef(format string, a ...interface{}) {
 	fmt.Printf(format+"\n", a...)
-	if TestLog != nil {
+	if testLog != nil {
 		TestLogInfof(format, a...)
 	}
 }
 
 func Warnf(format string, a ...interface{}) {
-	if PrintWarn {
-		fmt.Printf("WARNING (run tag "+RunTag+"): "+format+"\n", a...)
+	if printWarn {
+		if runTag != "" {
+			fmt.Printf("WARNING (run tag "+runTag+"): "+format+"\n", a...)
+		} else {
+			fmt.Printf("WARNING: "+format+"\n", a...)
+		}
 	}
-	if TestLog != nil {
+	if testLog != nil {
 		TestLogWarnf(format, a...)
 	}
 }
 
 func Errorf(format string, a ...interface{}) {
-	if PrintError {
-		fmt.Printf("ERROR (run tag "+RunTag+"): "+format+"\n", a...)
+	if printError {
+		if runTag != "" {
+			fmt.Printf("ERROR (run tag "+runTag+"): "+format+"\n", a...)
+		} else {
+			fmt.Printf("ERROR: "+format+"\n", a...)
+		}
 	}
-	if TestLog != nil {
+	if testLog != nil {
 		TestLogErrorf(format, a...)
 	}
 }
@@ -190,10 +213,14 @@ func Error(err error) {
 }
 
 func Resultsf(format string, a ...interface{}) {
-	if PrintResults {
-		fmt.Printf("(run tag "+RunTag+"): "+format+"\n", a...)
+	if printResults {
+		if runTag != "" {
+			fmt.Printf("(run tag "+runTag+"): "+format+"\n", a...)
+		} else {
+			fmt.Printf(format+"\n", a...)
+		}
 	}
-	if TestLog != nil {
+	if testLog != nil {
 		TestLogInfof(format, a...)
 	}
 }
@@ -201,6 +228,16 @@ func Resultsf(format string, a ...interface{}) {
 // print/log result and exit with specified code
 func Exitf(rc int, format string, a ...interface{}) {
 	var res string
+	for len(runTags) > 1 {
+		UnsetRunSubTag()
+	}
+	if len(runTags) == 1 {
+		fmt.Printf("Ended run, tag: %s (duration: %v)\n", runTag, time.Since(runStartTimes[len(runStartTimes)-1]))
+		runStartTimes = runStartTimes[:len(runStartTimes)-1]
+		runTags = runTags[:len(runTags)-1]
+		runTag = ""
+	}
+
 	switch rc {
 	case 0:
 		res = "SUCCESS"
@@ -216,8 +253,8 @@ func Exitf(rc int, format string, a ...interface{}) {
 	} else {
 		Resultsf(res)
 	}
-	if Log != nil {
-		Log.Exit(rc)
+	if logFile != nil {
+		logFile.Exit(rc)
 	} else {
 		os.Exit(rc)
 	}
@@ -657,7 +694,7 @@ func VerboseOkayf(format string, a ...interface{}) {
 	if len(format) > 0 {
 		Infof(format, a...)
 	}
-	if PrintVerbose {
+	if printVerbose {
 		c.HiGreen("OK")
 	}
 }
@@ -672,7 +709,7 @@ func VerboseFailedf(format string, a ...interface{}) {
 	if len(format) > 0 {
 		Errorf(format, a...)
 	}
-	if PrintVerbose {
+	if printVerbose {
 		c.Red("Failed")
 	}
 }
@@ -682,7 +719,7 @@ func VerboseFailed() {
 }
 
 func Verbosef(format string, a ...interface{}) {
-	if PrintVerbose {
+	if printVerbose {
 		fmt.Printf(format+"\n", a...)
 	}
 }
@@ -694,7 +731,7 @@ func VerbosePrintDivider() {
 
 // pretty print resty json responses
 func PrettyPrintJSON(resp *resty.Response) {
-	if !PrintVerbose {
+	if !printVerbose {
 		return
 	}
 	var prettyJSON bytes.Buffer
@@ -724,14 +761,38 @@ func CreateDirectoryIfNeeded(path string) error {
 	return fmt.Errorf("Path exists but is not a directory: %s", path)
 }
 
+func SetTestService(service string) {
+	if testService == "" {
+		SetRunSubTag(service)
+	} else {
+		ChangeRunSubTag(service)
+	}
+	if len(artifactDirectory) > 0 {
+		artifactFilePrefix = service + "-"
+	}
+	testService = service
+}
+
+func UnsetTestService() {
+	if testService == "" {
+		return
+	}
+	UnsetRunSubTag()
+	testService = ""
+	if len(artifactDirectory) > 0 {
+		artifactFilePrefix = ""
+	}
+}
+
 // create log file and directory provided by path if one does not exist
 // if no path is provided, use DEFAULT_LOG_FILE_DIR
-func CreateLogFile(path, service, version string, logs, retry, quiet, verbose bool) {
+func CreateLogFile(path, version string, logs, retry, quiet, verbose bool) {
 	var err error
+
 	if verbose {
-		PrintVerbose = true
+		printVerbose = true
 	} else if quiet {
-		PrintInfo, PrintWarn = false, false
+		printInfo, printWarn = false, false
 	}
 	if !logs {
 		return
@@ -745,15 +806,15 @@ func CreateLogFile(path, service, version string, logs, retry, quiet, verbose bo
 	}
 	logfile := path + "/cmsdev.log"
 	f, err := os.OpenFile(logfile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-	Log = logrus.New()
+	logFile = logrus.New()
 	if err != nil {
 		panic(err)
 	}
 	// We want nanosecond precision in log file entries
-	Log.SetFormatter(&logrus.TextFormatter{
+	logFile.SetFormatter(&logrus.TextFormatter{
 		TimestampFormat: time.RFC3339Nano,
 	})
-	Log.SetOutput(f)
+	logFile.SetOutput(f)
 	args := make([]string, 0, 5)
 	if retry {
 		args = append(args, "retry")
@@ -764,14 +825,13 @@ func CreateLogFile(path, service, version string, logs, retry, quiet, verbose bo
 	if verbose {
 		args = append(args, "verbose")
 	}
-	RunBaseTag = AlnumString(5)
-	RunTag = RunBaseTag
-	TestLog = Log.WithFields(logrus.Fields{"version": version, "service": service, "args": strings.Join(args, ",")})
+	runTag = strings.Join(runTags, "-")
+	testLog = logFile.WithFields(logrus.Fields{"version": version, "args": strings.Join(args, ",")})
 	Infof("cmsdev starting")
-	fmt.Printf("Starting main run, version: %s, tag: %s\n", version, RunTag)
+	fmt.Printf("Starting main run, version: %s, tag: %s\n", version, runTag)
 }
 
-func InitArtifacts(service string) {
+func InitArtifacts() {
 	artifactDirectory = os.Getenv("ARTIFACTS")
 	if len(artifactDirectory) == 0 {
 		Warnf("ARTIFACTS environment variable not set; no artifacts will be saved")
@@ -784,14 +844,15 @@ func InitArtifacts(service string) {
 		artifactDirectory = ""
 		return
 	}
-	artifactFilePrefix = service + "-"
-	Infof("artifactDirectory=%s, artifactFilePrefix=%s", artifactDirectory, artifactFilePrefix)
+	Infof("artifactDirectory=" + artifactDirectory)
 }
 
 func init() {
 	// Set default values
-	Log, TestLog = nil, nil
-	PrintInfo, PrintWarn, PrintError, PrintResults = true, true, true, true
-	PrintVerbose = false
-	RunTag, RunBaseTag, artifactDirectory, artifactFilePrefix = "", "", "", ""
+	runStartTimes = append(runStartTimes, time.Now())
+	runTags = append(runTags, AlnumString(5))
+	logFile, testLog = nil, nil
+	printInfo, printWarn, printError, printResults = true, true, true, true
+	printVerbose = false
+	runTag, artifactDirectory, artifactFilePrefix, testService = "", "", "", ""
 }
