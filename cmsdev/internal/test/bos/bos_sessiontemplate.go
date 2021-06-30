@@ -30,8 +30,8 @@ package bos
 
 import (
 	"net/http"
-	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
-	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/test"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
 func getFirstSessionTemplateId(listCmdOut []byte) (string, error) {

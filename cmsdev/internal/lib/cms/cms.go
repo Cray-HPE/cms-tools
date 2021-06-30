@@ -33,8 +33,8 @@ import (
 	"fmt"
 	c "github.com/fatih/color"
 	"sort"
-	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
-	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/k8s"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
 	"strings"
 )
 
