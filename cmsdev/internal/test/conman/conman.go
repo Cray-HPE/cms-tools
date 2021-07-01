@@ -82,8 +82,8 @@ func IsConmanRunning() (passed bool) {
 
 func verifyConsoleDataPods() (passed bool) {
 	passed = true
-	// We expect 4 or 5 of these (one main pod, 3 postgres pods, and possibly 1 wait-for-postgres pod)
-	podNames, ok := test.GetPodNamesByPrefixKey("console-data", 4, 5)
+	// We expect 4 or more of these (one main pod, 3 postgres pods, and possibly 1+ wait-for-postgres pods)
+	podNames, ok := test.GetPodNamesByPrefixKey("console-data", 4, -1)
 	if !ok {
 		passed = false
 	}
