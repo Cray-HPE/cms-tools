@@ -30,9 +30,9 @@ package test
 
 import (
 	"fmt"
-	"github.com/go-resty/resty"
-	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
-	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/k8s"
+	resty "gopkg.in/resty.v1"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
 )
 
 func GetAccessToken() string {

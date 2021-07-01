@@ -23,7 +23,7 @@ Copyright 2019-2021 Hewlett Packard Enterprise Development LP
 */
 package main
 
-import "stash.us.cray.com/cms-tools/cmsdev/internal/cmd"
+import "stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/cmd"
 
 func main() {
 	cmd.Execute()

@@ -30,8 +30,8 @@ package ims
 
 import (
 	"encoding/json"
-	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
-	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/test"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
 func runCLICommand(cmdArgs ...string) []byte {
