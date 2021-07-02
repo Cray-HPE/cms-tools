@@ -29,7 +29,7 @@ package ims
  */
 
 import (
-	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
 
 const RECIPE_DISTRO_DEFAULT string = "sles15"
