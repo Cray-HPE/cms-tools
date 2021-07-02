@@ -31,7 +31,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
-	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"strings"
 )
 
