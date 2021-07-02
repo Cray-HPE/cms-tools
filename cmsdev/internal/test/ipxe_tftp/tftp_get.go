@@ -34,8 +34,8 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
-	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
-	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/k8s"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
 )
 
 const ipxePathname = "/shared_tftp"

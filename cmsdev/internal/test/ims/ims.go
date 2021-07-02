@@ -32,10 +32,10 @@ import (
 	coreV1 "k8s.io/api/core/v1"
 	"os"
 	"regexp"
-	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/cms"
-	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
-	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/k8s"
-	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/test"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/cms"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 	"strings"
 )
 

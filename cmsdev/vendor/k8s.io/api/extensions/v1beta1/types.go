@@ -67,6 +67,13 @@ type Scale struct {
 	Status ScaleStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// Dummy definition
+type ReplicationControllerDummy struct {
+	metav1.TypeMeta `json:",inline"`
+}
+
 // +genclient
 // +genclient:method=GetScale,verb=get,subresource=scale,result=Scale
 // +genclient:method=UpdateScale,verb=update,subresource=scale,input=Scale,result=Scale
@@ -978,7 +985,7 @@ type AllowedHostPath struct {
 // Deprecated: use FSType from policy API Group instead.
 type FSType string
 
-const (
+var (
 	AzureFile             FSType = "azureFile"
 	Flocker               FSType = "flocker"
 	FlexVolume            FSType = "flexVolume"
@@ -1334,15 +1341,15 @@ type NetworkPolicyPort struct {
 }
 
 // DEPRECATED 1.9 - This group version of IPBlock is deprecated by networking/v1/IPBlock.
-// IPBlock describes a particular CIDR (Ex. "192.168.1.1/24","2001:db9::/64") that is allowed
-// to the pods matched by a NetworkPolicySpec's podSelector. The except entry describes CIDRs
-// that should not be included within this rule.
+// IPBlock describes a particular CIDR (Ex. "192.168.1.1/24") that is allowed to the pods
+// matched by a NetworkPolicySpec's podSelector. The except entry describes CIDRs that should
+// not be included within this rule.
 type IPBlock struct {
 	// CIDR is a string representing the IP Block
-	// Valid examples are "192.168.1.1/24" or "2001:db9::/64"
+	// Valid examples are "192.168.1.1/24"
 	CIDR string `json:"cidr" protobuf:"bytes,1,name=cidr"`
 	// Except is a slice of CIDRs that should not be included within an IP Block
-	// Valid examples are "192.168.1.1/24" or "2001:db9::/64"
+	// Valid examples are "192.168.1.1/24"
 	// Except values will be rejected if they are outside the CIDR range
 	// +optional
 	Except []string `json:"except,omitempty" protobuf:"bytes,2,rep,name=except"`
