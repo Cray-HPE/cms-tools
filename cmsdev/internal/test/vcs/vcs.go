@@ -34,11 +34,22 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type backupPod struct {
+	Name    string
+	Started v1.Time
+	Status  string
+}
+
 func IsVCSRunning() (passed bool) {
+	var latestBackupPod backupPod
+
 	passed = true
-	// We expect to find 2 or more gitea-vcs pods
+	// We expect to find 2 or more gitea-vcs pods (one main pod, at least one postgres pod,
+	// and one or more postgres backup pod)
 	podNames, ok := test.GetPodNamesByPrefixKey("vcs", 2, -1)
 	if !ok {
 		passed = false
@@ -53,10 +64,13 @@ func IsVCSRunning() (passed bool) {
 	// In addition to the main gitea-vcs pod (which should be in Running state), we expect:
 	// - 1 or more gitea-vcs-postgres pod (in Running state)
 	// - 0 or more gitea-vcs-wait-for-postgres-<num>- pods (in Succeeded state)
+	// - 0 or more gitea-vcs-postgresql-db-backup- pods
+
 	listedPodsOnError := false
 	mainPodCount := 0
 	postgresPodCount := 0
 	waitForPostgresRe := regexp.MustCompile("gitea-vcs-wait-for-postgres-[0-9][0-9]*-")
+	latestBackupPod.Name = ""
 	for _, podName := range podNames {
 		expectedStatus := "Running"
 		if waitForPostgresRe.MatchString(podName) {
@@ -70,6 +84,33 @@ func IsVCSRunning() (passed bool) {
 			if !test.CheckPVCStatus(pvcName) {
 				passed = false
 			}
+		} else if strings.HasPrefix(podName, "gitea-vcs-postgresql-db-backup-") {
+			common.Infof("checking pod start time for %s", podName)
+			podStarted, err := k8s.GetPodStartTime(common.NAMESPACE, podName)
+			if err != nil {
+				common.VerboseFailedf(err.Error())
+				passed = false
+				continue
+			}
+			common.Infof("Pod start time is %v", podStarted)
+			common.Infof("checking pod status for %s", podName)
+			podStatus, err := k8s.GetPodStatus(common.NAMESPACE, podName)
+			if err != nil {
+				common.VerboseFailedf(err.Error())
+				passed = false
+				continue
+			}
+			if podStatus != "Succeeded" && podStatus != "Running" && podStatus != "Pending" {
+				common.Warnf("Pod %s status is %s", podName, podStatus)
+			} else {
+				common.Infof("Pod %s status is %s", podName, podStatus)
+			}
+			if latestBackupPod.Name == "" || podStarted.After(latestBackupPod.Started.Time) {
+				latestBackupPod.Name = podName
+				latestBackupPod.Started = podStarted
+				latestBackupPod.Status = podStatus
+			}
+			continue
 		} else {
 			mainPodCount += 1
 		}
@@ -106,6 +147,29 @@ func IsVCSRunning() (passed bool) {
 			listedPodsOnError = true
 		}
 		common.VerboseFailedf("Expected at least 1 gitea-vcs-postgres pod but found %d", postgresPodCount)
+		passed = false
+	}
+
+	// Verify if postgres backup k8s cronjob exists
+	err := k8s.VerifyCronJobExists(common.NAMESPACE, "gitea-vcs-postgresql-db-backup")
+	if err == nil {
+		common.Infof("kubernetes CronJob found in namespace %s with name %s", common.NAMESPACE, "gitea-vcs-postgresql-db-backup")
+	} else {
+		common.VerboseFailedf(err.Error())
+		passed = false
+	}
+
+	if latestBackupPod.Name == "" {
+		common.Warnf("No gitea-vcs-postgresql-db-backup pods found -- db has not yet been backed up")
+	} else if latestBackupPod.Status == "Succeeded" {
+		common.Infof("The latest gitea-vcs-postgresql-db backup pod (%s) completed successfully", latestBackupPod.Name)
+	} else if latestBackupPod.Status == "Running" || latestBackupPod.Status == "Pending" {
+		common.VerboseFailedf("The most recent gitea-vcs-postgresql-db-backup pod (%s) has not yet completed; re-run this test after it is done", latestBackupPod.Name)
+	} else if latestBackupPod.Status == "Failed" {
+		common.VerboseFailedf("The most recent gitea-vcs-postgresql-db-backup pod (%s) failed", latestBackupPod.Name)
+		passed = false
+	} else {
+		common.VerboseFailedf("The most recent gitea-vcs-postgresql-db-backup pod (%s) has an unexpected status (%s)", latestBackupPod.Name, latestBackupPod.Status)
 		passed = false
 	}
 
