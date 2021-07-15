@@ -296,6 +296,24 @@ func GetContainers(pod coreV1.Pod) (containers []coreV1.Container) {
 	return
 }
 
+// Given a namespace and a cronjob name, verify that it exists
+func VerifyCronJobExists(namespace, name string) error {
+	clientset, err := GetClientset()
+	if err != nil {
+		return err
+	}
+	allCronJobs, err := clientset.BatchV1beta1().CronJobs(namespace).List(v1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, cj := range allCronJobs.Items {
+		if cj.ObjectMeta.Name == name {
+			return nil
+		}
+	}
+	return fmt.Errorf("No kubernetes CronJob found in namespace %s with name %s", namespace, name)
+}
+
 // Given an optional regex, return an array of Nodes (whose name match the regex, if specified)
 func GetNodes(params ...string) ([]coreV1.Node, error) {
 	var nodes []coreV1.Node
@@ -380,6 +398,22 @@ func GetPods(namespace string, params ...string) ([]coreV1.Pod, error) {
 		}
 	}
 	return pods, err
+}
+
+// Given a namespace and the name of a pod, return its start time
+func GetPodStartTime(namespace, podName string) (nodeStart v1.Time, err error) {
+	pods, err := GetPods(namespace, podName)
+	if err != nil {
+		return
+	}
+	for _, pod := range pods {
+		if pod.GetName() == podName {
+			nodeStart = pod.ObjectMeta.CreationTimestamp
+			return
+		}
+	}
+	err = fmt.Errorf("No pod in namespace %s found with name %s", namespace, podName)
+	return
 }
 
 // Given a namespace and the name of a pod, return the name of its node
