@@ -1,4 +1,4 @@
-# Copyright 2019-2021 Hewlett Packard Enterprise Development LP
+# Copyright 2021 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,31 +23,22 @@
 NAME ?= cray-cmstools
 VERSION ?= $(shell cat .version)-local
 
-SPEC_VERSION ?= $(shell cat .version)
 BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
 BUILD_DIR ?= $(PWD)/dist/rpmbuild
 
-SPEC_NAME ?= cray-cmstools-crayctldeploy
-SPEC_FILE ?= ${SPEC_NAME}.spec
-SOURCE_NAME ?= ${SPEC_NAME}-${SPEC_VERSION}
-SOURCE_PATH := ${BUILD_DIR}/SOURCES/${SOURCE_NAME}.tar.bz2
+CMSDEV_SPEC_NAME ?= ${NAME}-crayctldeploy
+CMSDEV_SPEC_FILE ?= ${CMSDEV_SPEC_NAME}.spec
+CMSDEV_SOURCE_NAME ?= ${CMSDEV_SPEC_NAME}-${VERSION}
+CMSDEV_SOURCE_PATH := ${BUILD_DIR}/SOURCES/${CMSDEV_SOURCE_NAME}.tar.bz2
 
-SPEC_TEST_NAME ?= cray-cmstools-crayctldeploy-test
-SPEC_TEST_FILE ?= ${SPEC_TEST_NAME}.spec
-SOURCE_TEST_NAME ?= ${SPEC_TEST_NAME}-${SPEC_VERSION}
-SOURCE_TEST_PATH := ${BUILD_DIR}/SOURCES/${SOURCE_TEST_NAME}.tar.bz2
+TESTS_SPEC_NAME ?= ${NAME}-crayctldeploy-test
+TESTS_SPEC_FILE ?= ${TESTS_SPEC_NAME}.spec
+TESTS_SOURCE_NAME ?= ${TESTS_SPEC_NAME}-${VERSION}
+TESTS_SOURCE_PATH := ${BUILD_DIR}/SOURCES/${TESTS_SOURCE_NAME}.tar.bz2
 
-
-
-all : prepare build_prep lint rpm rpm_test
+all : build_prep lint prepare rpm rpm_test
 rpm: rpm_package_source rpm_build_source rpm_build
 rpm_test: rpm_package_test_source rpm_build_test_source rpm_build_test
-
-prepare:
-		rm -rf $(BUILD_DIR)
-		mkdir -p $(BUILD_DIR)/SPECS $(BUILD_DIR)/SOURCES
-		cp $(SPEC_FILE) $(BUILD_DIR)/SPECS/
-		cp $(SPEC_TEST_FILE) $(BUILD_DIR)/SPECS/
 
 build_prep:
 		./runBuildPrep.sh
@@ -55,20 +46,26 @@ build_prep:
 lint:
 		./runLint.sh
 
+prepare:
+		rm -rf $(BUILD_DIR)
+		mkdir -p $(BUILD_DIR)/SPECS $(BUILD_DIR)/SOURCES
+		cp $(CMSDEV_SPEC_FILE) $(BUILD_DIR)/SPECS/
+		cp $(TESTS_SPEC_FILE) $(BUILD_DIR)/SPECS/
+
 rpm_package_source:
-		tar --transform 'flags=r;s,^,/$(SOURCE_NAME)/,' --exclude .git --exclude dist --exclude $(SPEC_TEST_FILE) -cvjf $(SOURCE_PATH) .
+		tar --transform 'flags=r;s,^,/$(CMSDEV_SOURCE_NAME)/,' --exclude .git --exclude dist --exclude ct-tests --exclude $(TESTS_SPEC_FILE) -cvjf $(CMSDEV_SOURCE_PATH) .
 
 rpm_build_source:
-		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ts $(SOURCE_PATH) --define "_topdir $(BUILD_DIR)"
+		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ts $(CMSDEV_SOURCE_PATH) --define "_topdir $(BUILD_DIR)"
 
 rpm_build:
-		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ba $(SPEC_FILE) --nodeps --define "_topdir $(BUILD_DIR)"
+		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ba $(CMSDEV_SPEC_FILE) --nodeps --define "_topdir $(BUILD_DIR)"
 
 rpm_package_test_source:
-		tar --transform 'flags=r;s,^,/$(SOURCE_TEST_NAME)/,' --exclude .git --exclude dist --exclude $(SPEC_FILE) -cvjf $(SOURCE_TEST_PATH) .
+		tar --transform 'flags=r;s,^,/$(TESTS_SOURCE_NAME)/,' --exclude .git --exclude dist --exclude cmsdev --exclude cmslogs --exclude cms-tftp --exclude $(CMSDEV_SPEC_FILE) -cvjf $(TESTS_SOURCE_PATH) .
 
 rpm_build_test_source:
-		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ts $(SOURCE_TEST_PATH) --define "_topdir $(BUILD_DIR)"
+		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ts $(TESTS_SOURCE_PATH) --define "_topdir $(BUILD_DIR)"
 
 rpm_build_test:
-		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ba $(SPEC_TEST_FILE) --nodeps --define "_topdir $(BUILD_DIR)"
+		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ba $(TESTS_SPEC_FILE) --nodeps --define "_topdir $(BUILD_DIR)"
