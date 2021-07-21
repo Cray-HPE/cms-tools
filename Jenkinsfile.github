@@ -1,0 +1,69 @@
+@Library('csm-shared-library') _
+
+pipeline {
+    agent {
+        label "metal-gcp-builder"
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: "10"))
+        timestamps()
+    }
+
+    environment {
+        NAME = "cray-cmstools"
+        DESCRIPTION = "Cray Management System - Tests"
+        IS_STABLE = getBuildIsStable()
+        VERSION = sh(returnStdout: true, script: "head -1 .version").trim()
+        BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
+        CMSDEV_SPEC_FILE = "cray-cmstools-crayctldeploy.spec"
+        TESTS_SPEC_FILE = "cray-cmstools-crayctldeploy-test.spec"
+    }
+
+    stages {
+        stage("Build Prep") {
+            steps {
+                sh "make build_prep"
+            }
+        }
+
+        stage("Lint") {
+            steps {
+                sh "make lint"
+            }
+        }
+
+        stage("Prepare") {
+            steps {
+                runLibraryScript("addRpmMetaData.sh", env.CMSDEV_SPEC_FILE)
+                runLibraryScript("addRpmMetaData.sh", env.TESTS_SPEC_FILE)
+                sh "make prepare"
+            }
+        }
+
+        stage("Build") {
+            parallel {
+                stage('Rpm') {
+                    steps {
+                        sh "make rpm"
+                    }
+                }
+
+                stage('Rpm Test') {
+                    steps {
+                        sh "make rpm_test"
+                    }
+                }
+            }
+        }
+
+        stage('Publish ') {
+            steps {
+                script {
+                    publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", arch: "x86_64", isStable: env.IS_STABLE)
+                    publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", arch: "src", isStable: env.IS_STABLE)
+                }
+            }
+        }
+    }
+}
