@@ -11,20 +11,16 @@ pipeline {
     }
 
     environment {
-        NAME = "cray-cms-tools"
-        DESCRIPTION = "Cray Management System - Configuration Framework Operator"
+        NAME = "cray-cmstools"
+        DESCRIPTION = "Cray Management System - Tests"
         IS_STABLE = getBuildIsStable()
-        VERSION = getDockerBuildVersion(isStable: env.IS_STABLE)
+        VERSION = sh(returnStdout: true, script: "head -1 .version").trim()
         BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
+        CMSDEV_SPEC_FILE = "cray-cmstools-crayctldeploy.spec"
+        TESTS_SPEC_FILE = "cray-cmstools-crayctldeploy-test.spec"
     }
 
     stages {
-        stage("Prepare") {
-            steps {
-                sh "make prepare"
-            }
-        }
-
         stage("Build Prep") {
             steps {
                 sh "make build_prep"
@@ -34,6 +30,14 @@ pipeline {
         stage("Lint") {
             steps {
                 sh "make lint"
+            }
+        }
+
+        stage("Prepare") {
+            steps {
+                runLibraryScript("addRpmMetaData.sh", env.CMSDEV_SPEC_FILE)
+                runLibraryScript("addRpmMetaData.sh", env.TESTS_SPEC_FILE)
+                sh "make prepare"
             }
         }
 
