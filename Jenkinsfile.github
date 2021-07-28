@@ -33,10 +33,23 @@ pipeline {
             }
         }
 
+        stage("Add RPM Metadata") {
+            parallel {
+                stage('Rpm') {
+                    steps {
+                        runLibraryScript("addRpmMetaData.sh", env.CMSDEV_SPEC_FILE)
+                    }
+                }
+                stage('Rpm Test') {
+                    steps {
+                        runLibraryScript("addRpmMetaData.sh", env.TESTS_SPEC_FILE)
+                    }
+                }
+            }
+        }
+
         stage("Prepare") {
             steps {
-                runLibraryScript("addRpmMetaData.sh", env.CMSDEV_SPEC_FILE)
-                runLibraryScript("addRpmMetaData.sh", env.TESTS_SPEC_FILE)
                 sh "make prepare"
             }
         }
@@ -59,10 +72,8 @@ pipeline {
 
         stage('Publish ') {
             steps {
-                script {
-                    publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", arch: "x86_64", isStable: env.IS_STABLE)
-                    publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", arch: "src", isStable: env.IS_STABLE)
-                }
+                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", arch: "x86_64", isStable: env.IS_STABLE)
+                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", arch: "src", isStable: env.IS_STABLE)
             }
         }
     }
