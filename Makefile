@@ -21,19 +21,19 @@
 # (MIT License)
 
 NAME ?= cray-cmstools
-VERSION ?= $(shell cat .version)-local
+RPM_VERSION ?= $(shell head -1 .version)
 
 BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
 BUILD_DIR ?= $(PWD)/dist/rpmbuild
 
 CMSDEV_SPEC_NAME ?= ${NAME}-crayctldeploy
 CMSDEV_SPEC_FILE ?= ${CMSDEV_SPEC_NAME}.spec
-CMSDEV_SOURCE_NAME ?= ${CMSDEV_SPEC_NAME}-${VERSION}
+CMSDEV_SOURCE_NAME ?= ${CMSDEV_SPEC_NAME}-${RPM_VERSION}
 CMSDEV_SOURCE_PATH := ${BUILD_DIR}/SOURCES/${CMSDEV_SOURCE_NAME}.tar.bz2
 
 TESTS_SPEC_NAME ?= ${NAME}-crayctldeploy-test
 TESTS_SPEC_FILE ?= ${TESTS_SPEC_NAME}.spec
-TESTS_SOURCE_NAME ?= ${TESTS_SPEC_NAME}-${VERSION}
+TESTS_SOURCE_NAME ?= ${TESTS_SPEC_NAME}-${RPM_VERSION}
 TESTS_SOURCE_PATH := ${BUILD_DIR}/SOURCES/${TESTS_SOURCE_NAME}.tar.bz2
 
 all : build_prep lint prepare rpm rpm_test
