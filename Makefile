@@ -36,15 +36,20 @@ TESTS_SPEC_FILE ?= ${TESTS_SPEC_NAME}.spec
 TESTS_SOURCE_NAME ?= ${TESTS_SPEC_NAME}-${RPM_VERSION}
 TESTS_SOURCE_PATH := ${BUILD_DIR}/SOURCES/${TESTS_SOURCE_NAME}.tar.bz2
 
-all : build_prep lint prepare rpm rpm_test
+all : clone_cms_meta_tools runbuildprep lint prepare rpm rpm_test
 rpm: rpm_package_source rpm_build_source rpm_build
 rpm_test: rpm_package_test_source rpm_build_test_source rpm_build_test
 
-build_prep:
-		./runBuildPrep.sh
+# If you wish to perform a local build, you will need to clone or copy the contents of the
+# cms_meta_tools repo to ./cms_meta_tools
+clone_cms_meta_tools:
+		git clone --depth 1 --no-single-branch https://github.com/Cray-HPE/cms-meta-tools.git ./cms_meta_tools
+
+runbuildprep:
+		./cms_meta_tools/scripts/runBuildPrep.sh
 
 lint:
-		./runLint.sh
+		./cms_meta_tools/scripts/runLint.sh
 
 prepare:
 		rm -rf $(BUILD_DIR)
@@ -53,7 +58,13 @@ prepare:
 		cp $(TESTS_SPEC_FILE) $(BUILD_DIR)/SPECS/
 
 rpm_package_source:
-		tar --transform 'flags=r;s,^,/$(CMSDEV_SOURCE_NAME)/,' --exclude .git --exclude dist --exclude ct-tests --exclude $(TESTS_SPEC_FILE) -cvjf $(CMSDEV_SOURCE_PATH) .
+		tar --transform 'flags=r;s,^,/$(CMSDEV_SOURCE_NAME)/,' \
+			--exclude .git \
+			--exclude ./cms_meta_tools \
+			--exclude ./dist \
+			--exclude ./ct-tests \
+			--exclude ./$(TESTS_SPEC_FILE) \
+			-cvjf $(CMSDEV_SOURCE_PATH) .
 
 rpm_build_source:
 		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ts $(CMSDEV_SOURCE_PATH) --define "_topdir $(BUILD_DIR)"
@@ -62,7 +73,15 @@ rpm_build:
 		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ba $(CMSDEV_SPEC_FILE) --nodeps --define "_topdir $(BUILD_DIR)"
 
 rpm_package_test_source:
-		tar --transform 'flags=r;s,^,/$(TESTS_SOURCE_NAME)/,' --exclude .git --exclude dist --exclude cmsdev --exclude cmslogs --exclude cms-tftp --exclude $(CMSDEV_SPEC_FILE) -cvjf $(TESTS_SOURCE_PATH) .
+		tar --transform 'flags=r;s,^,/$(TESTS_SOURCE_NAME)/,' \
+			--exclude .git \
+			--exclude ./dist \
+			--exclude ./cms_meta_tools \
+			--exclude ./cmsdev \
+			--exclude ./cmslogs \
+			--exclude ./cms-tftp \
+			--exclude ./$(CMSDEV_SPEC_FILE) \
+			-cvjf $(TESTS_SOURCE_PATH) .
 
 rpm_build_test_source:
 		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ts $(TESTS_SOURCE_PATH) --define "_topdir $(BUILD_DIR)"
