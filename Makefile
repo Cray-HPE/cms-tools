@@ -20,6 +20,9 @@
 #
 # (MIT License)
 
+# If you wish to perform a local build, you will need to clone or copy the contents of the
+# cms-meta-tools repo to ./cms_meta_tools
+
 NAME ?= cray-cmstools
 RPM_VERSION ?= $(shell head -1 .version)
 
@@ -36,14 +39,9 @@ TESTS_SPEC_FILE ?= ${TESTS_SPEC_NAME}.spec
 TESTS_SOURCE_NAME ?= ${TESTS_SPEC_NAME}-${RPM_VERSION}
 TESTS_SOURCE_PATH := ${BUILD_DIR}/SOURCES/${TESTS_SOURCE_NAME}.tar.bz2
 
-all : clone_cms_meta_tools runbuildprep lint prepare rpm rpm_test
+all : runbuildprep lint prepare rpm rpm_test
 rpm: rpm_package_source rpm_build_source rpm_build
 rpm_test: rpm_package_test_source rpm_build_test_source rpm_build_test
-
-# If you wish to perform a local build, you will need to clone or copy the contents of the
-# cms_meta_tools repo to ./cms_meta_tools
-clone_cms_meta_tools:
-		git clone --depth 1 --no-single-branch https://github.com/Cray-HPE/cms-meta-tools.git ./cms_meta_tools
 
 runbuildprep:
 		./cms_meta_tools/scripts/runBuildPrep.sh
