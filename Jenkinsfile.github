@@ -14,8 +14,6 @@ pipeline {
         NAME = "cray-cmstools"
         DESCRIPTION = "Cray Management System - Tests"
         IS_STABLE = getBuildIsStable()
-        VERSION = sh(returnStdout: true, script: "head -1 .version").trim()
-        BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
         CMSDEV_SPEC_FILE = "cray-cmstools-crayctldeploy.spec"
         TESTS_SPEC_FILE = "cray-cmstools-crayctldeploy-test.spec"
     }
@@ -24,11 +22,23 @@ pipeline {
         stage("Clone cms_meta_tools repo") {
             steps {
                 withCredentials([gitUsernamePassword(credentialsId: 'jenkins-algol60-cray-hpe-github-integration')]) {
-                    sh "make clone_cms_meta_tools"
+                    sh 'git clone --depth 1 --no-single-branch https://github.com/Cray-HPE/cms-meta-tools.git ./cms_meta_tools'
                 }
             }
         }
 
+        stage("Set Versions") {
+            steps {
+                script {
+                    // Get version from version.py
+                    def ver = sh(returnStdout: true, script: "./cms_meta_tools/version.py").trim()
+                    echo "Base version is ${ver}"
+
+                    // Write base version to .version
+                    writeFile(file: ".version", text: ver)
+                }
+            }
+        }
         stage("runBuildPrep") {
             steps {
                 sh "make runbuildprep"
@@ -44,11 +54,19 @@ pipeline {
         stage("Add RPM Metadata") {
             parallel {
                 stage('Rpm') {
+                    environment {
+                        BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
+                    }
+
                     steps {
                         runLibraryScript("addRpmMetaData.sh", env.CMSDEV_SPEC_FILE)
                     }
                 }
                 stage('Rpm Test') {
+                    environment {
+                        BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
+                    }
+
                     steps {
                         runLibraryScript("addRpmMetaData.sh", env.TESTS_SPEC_FILE)
                     }
