@@ -16,6 +16,7 @@ pipeline {
         IS_STABLE = getBuildIsStable()
         CMSDEV_SPEC_FILE = "cray-cmstools-crayctldeploy.spec"
         TESTS_SPEC_FILE = "cray-cmstools-crayctldeploy-test.spec"
+        BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
     }
 
     stages {
@@ -54,19 +55,11 @@ pipeline {
         stage("Add RPM Metadata") {
             parallel {
                 stage('Rpm') {
-                    environment {
-                        BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
-                    }
-
                     steps {
                         runLibraryScript("addRpmMetaData.sh", env.CMSDEV_SPEC_FILE)
                     }
                 }
                 stage('Rpm Test') {
-                    environment {
-                        BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
-                    }
-
                     steps {
                         runLibraryScript("addRpmMetaData.sh", env.TESTS_SPEC_FILE)
                     }
