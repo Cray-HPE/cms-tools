@@ -60,13 +60,13 @@ func DecodeJSONIntoStringList(listJsonBytes []byte) ([]string, error) {
 func GetStringFieldFromFirstItem(fieldName string, listJsonBytes []byte) (fieldValue string, err error) {
 	fieldValue = ""
 
-	Infof("Getting value of \"%s\" field from first element of list in JSON object", fieldName)
+	Debugf("Getting value of \"%s\" field from first element of list in JSON object", fieldName)
 	listObject, err := DecodeJSONIntoList(listJsonBytes)
 	if err != nil {
 		return
 	} else if len(listObject) == 0 {
 		// List is empty
-		Infof("List is empty")
+		Debugf("List is empty")
 		return
 	}
 
@@ -94,17 +94,30 @@ func GetStringFieldFromFirstItem(fieldName string, listJsonBytes []byte) (fieldV
 		err = fmt.Errorf("First list item has empty value for \"%s\" field", fieldName)
 		return
 	}
-	Infof("Value of \"%s\" field in first list item is \"%s\"", fieldName, fieldValue)
+	Debugf("Value of \"%s\" field in first list item is \"%s\"", fieldName, fieldValue)
 	return
 }
 
 func GetStringFieldFromMap(fieldName string, mapJsonBytes []byte) (fieldValue string, err error) {
 
-	Infof("Getting value of \"%s\" field from JSON object", fieldName)
+	Debugf("Getting value of \"%s\" field from JSON object", fieldName)
 	mapObject, err := DecodeJSONIntoStringMap(mapJsonBytes)
 	if err != nil {
 		return
 	}
+
+	fieldValue, err = GetStringFieldFromMapObject(fieldName, mapObject)
+	if err != nil {
+		return
+	}
+
+	Debugf("Value of \"%s\" field in JSON map is \"%s\"", fieldName, fieldValue)
+	return
+}
+
+func GetStringFieldFromMapObject(fieldName string, mapObject map[string]interface{}) (fieldValue string, err error) {
+	Debugf("Getting value of \"%s\" field from map object", fieldName)
+
 	fieldRawValue, ok := mapObject[fieldName]
 	if !ok {
 		err = fmt.Errorf("Map does not have \"%s\" field", fieldName)
@@ -119,7 +132,7 @@ func GetStringFieldFromMap(fieldName string, mapJsonBytes []byte) (fieldValue st
 		return
 	}
 
-	Infof("Value of \"%s\" field in first list item is \"%s\"", fieldName, fieldValue)
+	Debugf("Value of \"%s\" field in map object is \"%s\"", fieldName, fieldValue)
 	return
 }
 
@@ -131,6 +144,6 @@ func ValidateStringFieldValue(objectName, fieldName, expectedFieldValue string, 
 		err = fmt.Errorf("should have \"%s\" field value of \"%s\", but it is \"%s\"", objectName, fieldName, expectedFieldValue, actualValue)
 		return
 	}
-	Infof("%s has expected value for \"%s\" field", objectName, fieldName)
+	Debugf("%s has expected value for \"%s\" field", objectName, fieldName)
 	return
 }
