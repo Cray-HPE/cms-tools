@@ -146,7 +146,11 @@ func ChangeRunSubTag(tag string) {
 	SetRunSubTag(tag)
 }
 
-// Wrappers to Infof,  Warnf, and Errorf test log functions
+// Wrappers to Debugf, Infof,  Warnf, and Errorf test log functions
+func TestLogDebugf(format string, a ...interface{}) {
+	testLog.WithFields(logrus.Fields{"run": runTag, "service": testService}).Debugf(format, a...)
+}
+
 func TestLogInfof(format string, a ...interface{}) {
 	testLog.WithFields(logrus.Fields{"run": runTag, "service": testService}).Infof(format, a...)
 }
@@ -172,6 +176,15 @@ func Infof(format string, a ...interface{}) {
 	}
 	if testLog != nil {
 		TestLogInfof(format, a...)
+	}
+}
+
+func Debugf(format string, a ...interface{}) {
+	if printVerbose {
+		fmt.Printf(format+"\n", a...)
+	}
+	if testLog != nil {
+		TestLogDebugf(format, a...)
 	}
 }
 
@@ -810,6 +823,9 @@ func CreateLogFile(path, version string, logs, retry, quiet, verbose bool) {
 	if err != nil {
 		panic(err)
 	}
+	// Log everything debug and above
+	logFile.SetLevel(logrus.DebugLevel)
+
 	// We want nanosecond precision in log file entries
 	logFile.SetFormatter(&logrus.TextFormatter{
 		TimestampFormat: time.RFC3339Nano,
