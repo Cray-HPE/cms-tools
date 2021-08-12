@@ -53,7 +53,7 @@ type CommandResult struct {
 
 func (cmdResult *CommandResult) Init(cmdPath string, cmdArgs ...string) error {
 	if len(cmdPath) == 0 {
-		Infof("DEBUG: CommandResult init(): cmdArgs = %v", cmdArgs)
+		Debugf("CommandResult init(): cmdArgs = %v", cmdArgs)
 		return fmt.Errorf("CommandResult init(): cmdPath may not be empty")
 	}
 	cmdResult.CmdPath = cmdPath
@@ -97,17 +97,17 @@ func (cmdResult *CommandResult) Run() (err error) {
 	}
 	cmdResult.OutBytes, cmdResult.ErrBytes = stdout.Bytes(), stderr.Bytes()
 	if cmdResult.Rc != CmdRcCannotGet {
-		Infof("Command return code: %d", cmdResult.Rc)
+		Debugf("Command return code: %d", cmdResult.Rc)
 	}
 	if len(cmdResult.OutString()) > 0 {
-		Infof("Command stdout:\n%s", cmdResult.OutString())
+		Debugf("Command stdout:\n%s", cmdResult.OutString())
 	} else {
-		Infof("No stdout from command")
+		Debugf("No stdout from command")
 	}
 	if len(cmdResult.ErrString()) > 0 {
-		Infof("Command stderr:\n%s", cmdResult.ErrString())
+		Debugf("Command stderr:\n%s", cmdResult.ErrString())
 	} else {
-		Infof("No stderr from command")
+		Debugf("No stderr from command")
 	}
 	return
 }
@@ -117,10 +117,10 @@ func (cmdResult *CommandResult) Run() (err error) {
 func GetPath(cmdName string) (path string, err error) {
 	path, ok := CommandPaths[cmdName]
 	if ok {
-		Infof("Using cached value of %s path: %s", cmdName, path)
+		Debugf("Using cached value of %s path: %s", cmdName, path)
 		return
 	}
-	Infof("Looking up path of %s", cmdName)
+	Debugf("Looking up path of %s", cmdName)
 	path, err = exec.LookPath(cmdName)
 	if err != nil {
 		return
@@ -128,7 +128,7 @@ func GetPath(cmdName string) (path string, err error) {
 		err = fmt.Errorf("Empty path found for %s", cmdName)
 		return
 	}
-	Infof("Found path of %s: %s", cmdName, path)
+	Debugf("Found path of %s: %s", cmdName, path)
 	CommandPaths[cmdName] = path
 	return
 }
