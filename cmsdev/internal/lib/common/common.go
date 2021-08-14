@@ -29,12 +29,8 @@
 package common
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	c "github.com/fatih/color"
 	"github.com/go-resty/resty"
-	"github.com/sirupsen/logrus"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -46,7 +42,6 @@ const BASEHOST = "api-gw-service-nmn.local"
 const BASEURL = "https://" + BASEHOST
 const LOCALHOST = "http://localhost:5000"
 const NAMESPACE string = "services"
-const DEFAULT_LOG_FILE_DIR string = "/opt/cray/tests"
 
 // struct to hold endpoint METHOD operation details
 type endpointMethod struct {
@@ -112,10 +107,6 @@ var CMSServicesDuplicates = []string{
 	"ipxe",
 }
 
-// log file handle
-var logFile *logrus.Logger
-var testLog *logrus.Entry
-var printInfo, printWarn, printError, printResults, printVerbose bool
 var runTags []string
 var runStartTimes []time.Time
 var artifactDirectory, artifactFilePrefix, runTag, testService string
@@ -128,14 +119,14 @@ func SetRunSubTag(tag string) {
 	runStartTimes = append(runStartTimes, time.Now())
 	runTags = append(runTags, tag)
 	runTag = strings.Join(runTags, "-")
-	fmt.Printf("Starting sub-run, tag: %s\n", runTag)
+	Printf("Starting sub-run, tag: %s\n", runTag)
 }
 
 func UnsetRunSubTag() {
 	if len(runTags) <= 1 {
 		return
 	}
-	fmt.Printf("Ended sub-run, tag: %s (duration: %v)\n", runTag, time.Since(runStartTimes[len(runStartTimes)-1]))
+	Printf("Ended sub-run, tag: %s (duration: %v)\n", runTag, time.Since(runStartTimes[len(runStartTimes)-1]))
 	runStartTimes = runStartTimes[:len(runStartTimes)-1]
 	runTags = runTags[:len(runTags)-1]
 	runTag = strings.Join(runTags, "-")
@@ -144,153 +135,6 @@ func UnsetRunSubTag() {
 func ChangeRunSubTag(tag string) {
 	UnsetRunSubTag()
 	SetRunSubTag(tag)
-}
-
-// Wrappers to Debugf, Infof,  Warnf, and Errorf test log functions
-func TestLogDebugf(format string, a ...interface{}) {
-	testLog.WithFields(logrus.Fields{"run": runTag, "service": testService}).Debugf(format, a...)
-}
-
-func TestLogInfof(format string, a ...interface{}) {
-	testLog.WithFields(logrus.Fields{"run": runTag, "service": testService}).Infof(format, a...)
-}
-
-func TestLogWarnf(format string, a ...interface{}) {
-	testLog.WithFields(logrus.Fields{"run": runTag, "service": testService}).Warnf(format, a...)
-}
-
-func TestLogErrorf(format string, a ...interface{}) {
-	testLog.WithFields(logrus.Fields{"run": runTag, "service": testService}).Errorf(format, a...)
-}
-
-// Wrapper for default print function, in case we want to do anything in the future to
-// control whether or where things are printed
-func Printf(format string, a ...interface{}) {
-	fmt.Printf(format+"\n", a...)
-}
-
-// print and/or log messages to the appropriate level
-func Infof(format string, a ...interface{}) {
-	if printInfo {
-		fmt.Printf(format+"\n", a...)
-	}
-	if testLog != nil {
-		TestLogInfof(format, a...)
-	}
-}
-
-func Debugf(format string, a ...interface{}) {
-	if printVerbose {
-		fmt.Printf(format+"\n", a...)
-	}
-	if testLog != nil {
-		TestLogDebugf(format, a...)
-	}
-}
-
-func InfoOverridef(format string, a ...interface{}) {
-	fmt.Printf(format+"\n", a...)
-	if testLog != nil {
-		TestLogInfof(format, a...)
-	}
-}
-
-func Warnf(format string, a ...interface{}) {
-	if printWarn {
-		if runTag != "" {
-			fmt.Printf("WARNING (run tag "+runTag+"): "+format+"\n", a...)
-		} else {
-			fmt.Printf("WARNING: "+format+"\n", a...)
-		}
-	}
-	if testLog != nil {
-		TestLogWarnf(format, a...)
-	}
-}
-
-func Errorf(format string, a ...interface{}) {
-	if printError {
-		if runTag != "" {
-			fmt.Printf("ERROR (run tag "+runTag+"): "+format+"\n", a...)
-		} else {
-			fmt.Printf("ERROR: "+format+"\n", a...)
-		}
-	}
-	if testLog != nil {
-		TestLogErrorf(format, a...)
-	}
-}
-
-func Error(err error) {
-	Errorf(err.Error())
-}
-
-func Resultsf(format string, a ...interface{}) {
-	if printResults {
-		if runTag != "" {
-			fmt.Printf("(run tag "+runTag+"): "+format+"\n", a...)
-		} else {
-			fmt.Printf(format+"\n", a...)
-		}
-	}
-	if testLog != nil {
-		TestLogInfof(format, a...)
-	}
-}
-
-// print/log result and exit with specified code
-func Exitf(rc int, format string, a ...interface{}) {
-	var res string
-	for len(runTags) > 1 {
-		UnsetRunSubTag()
-	}
-	if len(runTags) == 1 {
-		fmt.Printf("Ended run, tag: %s (duration: %v)\n", runTag, time.Since(runStartTimes[len(runStartTimes)-1]))
-		runStartTimes = runStartTimes[:len(runStartTimes)-1]
-		runTags = runTags[:len(runTags)-1]
-		runTag = ""
-	}
-
-	switch rc {
-	case 0:
-		res = "SUCCESS"
-	case 1:
-		res = "FAILURE"
-	case 2:
-		res = "USAGE ERROR"
-	default:
-		res = "UNKNOWN ERROR"
-	}
-	if len(format) > 0 {
-		Resultsf(res+": "+format, a...)
-	} else {
-		Resultsf(res)
-	}
-	if logFile != nil {
-		logFile.Exit(rc)
-	} else {
-		os.Exit(rc)
-	}
-}
-
-func Usagef(format string, a ...interface{}) {
-	Exitf(2, format, a...)
-}
-
-func Successf(format string, a ...interface{}) {
-	Exitf(0, format, a...)
-}
-
-func Success() {
-	Exitf(0, "")
-}
-
-func Failuref(format string, a ...interface{}) {
-	Exitf(1, format, a...)
-}
-
-func Failure() {
-	Exitf(1, "")
 }
 
 func ArtifactCommand(label, cmdName string, cmdArgs ...string) {
@@ -701,62 +545,6 @@ func Restful(method, url string, params Params) (*resty.Response, error) {
 
 }
 
-// If format is not blank, call Infof with format + a
-// In verbose mode, also print green OK
-func VerboseOkayf(format string, a ...interface{}) {
-	if len(format) > 0 {
-		Infof(format, a...)
-	}
-	if printVerbose {
-		c.HiGreen("OK")
-	}
-}
-
-func VerboseOkay() {
-	VerboseOkayf("")
-}
-
-// If format is not blank, call Errorf with format + a
-// In verbose mode, also print red Failed
-func VerboseFailedf(format string, a ...interface{}) {
-	if len(format) > 0 {
-		Errorf(format, a...)
-	}
-	if printVerbose {
-		c.Red("Failed")
-	}
-}
-
-func VerboseFailed() {
-	VerboseFailedf("")
-}
-
-func Verbosef(format string, a ...interface{}) {
-	if printVerbose {
-		fmt.Printf(format+"\n", a...)
-	}
-}
-
-// Print a dividing line to stdout if in verbose mode
-func VerbosePrintDivider() {
-	Verbosef("---\n")
-}
-
-// pretty print resty json responses
-func PrettyPrintJSON(resp *resty.Response) {
-	if !printVerbose {
-		return
-	}
-	var prettyJSON bytes.Buffer
-
-	err := json.Indent(&prettyJSON, resp.Body(), "", "   ")
-	if err != nil {
-		fmt.Printf("%v\n", resp)
-	} else {
-		fmt.Printf("%s\n", strings.TrimSpace(string(prettyJSON.Bytes())))
-	}
-}
-
 func CreateDirectoryIfNeeded(path string) error {
 	// First see if the path already exists
 	fileInfo, err := os.Stat(path)
@@ -797,56 +585,6 @@ func UnsetTestService() {
 	}
 }
 
-// create log file and directory provided by path if one does not exist
-// if no path is provided, use DEFAULT_LOG_FILE_DIR
-func CreateLogFile(path, version string, logs, retry, quiet, verbose bool) {
-	var err error
-
-	if verbose {
-		printVerbose = true
-	} else if quiet {
-		printInfo, printWarn = false, false
-	}
-	if !logs {
-		return
-	} else if len(path) == 0 {
-		path = DEFAULT_LOG_FILE_DIR
-	}
-	err = CreateDirectoryIfNeeded(path)
-	if err != nil {
-		fmt.Printf("Error with log directory: %s\n", path)
-		panic(err)
-	}
-	logfile := path + "/cmsdev.log"
-	f, err := os.OpenFile(logfile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-	logFile = logrus.New()
-	if err != nil {
-		panic(err)
-	}
-	// Log everything debug and above
-	logFile.SetLevel(logrus.DebugLevel)
-
-	// We want nanosecond precision in log file entries
-	logFile.SetFormatter(&logrus.TextFormatter{
-		TimestampFormat: time.RFC3339Nano,
-	})
-	logFile.SetOutput(f)
-	args := make([]string, 0, 5)
-	if retry {
-		args = append(args, "retry")
-	}
-	if quiet {
-		args = append(args, "quiet")
-	}
-	if verbose {
-		args = append(args, "verbose")
-	}
-	runTag = strings.Join(runTags, "-")
-	testLog = logFile.WithFields(logrus.Fields{"version": version, "args": strings.Join(args, ",")})
-	Infof("cmsdev starting")
-	fmt.Printf("Starting main run, version: %s, tag: %s\n", version, runTag)
-}
-
 func InitArtifacts() {
 	artifactDirectory = os.Getenv("ARTIFACTS")
 	if len(artifactDirectory) == 0 {
@@ -871,4 +609,6 @@ func init() {
 	printInfo, printWarn, printError, printResults = true, true, true, true
 	printVerbose = false
 	runTag, artifactDirectory, artifactFilePrefix, testService = "", "", "", ""
+	// Call the init function for the printlog source file
+	printlogInit()
 }
