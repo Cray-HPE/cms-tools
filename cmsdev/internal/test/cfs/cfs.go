@@ -110,6 +110,9 @@ func IsCFSRunning() (passed bool) {
 	if !testCFSCLI() {
 		passed = false
 	}
+	if !checkCfsComponentsStatus() {
+		passed = false
+	}
 	if !passed {
 		common.ArtifactsPods(podNames)
 	}
@@ -244,6 +247,125 @@ func testCFSAPI() (passed bool) {
 
 		// Validate that we find the expected ID field value
 		if !checkIDField(resp.Body(), cfsEndpoint, idFieldName, idValue) {
+			passed = false
+		}
+	}
+	return
+}
+
+func checkCfsComponentsStatus() (passed bool) {
+	// We keep a map of the status of each id we have seen, so that we do not report
+	// errors twice for the same id when we check it using both the CLI and API
+	var cfsComponentIdConfigStatus = map[string]string{}
+	var url string
+	var baseurl string = common.BASEURL
+	passed = true
+
+	// First list the CFS components using the API
+	params := test.GetAccessTokenParams()
+	if params == nil {
+		passed = false
+	} else {
+		common.Infof("API: Listing CFS components")
+		url = baseurl + endpoints["cfs"]["components"].Url
+		resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+		if err != nil {
+			common.Error(err)
+			passed = false
+		} else {
+			common.Infof("Validating configurationStatuses of components listed by API call (if any)")
+			if !checkCfsComponentsStatusHelper(resp.Body(), cfsComponentIdConfigStatus) {
+				passed = false
+			}
+		}
+	}
+
+	// Now do the same via the CLI
+	common.Infof("CLI: Listing CFS components")
+	cmdOut := runCLICommand("components", "list")
+	if cmdOut == nil {
+		passed = false
+	} else {
+		common.Infof("Validating configurationStatuses of components listed by CLI call (if any)")
+		if !checkCfsComponentsStatusHelper(cmdOut, cfsComponentIdConfigStatus) {
+			passed = false
+		}
+	}
+
+	if passed {
+		common.Infof("No errors when checking configurationStatuses of CFS components")
+	} else {
+		common.Infof("At least one error found when checking configurationStatuses of CFS components")
+	}
+	return
+}
+
+// For each component in the list, examine its status field.
+// We expect status "configured"
+// For status "unconfigured" or "pending" we record a warning
+// For status "failed" we report an error
+// An error is also reported for any status other than the four listed above, as they
+// are the only ones that should ever be found.
+func checkCfsComponentsStatusHelper(compListJSONBytes []byte, compIdStatus map[string]string) (passed bool) {
+	passed = true
+
+	// First, convert the output into a list
+	listObject, err := common.DecodeJSONIntoList(compListJSONBytes)
+	if err != nil {
+		common.Error(err)
+		passed = false
+		return
+	}
+
+	idFieldName := cfsEndpointIdFieldName["components"]
+
+	for _, componentObject := range listObject {
+		component, ok := componentObject.(map[string]interface{})
+		if !ok {
+			common.Errorf("One of the items in the component list is not a dictionary: %v", componentObject)
+			passed = false
+			continue
+		}
+
+		common.Debugf("Checking CFS component: %v", component)
+
+		componentId, err := common.GetStringFieldFromMapObject(idFieldName, component)
+		if err != nil {
+			passed = false
+			common.Error(err)
+		}
+
+		componentConfigStatus, err := common.GetStringFieldFromMapObject("configurationStatus", component)
+		if err != nil {
+			passed = false
+			common.Error(err)
+		}
+
+		previousStatus, ok := compIdStatus[componentId]
+		if ok {
+			if previousStatus == componentConfigStatus {
+				common.Infof("CFS component id %s still has configurationStatus '%s'", componentId, componentConfigStatus)
+				continue
+			} else {
+				common.Infof("CFS component id %s configurationStatus has changed from our last check", componentId)
+			}
+		}
+		compIdStatus[componentId] = componentConfigStatus
+
+		message := "CFS component id %s has configurationStatus '%s'"
+		if componentConfigStatus == "configured" {
+			common.Infof(message, componentId, componentConfigStatus)
+		} else if componentConfigStatus == "failed" {
+			common.Errorf(message, componentId, componentConfigStatus)
+			passed = false
+		} else if componentConfigStatus == "unconfigured" {
+			common.Warnf(message, componentId, componentConfigStatus)
+			common.Infof("It is unusual for a CFS component to have this configurationStatus except after CSM product install")
+		} else if componentConfigStatus == "pending" {
+			common.Warnf(message, componentId, componentConfigStatus)
+			common.Infof("Monitor this CFS component, or re-run this test, to confirm that this component gets configured successfully")
+		} else {
+			common.Errorf("CFS component id %s has unexpected configurationStatus '%s'", componentId, componentConfigStatus)
 			passed = false
 		}
 	}
