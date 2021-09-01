@@ -203,8 +203,8 @@ fi
 echo "****************************************"
 if [ $errors -gt 0 ]
 then
-    echo "** ERRORS found while running script"
+    echo "** ERRORS found while running $0"
 else
-    echo "** Script successfully completed"
+    echo "** $0 successfully completed"
 fi
 exit $errors
