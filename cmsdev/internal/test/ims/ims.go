@@ -29,14 +29,15 @@ package ims
  */
 
 import (
-	coreV1 "k8s.io/api/core/v1"
 	"os"
 	"regexp"
+	"strings"
+
+	coreV1 "k8s.io/api/core/v1"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/cms"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/k8s"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/test"
-	"strings"
 )
 
 func IsIMSRunning() (passed bool) {
@@ -278,6 +279,10 @@ func IsIMSRunning() (passed bool) {
 	if !passed && !artifactsCollected {
 		common.ArtifactsPodsPvcs(podNames, pvcNames)
 		artifactsCollected = true
+	}
+
+	if !signingkeysTest() {
+		passed = false
 	}
 
 	return
