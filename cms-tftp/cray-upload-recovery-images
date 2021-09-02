@@ -27,47 +27,61 @@
 
 set -e
 
+errors=0
+
 echo "Attempting to retrieve ChassisBMC .itb file"
 
 #look for an images that is cray, for chassisBMC, BMC target; that has the magic string cc- in it; grab its s3url; only get the 0th result; we dont care if there are more; b/c we only need the 1 recovery image.
 CHASSIS_FILE=$(cray fas images list --format json | jq '[.images[] | select(.manufacturer=="cray") | select(.deviceType | test("chassisbmc";"i")) |  select(.target | test("bmc";"i")) | select(.s3URL | contains("cc-")) | .s3URL'][0] | sed -e 's/^"//' -e 's/"$//')
 echo "${CHASSIS_FILE}"
 
-if [[ $CHASSIS_FILE ]]
+if [[ $CHASSIS_FILE != "null" ]]
 then
     #cray artifacts get fw-update d7bb5be9eecc11eab18c26c5771395a4/cc-1.3.10.itb cc.itb
     #if the file has s3 at the beginning of it then we should use cray artifacts to download; else do a wget or curl for an http file
-    
     CFD=false
     if [[ "$CHASSIS_FILE" =~ ^s3* ]]
     then
-
        if [[ "$CHASSIS_FILE" == *"fw-update"* ]]
        then
-	  CHASSIS_PATH=$(echo "${CHASSIS_FILE}" |  cut -d "/" -f3-)	
-	  echo "${CHASSIS_PATH}"
-	  cray artifacts get fw-update ${CHASSIS_PATH} /tmp/cc.itb	
-          CFD=true
+         CHASSIS_PATH=$(echo "${CHASSIS_FILE}" |  cut -d "/" -f3-)
+         echo "${CHASSIS_PATH}"
+         cray artifacts get fw-update ${CHASSIS_PATH} /tmp/cc.itb
+         CFD=true
        fi
     else
         #need to use curl; b/c this is an http file
-	curl -k ${CHASSIS_FILE} --output /tmp/cc.itb
+        curl -k ${CHASSIS_FILE} --output /tmp/cc.itb
         CFD=true
     fi
 
     if [[ "$CFD" == true ]]
-    then 	
-        #now use cray-tftp-upload to upload the file and clean up after ourselves
-        cray-tftp-upload /tmp/cc.itb
+    then
+        # Check tmp file was created
+        if [ -f /tmp/cc.itb ]
+        then
+            #now use cray-tftp-upload to upload the file and clean up after ourselves
+            cray-tftp-upload /tmp/cc.itb
+            if [ $? -ne 0 ]; then
+              errors=$(expr $errors + 1)
+            fi
 
-        # now clean up
-        rm /tmp/cc.itb
-        echo "removed /tmp/cc.itb"
-        echo "ChassisBMC recovery image upload complete"
+            # now clean up
+            rm /tmp/cc.itb
+            echo "removed /tmp/cc.itb"
+            echo "ChassisBMC recovery image upload complete"
+        else
+            echo "/tmp/cc.itb was not created"
+            errors=$(expr $errors + 1)
+        fi
     else
         echo "download failed; could not process ChassisBMC file"
+        errors=$(expr $errors + 1)
     fi
-fi 
+else
+    echo "Did not find ChassisBMC file in FAS image list"
+    errors=$(expr $errors + 1)
+fi
 
 echo "========================================"
 echo "Attempting to retrieve NodeBMC .itb file"
@@ -76,40 +90,53 @@ echo "Attempting to retrieve NodeBMC .itb file"
 NODE_FILE=$(cray fas images list --format json | jq '[.images[] | select(.manufacturer=="cray") | select(.deviceType | test("nodebmc";"i")) |  select(.target | test("bmc";"i")) | select(.s3URL | contains("nc-")) | .s3URL'][0] | sed -e 's/^"//' -e 's/"$//')
 echo "${NODE_FILE}"
 
-if [[ $NODE_FILE ]]
+if [[ $NODE_FILE != "null" ]]
 then
     #cray artifacts get fw-update d7bb5be9eecc11eab18c26c5771395a4/nc-1.3.10.itb nc.itb
     #if the file has s3 at the beginning of it then we should use cray artifacts to download; else do a wget or curl for an http file
-    
+
     NFD=false
     if [[ "$NODE_FILE" =~ ^s3* ]]
     then
-
        if [[ "$NODE_FILE" == *"fw-update"* ]]
        then
-	  NODE_PATH=$(echo "${NODE_FILE}" |  cut -d "/" -f3-)	
-	  echo "${NODE_PATH}"
-	  cray artifacts get fw-update ${NODE_PATH} /tmp/nc.itb	
+          NODE_PATH=$(echo "${NODE_FILE}" |  cut -d "/" -f3-)
+          echo "${NODE_PATH}"
+          cray artifacts get fw-update ${NODE_PATH} /tmp/nc.itb
           NFD=true
        fi
     else
         #need to use curl; b/c this is an http file
-	curl -k ${NODE_FILE} --output /tmp/nc.itb
+        curl -k ${NODE_FILE} --output /tmp/nc.itb
         NFD=true
     fi
 
     if [[ "$NFD" == true ]]
-    then 	
-        #now use cray-tftp-upload to upload the file and clean up after ourselves
-        cray-tftp-upload /tmp/nc.itb
+    then
+        # Check tmp file was created
+        if [ -f /tmp/nc.itb ]
+        then
+            #now use cray-tftp-upload to upload the file and clean up after ourselves
+            cray-tftp-upload /tmp/nc.itb
+            if [ $? -ne 0 ]; then
+              errors=$(expr $errors + 1)
+            fi
 
-        # now clean up
-        rm /tmp/nc.itb
-        echo "removed /tmp/nc.itb"
-        echo "NodeBMC recovery image upload complete"
+            # now clean up
+            rm /tmp/nc.itb
+            echo "removed /tmp/nc.itb"
+            echo "NodeBMC recovery image upload complete"
+        else
+            echo "/tmp/nc.itb was not created"
+            errors=$(expr $errors + 1)
+        fi
     else
         echo "download failed; could not process NodeBMC file"
+        errors=$(expr $errors + 1)
     fi
+else
+    echo "Did not find NodeBMC file in FAS image list"
+    errors=$(expr $errors + 1)
 fi
 
 echo "========================================"
@@ -119,42 +146,65 @@ echo "Attempting to retrieve RouterBMC .itb file"
 ROUTER_FILE=$(cray fas images list --format json | jq '[.images[] | select(.manufacturer=="cray") | select(.deviceType | test("routerbmc";"i")) |  select(.target | test("recovery";"i")) | select(.s3URL | contains("s3")) | .s3URL'][0] | sed -e 's/^"//' -e 's/"$//')
 echo "${ROUTER_FILE}"
 
-if [[ $ROUTER_FILE ]]
+if [[ $ROUTER_FILE != "null" ]]
 then
     #cray artifacts get fw-update d7bb5be9eecc11eab18c26c5771395a4/rec.itb rec.itb
     #if the file has s3 at the beginning of it then we should use cray artifacts to download; else do a wget or curl for an http file
-    
+
     RFD=false
     if [[ "$ROUTER_FILE" =~ ^s3* ]]
     then
-
        if [[ "$ROUTER_FILE" == *"fw-update"* ]]
        then
-	  ROUTER_PATH=$(echo "${ROUTER_FILE}" |  cut -d "/" -f3-)	
-	  echo "${ROUTER_PATH}"
-	  cray artifacts get fw-update ${ROUTER_PATH} /tmp/rec.itb	
-          RFD=true
+           ROUTER_PATH=$(echo "${ROUTER_FILE}" |  cut -d "/" -f3-)
+           echo "${ROUTER_PATH}"
+           cray artifacts get fw-update ${ROUTER_PATH} /tmp/rec.itb
+           RFD=true
        fi
     else
         #need to use curl; b/c this is an http file
-	curl -k ${ROUTER_FILE} --output /tmp/rec.itb
+        curl -k ${ROUTER_FILE} --output /tmp/rec.itb
         RFD=true
     fi
 
     if [[ "$RFD" == true ]]
-    then 	
-        cp /tmp/rec.itb /tmp/sc.itb
-        #now use cray-tftp-upload to upload the file and clean up after ourselves
-        cray-tftp-upload /tmp/rec.itb
-        cray-tftp-upload /tmp/sc.itb
+    then
+        if [ -f /tmp/rec.itb ]
+        then
+            cp /tmp/rec.itb /tmp/sc.itb
+            #now use cray-tftp-upload to upload the file and clean up after ourselves
+            cray-tftp-upload /tmp/rec.itb
+            if [ $? -ne 0 ]; then
+              errors=$(expr $errors + 1)
+            fi
+            cray-tftp-upload /tmp/sc.itb
+            if [ $? -ne 0 ]; then
+              errors=$(expr $errors + 1)
+            fi
 
-        # now clean up
-        rm /tmp/rec.itb
-        rm /tmp/sc.itb
-        echo "removed /tmp/rec.itb"
-        echo "removed /tmp/sc.itb"
-        echo "RouterBMC recovery image upload complete"
+            # now clean up
+            rm /tmp/rec.itb
+            rm /tmp/sc.itb
+            echo "removed /tmp/rec.itb"
+            echo "removed /tmp/sc.itb"
+            echo "RouterBMC recovery image upload complete"
+        else
+            echo "/tmp/rec.itb was not created"
+            errors=$(expr $errors + 1)
+        fi
     else
         echo "download failed; could not process RouterBMC file"
+        errors=$(expr $errors + 1)
     fi
+else
+    echo "Did not find RouterBMC file in FAS image list"
+    errors=$(expr $errors + 1)
 fi
+echo "****************************************"
+if [ $errors -gt 0 ]
+then
+    echo "** ERRORS found while running $0"
+else
+    echo "** $0 successfully completed"
+fi
+exit $errors
