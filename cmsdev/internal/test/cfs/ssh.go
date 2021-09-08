@@ -76,7 +76,7 @@ func TestSSH() {
 		log.Fatal("Failed to create session: ", err)
 	}
 	defer session.Close()
-	
+
 	var b bytes.Buffer
 	session.Stdout = &b
 	if err := session.Run("/usr/bin/whoami"); err != nil {
