@@ -39,13 +39,16 @@ import (
 
 const systemctlCommandPath = "/usr/bin/systemctl"
 const systemctlCommandArgs = "--no-pager status cfs-state-reporter"
+
 var systemctlCommandString = systemctlCommandPath + " " + systemctlCommandArgs
+
 const systemctlSuccessString = "(code=exited, status=0/SUCCESS)"
 
 // We assume the local and remote user are root, and that the local user's
 // ssh keys and known_hosts files are in the default locations.
 const remoteUser = "root"
 const localSshDir = "/root/.ssh"
+
 var localKeyFile = localSshDir + "/" + "id_rsa"
 var localKnownHostsFile = localSshDir + "/" + "known_hosts"
 
@@ -53,7 +56,7 @@ var localKnownHostsFile = localSshDir + "/" + "known_hosts"
 const remoteSshPort = 22
 
 // Generate the ssh.ClientConfig object to use with our subsequent ssh sessions.
-// It will use public key authentication. 
+// It will use public key authentication.
 func getSSHConfig() (config *ssh.ClientConfig, err error) {
 	common.Infof("Generating ssh client configuration")
 	key, err := ioutil.ReadFile(localKeyFile)
@@ -129,7 +132,7 @@ func runRemoteCommand(remoteHost, commandString string, config *ssh.ClientConfig
 		return err
 	}
 	defer session.Close()
-	
+
 	var outBuffer, errBuffer bytes.Buffer
 	session.Stdout = &outBuffer
 	session.Stderr = &errBuffer
@@ -198,8 +201,8 @@ func checkCfsStateReporterOnRemoteHost(remoteHost string, config *ssh.ClientConf
 
 // Extract from /etc/hosts the list of all master and worker NCNs, except for the current host
 func getMastersAndWorkers() (ncns []string, err error) {
-	result, err := common.RunPath("/bin/bash", "-c", 
-								"grep -o -E \"ncn-[mw][0-9][0-9][0-9]([[:space:]]|$)\" /etc/hosts | grep -Ev \"^$HOSTNAME$\"")
+	result, err := common.RunPath("/bin/bash", "-c",
+		"grep -o -E \"ncn-[mw][0-9][0-9][0-9]([[:space:]]|$)\" /etc/hosts | grep -Ev \"^$HOSTNAME$\"")
 	if err != nil {
 		err = fmt.Errorf("Error getting NCN hostnames from /etc/hosts: %v", err)
 		return
@@ -234,7 +237,7 @@ func verifyCfsStateReporterOnMasterAndWorkers() (ok bool) {
 	}
 
 	common.Infof("Checking status of cfs-state-reporter on other master and worker NCNs")
-	
+
 	common.Debugf("Getting list of other master and worker NCNs from /etc/hosts")
 	ncnList, err := getMastersAndWorkers()
 	if err != nil {
@@ -257,7 +260,7 @@ func verifyCfsStateReporterOnMasterAndWorkers() (ok bool) {
 		return
 	}
 
-	for _, ncnName := range(ncnList) {
+	for _, ncnName := range ncnList {
 		if !checkCfsStateReporterOnRemoteHost(ncnName, config) {
 			ok = false
 		}
