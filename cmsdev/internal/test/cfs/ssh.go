@@ -32,6 +32,7 @@ import (
 	"bytes"
 	"fmt"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/knownhosts"
 	"io/ioutil"
 	"log"
 )
@@ -54,13 +55,18 @@ func TestSSH() {
 		log.Fatalf("unable to parse private key: %v", err)
 	}
 
+	hostKeyCallback, err := knownhosts.New("/Users/user/.ssh/known_hosts")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	config := &ssh.ClientConfig{
 		User: "root",
 		Auth: []ssh.AuthMethod{
 			// Use the PublicKeys method for remote authentication.
 			ssh.PublicKeys(signer),
 		},
-		HostKeyCallback: ssh.FixedHostKey(hostKey),
+		HostKeyCallback: hostKeyCallback,
 	}
 
 	client, err := ssh.Dial("tcp", "ncn-s001:22", config)
