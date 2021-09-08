@@ -171,7 +171,7 @@ func runRemoteCommand(remoteHost, commandString string, config *ssh.ClientConfig
 func validateSystemctlOutput(outString) error {
 	if len(outString) == 0 {
 		return fmt.Errorf("Command gave no output: %s", systemctlCommandString)
-	} elif !strings.Contains(outString, successString) {
+	} else if !strings.Contains(outString, successString) {
 		return fmt.Errorf("Expected string not found in \"%s\" output: %s", systemctlCommandString, systemctlSuccessString)
 	}
 	return nil
