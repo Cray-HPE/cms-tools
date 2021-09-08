@@ -32,6 +32,7 @@ import (
 	"bytes"
 	"fmt"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/knownhosts"
 	"io/ioutil"
 	"stash.us.cray.com/cms-tools/cmsdev/internal/lib/common"
 	"strings"
@@ -74,9 +75,9 @@ func getSSHConfig() (config *ssh.ClientConfig, err error) {
 		return
 	}
 
-	hostKeyCallback, err := ssh.knownhosts.New(localKnownHostsFile)
+	hostKeyCallback, err := knownhosts.New(localKnownHostsFile)
 	if err != nil {
-		common.Debugf("ssh.knownhosts.New(\"%s\") returned error: %v", localKnownHostsFile, err)
+		common.Debugf("knownhosts.New(\"%s\") returned error: %v", localKnownHostsFile, err)
 		return
 	}
 

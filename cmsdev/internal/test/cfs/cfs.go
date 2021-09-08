@@ -54,7 +54,6 @@ var cfsEndpointIdFieldName = map[string]string{
 }
 
 func IsCFSRunning() (passed bool) {
-	TestSSH()
 	passed = true
 	// 2 pods minimum since we expect both an api and operator pod
 	podNames, ok := test.GetPodNamesByPrefixKey("cfs", 2, -1)
