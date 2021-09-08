@@ -29,6 +29,8 @@ package cfs
  */
 
 import (
+	"bytes"
+	"fmt"
 	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	"log"
