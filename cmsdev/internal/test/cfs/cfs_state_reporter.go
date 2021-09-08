@@ -185,7 +185,7 @@ func validateSystemctlOutput(outString string) error {
 // If ssh errors are encountered, a warning is logged, but the function returns success.
 func checkCfsStateReporterOnRemoteHost(remoteHost string, config *ssh.ClientConfig) bool {
 	common.Infof("Checking cfs-state-reporter status on %s", remoteHost)
-	outString, errString, rc, err := runRemoteCommand(remoteHost, systemctlCommandString, config)
+	outString, _, _, err := runRemoteCommand(remoteHost, systemctlCommandString, config)
 	if err != nil {
 		common.Warnf("Unable to check cfs-state-reporter status on %s: %v", remoteHost, err)
 		// We do not consider this to be a failure
