@@ -114,6 +114,10 @@ func IsCFSRunning() (passed bool) {
 	if !checkCfsComponentsStatus() {
 		passed = false
 	}
+	// This function is defined in cfs_state_reporter.go
+	if !verifyCfsStateReporterOnMasterAndWorkers() {
+		passed = false 
+	}
 	if !passed {
 		common.ArtifactsPods(podNames)
 	}
