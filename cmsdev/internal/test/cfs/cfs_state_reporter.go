@@ -197,7 +197,7 @@ func checkCfsStateReporterOnRemoteHost(remoteHost string, config *ssh.ClientConf
 }
 
 // Extract from /etc/hosts the list of all master and worker NCNs, except for the current host
-func getMastersAndWorkers() (ncns string[], err error) {
+func getMastersAndWorkers() (ncns []string, err error) {
 	result, err := common.RunPath("/bin/bash", "-c", 
 								"grep -o -E \"ncn-[mw][0-9][0-9][0-9]([[:space:]]|$)\" /etc/hosts | grep -Ev \"^$HOSTNAME$\"")
 	if err != nil {
