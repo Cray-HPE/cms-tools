@@ -137,14 +137,14 @@ func runRemoteCommand(remoteHost, commandString string, config *ssh.ClientConfig
 	var outBuffer, errBuffer bytes.Buffer
 	session.Stdout = &outBuffer
 	session.Stderr = &errBuffer
-	err := session.Wait()
+	err = session.Wait()
 	outString = outBuffer.String()
 	if len(outString) > 0 {
 		common.Debugf("Command stdout: %s", outString)
 	} else {
 		common.Debugf("No stdout from command")
 	}
-	errString = errBytes.String()
+	errString = errBuffer.String()
 	if len(errString) > 0 {
 		common.Warnf("Command stderr: %s", errString)
 	} else {
@@ -172,10 +172,10 @@ func runRemoteCommand(remoteHost, commandString string, config *ssh.ClientConfig
 }
 
 // Checks the systemctl command output to see if our expected success string is in there.
-func validateSystemctlOutput(outString) error {
+func validateSystemctlOutput(outString string) error {
 	if len(outString) == 0 {
 		return fmt.Errorf("Command gave no output: %s", systemctlCommandString)
-	} else if !strings.Contains(outString, successString) {
+	} else if !strings.Contains(outString, systemctlSuccessString) {
 		return fmt.Errorf("Expected string not found in \"%s\" output: %s", systemctlCommandString, systemctlSuccessString)
 	}
 	return nil
@@ -228,7 +228,7 @@ func verifyCfsStateReporterOnMasterAndWorkers() (ok bool) {
 		common.Errorf("Error running \"%s\": %v", systemctlCommandString, err)
 		ok = false
 	} else {
-		err = validateSystemctlOutput(outString)
+		err = validateSystemctlOutput(cmdResult.OutString())
 		if err != nil {
 			common.Errorf("cfs-state-reporter check failed on this host: %v", err)
 			ok = false
