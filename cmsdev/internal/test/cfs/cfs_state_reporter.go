@@ -183,7 +183,7 @@ func validateSystemctlOutput(outString string) error {
 	if len(outString) == 0 {
 		return fmt.Errorf("Command gave no output: %s", systemctlCommandString)
 	} else if !strings.Contains(outString, systemctlSuccessString) {
-		return fmt.Errorf("Expected string not found in \"%s\" output: %s", systemctlCommandString, systemctlSuccessString)
+		return fmt.Errorf("Output of \"%s\" does not contain expected string: %s", systemctlCommandString, systemctlSuccessString)
 	}
 	return nil
 }
