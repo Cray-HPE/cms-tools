@@ -39,22 +39,22 @@ import (
 
 const systemctlCommandPath = "/usr/bin/systemctl"
 const systemctlCommandArgs = "--no-pager status cfs-state-reporter"
-var systemctlCommandString := systemctlCommandPath + " " + systemctlCommandArgs
+var systemctlCommandString = systemctlCommandPath + " " + systemctlCommandArgs
 const systemctlSuccessString = "(code=exited, status=0/SUCCESS)"
 
 // We assume the local and remote user are root, and that the local user's
 // ssh keys and known_hosts files are in the default locations.
 const remoteUser = "root"
 const localSshDir = "/root/.ssh"
-var localKeyFile := localSshDir + "/" + "id_rsa"
-var localKnownHostsFile := localSshDir + "/" + "known_hosts"
+var localKeyFile = localSshDir + "/" + "id_rsa"
+var localKnownHostsFile = localSshDir + "/" + "known_hosts"
 
 // We assume the default ssh port on the remote host
 const remoteSshPort = 22
 
 // Generate the ssh.ClientConfig object to use with our subsequent ssh sessions.
 // It will use public key authentication. 
-func getSSHConfig() (config &ssh.ClientConfig, err error) {
+func getSSHConfig() (config *ssh.ClientConfig, err error) {
 	common.Infof("Generating ssh client configuration")
 	key, err := ioutil.ReadFile(localKeyFile)
 	if err != nil {
@@ -90,7 +90,7 @@ func getSSHConfig() (config &ssh.ClientConfig, err error) {
 }
 
 // Return the ssh.Client object needed to create ssh Sessions to the specified remoteHost.
-func getSSHClient(remoteHost string, config &ssh.ClientConfig) (client ssh.Client, err error) {
+func getSSHClient(remoteHost string, config *ssh.ClientConfig) (client ssh.Client, err error) {
 	remoteHostPort := fmt.Sprintf("%s:%d", remoteHost, remoteSshPort)
 	common.Debugf("Creating ssh client for %s", remoteHostPort)
 	client, err = ssh.Dial("tcp", remoteHostPort, config)
@@ -103,7 +103,7 @@ func getSSHClient(remoteHost string, config &ssh.ClientConfig) (client ssh.Clien
 }
 
 // Return the ssh.Session object needed to run commands on the specified client
-function getSSHSession(client ssh.Client) (session ssh.Session, err error) {
+func getSSHSession(client ssh.Client) (session ssh.Session, err error) {
 	common.Debugf("Creating ssh session for client %v", client)
 	session, err := client.NewSession()
 	if err != nil {
@@ -118,7 +118,7 @@ function getSSHSession(client ssh.Client) (session ssh.Session, err error) {
 // If the remote command runs but returns a non-0 return code, this does not
 // generate an error. It is left to the caller to decide how to deal with that.
 // Errors are only returned in the case that there were problems with ssh itself.
-function runRemoteCommand(remoteHost, commandString string, config &ssh.ClientConfig) (outString, errString string, rc int, err error) {
+func runRemoteCommand(remoteHost, commandString string, config *ssh.ClientConfig) (outString, errString string, rc int, err error) {
 	client, err := getSSHClient(remoteHost, config)
 	if err != nil {
 		return err
@@ -168,7 +168,7 @@ function runRemoteCommand(remoteHost, commandString string, config &ssh.ClientCo
 }
 
 // Checks the systemctl command output to see if our expected success string is in there.
-function validateSystemctlOutput(outString) error {
+func validateSystemctlOutput(outString) error {
 	if len(outString) == 0 {
 		return fmt.Errorf("Command gave no output: %s", systemctlCommandString)
 	} elif !strings.Contains(outString, successString) {
@@ -179,7 +179,7 @@ function validateSystemctlOutput(outString) error {
 
 // Runs our systemctl command via ssh on the remote host, and validates the output.
 // If ssh errors are encountered, a warning is logged, but the function returns success.
-function checkCfsStateReporterOnRemoteHost(remoteHost string, config &ssh.ClientConfig) bool {
+func checkCfsStateReporterOnRemoteHost(remoteHost string, config *ssh.ClientConfig) bool {
 	common.Infof("Checking cfs-state-reporter status on %s", remoteHost)
 	outString, errString, rc, err := runRemoteCommand(remoteHost, systemctlCommandString, config)
 	if err != nil {
@@ -197,7 +197,7 @@ function checkCfsStateReporterOnRemoteHost(remoteHost string, config &ssh.Client
 }
 
 // Extract from /etc/hosts the list of all master and worker NCNs, except for the current host
-function getMastersAndWorkers() (ncns string[], err error) {
+func getMastersAndWorkers() (ncns string[], err error) {
 	result, err := common.RunPath("/bin/bash", "-c", 
 								"grep -o -E \"ncn-[mw][0-9][0-9][0-9]([[:space:]]|$)\" /etc/hosts | grep -Ev \"^$HOSTNAME$\"")
 	if err != nil {
@@ -213,7 +213,7 @@ function getMastersAndWorkers() (ncns string[], err error) {
 
 // We run our systemctl command on the local host and on all other master and worker nodes, validating
 // that our expected success string shows up in the output.
-function verifyCfsStateReporterOnMasterAndWorkers() (ok bool) {
+func verifyCfsStateReporterOnMasterAndWorkers() (ok bool) {
 	// Let's be optimistic! ok starts out as true
 	ok = true
 
