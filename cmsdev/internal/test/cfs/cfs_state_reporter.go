@@ -211,7 +211,7 @@ func getMastersAndWorkers() (ncns []string, err error) {
 		err = fmt.Errorf("Error getting NCN hostnames from /etc/hosts: bash command returned return code %d", result.Rc)
 		return
 	}
-	ncns = strings.Fields(result.OutBytes.String())
+	ncns = strings.Fields(result.OutString())
 	return
 }
 
