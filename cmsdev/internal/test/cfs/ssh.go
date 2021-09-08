@@ -38,7 +38,6 @@ import (
 )
 
 func TestSSH() {
-	var hostKey ssh.PublicKey
 	// A public key may be used to authenticate against the remote
 	// server by using an unencrypted PEM-encoded private key file.
 	//
