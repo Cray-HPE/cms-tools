@@ -137,6 +137,13 @@ func runRemoteCommand(remoteHost, commandString string, config *ssh.ClientConfig
 	var outBuffer, errBuffer bytes.Buffer
 	session.Stdout = &outBuffer
 	session.Stderr = &errBuffer
+	common.Debugf("Starting command \"%s\" via ssh on remote host %s", commandString, remoteHost)
+	err = session.Start(commandString)
+	if err != nil {
+		return
+	}
+
+	common.Debugf("Waiting for command to complete")
 	err = session.Wait()
 	outString = outBuffer.String()
 	if len(outString) > 0 {
