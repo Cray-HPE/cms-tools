@@ -109,7 +109,7 @@ func getSSHClient(remoteHost string, config *ssh.ClientConfig) (client *ssh.Clie
 // Return the ssh.Session object needed to run commands on the specified client
 func getSSHSession(client *ssh.Client) (session *ssh.Session, err error) {
 	common.Debugf("Creating ssh session for client %v", client)
-	session, err := client.NewSession()
+	session, err = client.NewSession()
 	if err != nil {
 		common.Debugf("client.NewSession returned error: %v", err)
 		err = fmt.Errorf("Failed to create session: ", err)
@@ -125,12 +125,12 @@ func getSSHSession(client *ssh.Client) (session *ssh.Session, err error) {
 func runRemoteCommand(remoteHost, commandString string, config *ssh.ClientConfig) (outString, errString string, rc int, err error) {
 	client, err := getSSHClient(remoteHost, config)
 	if err != nil {
-		return err
+		return
 	}
 	defer client.Close()
 	session, err := getSSHSession(client)
 	if err != nil {
-		return err
+		return
 	}
 	defer session.Close()
 
