@@ -54,7 +54,7 @@ func TestSSH() {
 		log.Fatalf("unable to parse private key: %v", err)
 	}
 
-	hostKeyCallback, err := knownhosts.New("/Users/user/.ssh/known_hosts")
+	hostKeyCallback, err := knownhosts.New("/root/.ssh/known_hosts")
 	if err != nil {
 		log.Fatal(err)
 	}
