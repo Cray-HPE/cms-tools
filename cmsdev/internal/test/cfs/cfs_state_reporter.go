@@ -94,7 +94,7 @@ func getSSHConfig() (config *ssh.ClientConfig, err error) {
 }
 
 // Return the ssh.Client object needed to create ssh Sessions to the specified remoteHost.
-func getSSHClient(remoteHost string, config *ssh.ClientConfig) (client ssh.Client, err error) {
+func getSSHClient(remoteHost string, config *ssh.ClientConfig) (client *ssh.Client, err error) {
 	remoteHostPort := fmt.Sprintf("%s:%d", remoteHost, remoteSshPort)
 	common.Debugf("Creating ssh client for %s", remoteHostPort)
 	client, err = ssh.Dial("tcp", remoteHostPort, config)
@@ -107,7 +107,7 @@ func getSSHClient(remoteHost string, config *ssh.ClientConfig) (client ssh.Clien
 }
 
 // Return the ssh.Session object needed to run commands on the specified client
-func getSSHSession(client ssh.Client) (session ssh.Session, err error) {
+func getSSHSession(client *ssh.Client) (session *ssh.Session, err error) {
 	common.Debugf("Creating ssh session for client %v", client)
 	session, err := client.NewSession()
 	if err != nil {
