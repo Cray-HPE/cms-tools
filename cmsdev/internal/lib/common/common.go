@@ -144,9 +144,9 @@ func ArtifactCommand(label, cmdName string, cmdArgs ...string) {
 	t := time.Now()
 	outfilename := artifactDirectory + "/" + artifactFilePrefix + label + "-" + t.Format(time.RFC3339Nano) + ".txt"
 	cmdStr := cmdName + strings.Join(cmdArgs, " ")
-	Infof("Running command: %s", cmdStr)
+	Debugf("Running command: %s", cmdStr)
 	cmd := exec.Command(cmdName, cmdArgs...)
-	Infof("Storing output in %s", outfilename)
+	Debugf("Storing output in %s", outfilename)
 	outfile, err := os.Create(outfilename)
 	if err != nil {
 		Warnf("Error creating output file; %s", err.Error())
@@ -163,7 +163,7 @@ func ArtifactCommand(label, cmdName string, cmdArgs ...string) {
 	if err != nil {
 		Warnf("Command failed; %s", err.Error())
 	} else {
-		Infof("Command completed without error")
+		Debugf("Command completed without error")
 	}
 }
 

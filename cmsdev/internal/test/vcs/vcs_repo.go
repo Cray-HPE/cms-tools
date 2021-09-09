@@ -58,7 +58,7 @@ func vcsRequest(requestType, requestUri, jsonString string, expectedStatusCode i
 	tryInsecure = false
 
 	// Get vcs user and password
-	common.Infof("Getting vcs user and password")
+	common.Debugf("Getting vcs user and password")
 	vcsUser, vcsPass, err := k8s.GetVcsUsernamePassword()
 	if err != nil {
 		common.Error(err)
@@ -80,7 +80,7 @@ func vcsRequest(requestType, requestUri, jsonString string, expectedStatusCode i
 		}
 		if len(jsonString) > 0 {
 			dataArray = []byte(jsonString)
-			common.Infof("data: %s", jsonString)
+			common.Debugf("data: %s", jsonString)
 		}
 		if requestType == "DELETE" {
 			if len(jsonString) > 0 {
@@ -224,7 +224,7 @@ func repoTest() (passed bool) {
 	}
 
 	// Get vcs user and password
-	common.Infof("Getting vcs user and password")
+	common.Debugf("Getting vcs user and password")
 	vcsUser, vcsPass, err := k8s.GetVcsUsernamePassword()
 	if err != nil {
 		common.Error(err)
@@ -301,7 +301,7 @@ func runCmd(shouldPass bool, cmdName string, cmdArgs ...string) bool {
 	var cmdResult *common.CommandResult
 	var err error
 	if !shouldPass {
-		common.Infof("WE EXPECT THE FOLLOWING %s COMMAND TO FAIL", cmdName)
+		common.Debugf("WE EXPECT THE FOLLOWING %s COMMAND TO FAIL", cmdName)
 	}
 	cmdResult, err = common.RunName(cmdName, cmdArgs...)
 	if err != nil {
@@ -410,7 +410,7 @@ func cloneTest(repoName, repoUrl string) bool {
 	textFileBase := fmt.Sprintf("vcs_repo_test_textfile.%d.%d.txt", common.Intn(1000000), common.Intn(1000000))
 	textFile := "/tmp/" + textFileBase
 	textFileSizeBytes := common.IntInRange(1, 20*1024)
-	common.Infof("Creating file to put in new repo: %s", textFile)
+	common.Debugf("Creating file to put in new repo: %s", textFile)
 	f, err := os.Create(textFile)
 	if err != nil {
 		common.Error(err)
@@ -419,7 +419,7 @@ func cloneTest(repoName, repoUrl string) bool {
 	}
 	defer f.Close()
 
-	common.Infof("Writing %d characters to %s", textFileSizeBytes, textFile)
+	common.Debugf("Writing %d characters to %s", textFileSizeBytes, textFile)
 	_, err = f.WriteString(common.TextStringWithNewlines(textFileSizeBytes))
 	if err != nil {
 		common.Error(err)
