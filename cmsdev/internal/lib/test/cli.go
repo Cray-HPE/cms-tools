@@ -141,7 +141,7 @@ func RunCLICommand(cmdList ...string) []byte {
 	} else {
 		cmdStr = "CRAY_CONFIG=" + CliConfigFile + " " + baseCmdStr
 	}
-	common.Debugff("Running command: %s", cmdStr)
+	common.Debugf("Running command: %s", cmdStr)
 	cmdResult, err = common.RunName("bash", "-c", cmdStr)
 	if err != nil {
 		common.Error(err)
