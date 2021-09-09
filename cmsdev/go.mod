@@ -25,13 +25,22 @@ module stash.us.cray.com/SCMS/cms-tools/cmsdev
 go 1.13
 
 require (
+	github.com/bketelsen/crypt v0.0.4 // indirect
 	github.com/fatih/color v1.12.0
+	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
+	github.com/mitchellh/mapstructure v1.4.1 // indirect
+	github.com/pelletier/go-toml v1.9.3 // indirect
 	github.com/pin/tftp v2.1.0+incompatible
 	github.com/sirupsen/logrus v1.8.1
+	github.com/spf13/afero v1.5.1 // indirect
+	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.1.3
-	github.com/spf13/viper v1.8.1
+	github.com/spf13/jwalterweatherman v1.1.0 // indirect
+	github.com/spf13/viper v1.7.1
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
+	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/resty.v1 v1.12.0
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
