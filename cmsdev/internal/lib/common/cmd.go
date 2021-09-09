@@ -77,7 +77,7 @@ func (cmdResult *CommandResult) Run() (err error) {
 
 	cmdResult.ExecCmd = exec.Command(cmdResult.CmdPath, cmdResult.CmdArgs...)
 	cmdResult.CmdString = fmt.Sprintf("%s", cmdResult.ExecCmd)
-	Infof("Running command: %s", cmdResult.CmdString)
+	Debugf("Running command: %s", cmdResult.CmdString)
 
 	cmdResult.ExecCmd.Stdout = &stdout
 	cmdResult.ExecCmd.Stderr = &stderr

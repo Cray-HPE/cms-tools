@@ -47,14 +47,14 @@ type ArtifactRecord struct {
 // Get a list of S3 buckets via CLI.
 // If error, logs it and returns nil.
 func GetBuckets() []string {
-	common.Infof("Getting list of all S3 buckets via CLI")
+	common.Debugf("Getting list of all S3 buckets via CLI")
 	cmdOut := test.RunCLICommandJSON("artifacts", "buckets", "list")
 	if cmdOut == nil {
 		return nil
 	}
 
 	// Extract list of buckets from command output
-	common.Infof("Decoding JSON in command output")
+	common.Debugf("Decoding JSON in command output")
 	bucketList, err := common.DecodeJSONIntoStringList(cmdOut)
 	if err != nil {
 		common.Error(err)
@@ -66,7 +66,7 @@ func GetBuckets() []string {
 // Get a list of artifacts in the specified S3 bucket (via CLI).
 // If error, logs it and returns nil.
 func GetArtifactsInBucket(bucket string) []ArtifactRecord {
-	common.Infof("Getting list of all S3 artifacts in %s bucket via CLI", bucket)
+	common.Debugf("Getting list of all S3 artifacts in %s bucket via CLI", bucket)
 	cmdOut := test.RunCLICommandJSON("artifacts", "list", bucket)
 	if cmdOut == nil {
 		return nil
@@ -75,7 +75,7 @@ func GetArtifactsInBucket(bucket string) []ArtifactRecord {
 	var listArtifactsObject ListArtifacts
 
 	// Extract object from command output
-	common.Infof("Decoding JSON in command output")
+	common.Debugf("Decoding JSON in command output")
 	if err := json.Unmarshal(cmdOut, &listArtifactsObject); err != nil {
 		common.Error(err)
 		return nil
