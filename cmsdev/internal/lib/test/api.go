@@ -36,10 +36,10 @@ import (
 )
 
 func GetAccessToken() string {
-	common.Infof("Getting access token")
+	common.Debugf("Getting access token")
 	token, err := k8s.GetAccessToken()
 	if err != nil {
-		common.Error(fmt.Errorf("Error getting access token: %v", err))
+		common.Errorf("Error getting access token: %v", err)
 		return ""
 	}
 	return token
@@ -65,6 +65,7 @@ func RestfulVerifyStatus(method, url string, params common.Params, ExpectedStatu
 		err = fmt.Errorf("%s %s failed: %v", method, url, err)
 		return
 	}
+	common.Debugf("resp=%v", resp)
 	common.PrettyPrintJSON(resp)
 	if resp.StatusCode() != ExpectedStatus {
 		err = fmt.Errorf("%s %s: expected status code %d, got %d", method, url, ExpectedStatus, resp.StatusCode())

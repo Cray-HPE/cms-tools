@@ -64,9 +64,9 @@ func getKubeConfig() (*rest.Config, error) {
 		kubeconfig = filepath.Join(
 			os.Getenv("HOME"), ".kube", "config",
 		)
-		common.Infof("KUBECONFIG env var not set. Using default = %s", kubeconfig)
+		common.Debugf("KUBECONFIG env var not set. Using default = %s", kubeconfig)
 	} else {
-		common.Infof("Found env var KUBECONFIG = %s", kubeconfig)
+		common.Debugf("Found env var KUBECONFIG = %s", kubeconfig)
 	}
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	return config, err
@@ -86,7 +86,7 @@ func GetClientset() (*kubernetes.Clientset, error) {
 
 func GetKubectlPath() (string, error) {
 	if len(KubectlPath) == 0 {
-		common.Infof("Trying to look up path of kubectl")
+		common.Debugf("Trying to look up path of kubectl")
 		path, err := exec.LookPath("kubectl")
 		if err != nil {
 			return "", err
@@ -106,12 +106,12 @@ func RunCommandInContainer(podName, namespace, containerName string, cmdStrings 
 		return "", err
 	}
 	cmd := exec.Command(path, cmdList...)
-	common.Infof("Running command: %s", cmd)
+	common.Debugf("Running command: %s", cmd)
 	cmdOut, err := cmd.CombinedOutput()
 	if len(cmdOut) > 0 {
-		common.Infof("Command output: %s", cmdOut)
+		common.Debugf("Command output: %s", cmdOut)
 	} else {
-		common.Infof("No command output")
+		common.Debugf("No command output")
 	}
 	return string(cmdOut), err
 }
@@ -119,7 +119,7 @@ func RunCommandInContainer(podName, namespace, containerName string, cmdStrings 
 func GetVcsUsernamePassword() (vcsUsername, vcsPassword string, err error) {
 	// TODO: clean this up. remove exec.Command and replace with clientgo
 	if len(VcsUser) != 0 && len(VcsPass) != 0 {
-		common.Infof("Using cached values of vcs user and password")
+		common.Debugf("Using cached values of vcs user and password")
 		vcsUsername = VcsUser
 		vcsPassword = VcsPass
 		return
@@ -134,10 +134,10 @@ func GetVcsUsernamePassword() (vcsUsername, vcsPassword string, err error) {
 	}
 
 	cmd = exec.Command(path, "get", "secret", "-n", "services", "vcs-user-credentials", "--template={{.data.vcs_username}}")
-	common.Infof("Running command: %s", cmd)
+	common.Debugf("Running command: %s", cmd)
 	cmdOut, err = cmd.CombinedOutput()
 	if len(cmdOut) > 0 {
-		common.Infof("Command output: %s", cmdOut)
+		common.Debugf("Command output: %s", cmdOut)
 	} else if err == nil {
 		err = fmt.Errorf("No output from command: %s", cmd)
 	} else {
@@ -147,8 +147,8 @@ func GetVcsUsernamePassword() (vcsUsername, vcsPassword string, err error) {
 		return
 	}
 	base64Str := strings.TrimSpace(string(cmdOut))
-	common.Infof("vcs username (base 64) = \"%s\"", base64Str)
-	common.Infof("Decoding vcs username from base 64")
+	common.Debugf("vcs username (base 64) = \"%s\"", base64Str)
+	common.Debugf("Decoding vcs username from base 64")
 	decodedBytes, err := base64.StdEncoding.DecodeString(base64Str)
 	if err != nil {
 		return
@@ -157,13 +157,13 @@ func GetVcsUsernamePassword() (vcsUsername, vcsPassword string, err error) {
 		return
 	}
 	vcsUsername = strings.TrimSpace(string(decodedBytes))
-	common.Infof("Decoded vcs username = \"%s\"", vcsUsername)
+	common.Debugf("Decoded vcs username = \"%s\"", vcsUsername)
 
 	cmd = exec.Command(path, "get", "secret", "-n", "services", "vcs-user-credentials", "--template={{.data.vcs_password}}")
-	common.Infof("Running command: %s", cmd)
+	common.Debugf("Running command: %s", cmd)
 	cmdOut, err = cmd.CombinedOutput()
 	if len(cmdOut) > 0 {
-		common.Infof("Command output: %s", cmdOut)
+		common.Debugf("Command output: %s", cmdOut)
 	} else if err == nil {
 		err = fmt.Errorf("No output from command: %s", cmd)
 	} else {
@@ -173,8 +173,8 @@ func GetVcsUsernamePassword() (vcsUsername, vcsPassword string, err error) {
 		return
 	}
 	base64Str = strings.TrimSpace(string(cmdOut))
-	common.Infof("vcs password (base 64) = \"%s\"", base64Str)
-	common.Infof("Decoding vcs password from base 64")
+	common.Debugf("vcs password (base 64) = \"%s\"", base64Str)
+	common.Debugf("Decoding vcs password from base 64")
 	decodedBytes, err = base64.StdEncoding.DecodeString(base64Str)
 	if err != nil {
 		return
@@ -183,7 +183,7 @@ func GetVcsUsernamePassword() (vcsUsername, vcsPassword string, err error) {
 		return
 	}
 	vcsPassword = strings.TrimSpace(string(decodedBytes))
-	common.Infof("Decoded vcs password = \"%s\"", vcsPassword)
+	common.Debugf("Decoded vcs password = \"%s\"", vcsPassword)
 	VcsUser = vcsUsername
 	VcsPass = vcsPassword
 	return
@@ -200,10 +200,10 @@ func GetOauthClientSecret() (string, error) {
 		return "", err
 	}
 	cmd = exec.Command(path, "get", "secrets", "admin-client-auth", "-ojsonpath='{.data.client-secret}'")
-	common.Infof("Running command: %s", cmd)
+	common.Debugf("Running command: %s", cmd)
 	cmdOut, err = cmd.CombinedOutput()
 	if len(cmdOut) > 0 {
-		common.Infof("Command output: %s", cmdOut)
+		common.Debugf("Command output: %s", cmdOut)
 	} else if err == nil {
 		err = fmt.Errorf("No output from command: %s", cmd)
 	} else {
@@ -213,10 +213,10 @@ func GetOauthClientSecret() (string, error) {
 		return "", err
 	}
 	cmdStr := fmt.Sprintf("echo %s | base64 -d", strings.Trim(string(cmdOut), "'"))
-	common.Infof("Running command: %s", cmdStr)
+	common.Debugf("Running command: %s", cmdStr)
 	cmdOut, err = exec.Command("bash", "-c", cmdStr).Output()
 	if len(cmdOut) > 0 {
-		common.Infof("Command output: %s", cmdOut)
+		common.Debugf("Command output: %s", cmdOut)
 	} else if err == nil {
 		err = fmt.Errorf("No output from command: %s", cmd)
 	} else {
@@ -249,11 +249,11 @@ func GetAccessJSON(params ...string) ([]byte, error) {
 
 	cmdStr := fmt.Sprintf("curl -k -s -d grant_type=client_credentials -d client_id=admin-client -d client_secret=%s "+
 		"https://api-gw-service-nmn.local/keycloak/realms/shasta/protocol/openid-connect/token", clientSecret)
-	common.Infof("Running command: bash -c \"%s\"", cmdStr)
+	common.Debugf("Running command: bash -c \"%s\"", cmdStr)
 	cmdOut, err = exec.Command("bash", "-c", cmdStr).Output()
 	if err != nil {
 		if len(cmdOut) > 0 {
-			common.Infof("Command output: %s", cmdOut)
+			common.Debugf("Command output: %s", cmdOut)
 		}
 		return nil, err
 	} else {
@@ -271,7 +271,7 @@ func GetAccessToken(params ...string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	common.Infof("Parsing JSON object containing access token")
+	common.Debugf("Parsing JSON object containing access token")
 	if err = json.Unmarshal(cmdOut, &jsonData); err != nil {
 		return "", err
 	}
