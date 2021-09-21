@@ -114,7 +114,7 @@ func IsCFSRunning() (passed bool) {
 		passed = false
 	}
 	// This function is defined in cfs_state_reporter.go
-	if !verifyCfsStateReporterOnMasterAndWorkers() {
+	if !verifyCfsStateReporterOnNcns() {
 		passed = false
 	}
 	if !passed {
