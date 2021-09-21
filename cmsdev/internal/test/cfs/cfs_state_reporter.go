@@ -207,10 +207,10 @@ func checkCfsStateReporterOnRemoteHost(remoteHost string, config *ssh.ClientConf
 	return true
 }
 
-// Extract from /etc/hosts the list of all master and worker NCNs, except for the current host
-func getMastersAndWorkers() (ncns []string, err error) {
+// Extract from /etc/hosts the list of all NCNs, except for the current host
+func getNcns() (ncns []string, err error) {
 	result, err := common.RunPath("/bin/bash", "-c",
-		"grep -o -E \"ncn-[mw][0-9][0-9][0-9]([[:space:]]|$)\" /etc/hosts | grep -Ev \"^$HOSTNAME$\"")
+		"grep -o -E \"ncn-[msw][0-9][0-9][0-9]([[:space:]]|$)\" /etc/hosts | grep -Ev \"^$HOSTNAME$\"")
 	if err != nil {
 		err = fmt.Errorf("Error getting NCN hostnames from /etc/hosts: %v", err)
 		return
@@ -222,9 +222,9 @@ func getMastersAndWorkers() (ncns []string, err error) {
 	return
 }
 
-// We run our systemctl command on the local host and on all other master and worker nodes, validating
+// We run our systemctl command on the local host and on all other NCNs, validating
 // that our expected success string shows up in the output.
-func verifyCfsStateReporterOnMasterAndWorkers() (ok bool) {
+func verifyCfsStateReporterOnNcns() (ok bool) {
 	// Let's be optimistic! ok starts out as true
 	ok = true
 
@@ -244,17 +244,17 @@ func verifyCfsStateReporterOnMasterAndWorkers() (ok bool) {
 		}
 	}
 
-	common.Infof("Checking status of cfs-state-reporter on other master and worker NCNs")
+	common.Infof("Checking status of cfs-state-reporter on other NCNs")
 
-	common.Debugf("Getting list of other master and worker NCNs from /etc/hosts")
-	ncnList, err := getMastersAndWorkers()
+	common.Debugf("Getting list of other NCNs from /etc/hosts")
+	ncnList, err := getNcns()
 	if err != nil {
 		common.Error(err)
 		// Nothing more to do if we cannot get the list
 		ok = false
 		return
 	} else if len(ncnList) == 0 {
-		common.Errorf("No other master or worker NCNs found in /etc/hosts -- this should never be the case")
+		common.Errorf("No other NCNs found in /etc/hosts -- this should never be the case")
 		ok = false
 		return
 	}
@@ -263,7 +263,7 @@ func verifyCfsStateReporterOnMasterAndWorkers() (ok bool) {
 	config, err := getSSHConfig()
 	if err != nil {
 		common.Warnf("Unable to generate ssh configuration: %v", err)
-		common.Warnf("Unable to verify cfs-state-reporter status on other master and worker NCNs")
+		common.Warnf("Unable to verify cfs-state-reporter status on other NCNs")
 		// Nothing more we can do without the ssh configuration
 		return
 	}
