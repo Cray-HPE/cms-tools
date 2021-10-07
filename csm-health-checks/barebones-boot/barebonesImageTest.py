@@ -41,6 +41,9 @@ import time
 from kubernetes import client, config
 from kubernetes.stream import stream
 
+# url for additional troubleshooting help
+HELP_URL = "https://github.com/Cray-HPE/docs-csm/blob/main/troubleshooting/cms_barebones_image_boot.md"
+
 # Set up the logger.  This is set up to log minimal information to the 
 # console, but a full description to the file.
 DEFAULT_LOG_LEVEL = os.environ.get("LOG_LEVEL", logging.INFO)
@@ -480,10 +483,12 @@ if __name__ == "__main__":
         run(k8sClientApi)
     except BBException:
         logger.error("Failure of barebones image boot test.")
+        logger.info(f"For troubleshooting information and manual steps, see {HELP_URL}")
         sys.exit(1)
     except Exception as err:
         logger.exception("An unanticipated exception occurred during during barebones image "
                          "boot test : %s; ", err)
+        logger.info(f"For troubleshooting information and manual steps, see {HELP_URL}")
         sys.exit(1)
 
     # exit indicating success
