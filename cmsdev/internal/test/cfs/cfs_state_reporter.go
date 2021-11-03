@@ -209,8 +209,14 @@ func checkCfsStateReporterOnRemoteHost(remoteHost string, config *ssh.ClientConf
 
 // Extract from /etc/hosts the list of all NCNs, except for the current host
 func getNcns() (ncns []string, err error) {
+	// Explanation of the piped commands being run:
+	// 1. The first grep commands extracts all strings from /etc/hosts of the form ncn-X### where X is m, s, or w
+	// 2. But because the grep makes sure it is followed by whitespace or an end-of-line, we add the sed command,
+	//   to strip off any trailing whitespace
+	// 3. We use the sort command to remove duplicates
+	// 4. Finally, we use another grep command to exclude the local hostname from the results
 	result, err := common.RunPath("/bin/bash", "-c",
-		"grep -o -E \"ncn-[msw][0-9][0-9][0-9]([[:space:]]|$)\" /etc/hosts | grep -Ev \"^$HOSTNAME$\"")
+		"grep -Eo 'ncn-[msw][0-9][0-9][0-9]([[:space:]]|$)' /etc/hosts | sed 's/[[:space:]]*$//g' | sort -u | grep -Ev \"^$(hostname)$\"")
 	if err != nil {
 		err = fmt.Errorf("Error getting NCN hostnames from /etc/hosts: %v", err)
 		return
