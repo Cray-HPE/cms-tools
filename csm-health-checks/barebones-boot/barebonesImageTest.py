@@ -342,6 +342,11 @@ def find_compute_node():
     compute node, look for that first.  If the user has not specified a node or the one
     the user specified is not available just use the first one returned by hsm.
     """
+
+    # log if the user has specified a compute node
+    if not INPUT_COMPUTE_NODE == None:
+        logger.debug(f"User specified compute node: {INPUT_COMPUTE_NODE}")
+
     # query for compute nodes that are enabled
     # cray hsm state components list --role Compute --enabled true
     url = API_GW_SECURE + "smd/hsm/v1/State/Components"
@@ -434,6 +439,13 @@ def parse_command_line():
     parser = argparse.ArgumentParser()
     parser.add_argument('-x', "--xname", nargs='?', help='Compute node to use for boot test')
     args = parser.parse_args()
+
+    # get specified compute node if present
+    if not args.xname == None:
+        INPUT_COMPUTE_NODE = args.xname
+        logger.debug(f"Input args.xname={args.xname}")
+    else:
+        logger.debug("Input arg xname not specified.")
 
 def get_access_token(k8sClientApi):
     """
