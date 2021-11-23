@@ -103,8 +103,7 @@ func getSigningkeys(imagename string) (keys []string, err error) {
 	var cmd *exec.Cmd
 	var cmdOut []byte
 	// Run the command podman run --entrypoint "" registry.local/imagename ls /signing-keys
-	cmd = exec.Command("podman", "run", "--entrypoint", "\"\"", "registry.local/"+imagename, "ls", "/signing-keys")
-	//cmd = exec.Command("docker", "run", "--entrypoint=", "--rm", "artifactory.algol60.net/"+imagename, "ls", "/signing-keys")
+	cmd = exec.Command("podman", "run", "--entrypoint", "", "registry.local/"+imagename, "ls", "/signing-keys")
 	common.Infof("Running command: %s", cmd)
 	cmdOut, err = cmd.CombinedOutput()
 	common.Debugf("OUT: %s", cmdOut)
@@ -131,8 +130,7 @@ func verifySigningkeys(imagename string, keys []string) (err error) {
 	var cmd *exec.Cmd
 	var cmdOut []byte
 	// Run the command podman run --entrypoint "" registry.local/imagename cat /scripts/entrypoint.sh
-	cmd = exec.Command("podman", "run", "--entrypoint", "\"\"", "registry.local/"+imagename, "cat", "/scripts/entrypoint.sh")
-	//cmd = exec.Command("docker", "run", "--entrypoint=", "--rm", "artifactory.algol60.net/"+imagename, "cat", "/scripts/entrypoint.sh")
+	cmd = exec.Command("podman", "run", "--entrypoint", "", "registry.local/"+imagename, "cat", "/scripts/entrypoint.sh")
 	common.Infof("Running command: %s", cmd)
 	cmdOut, err = cmd.CombinedOutput()
 	common.Debugf("OUT: %s", cmdOut)
