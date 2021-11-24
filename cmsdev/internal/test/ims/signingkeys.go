@@ -39,31 +39,33 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
 )
 
-// Run the command kubectl -n services get cm cray-configmap-ims-v2-image-create-kiwi-ng -o go-template='{{index .data "image_job_create.yaml.template"}}'
-// Get the image with kiwi-ng in the image name and return
+const configMapName = "cray-configmap-ims-v2-image-create-kiwi-ng"
+const imageFieldName = "image_job_create.yaml.template"
+
+// Retrieve the cray-configmap-ims-v2-image-create-kiwi-ng configmap in kubernetes
+// Look at the data field for "image_job_create.yaml.template"
+// Parse that field to find the image which has kiwi-ng in its name, and return that name
 func getOpensuseImage() (imagename string, err error) {
 	imagename = ""
-	var cmd *exec.Cmd
-	var cmdOut []byte
-	var kubectlPath string
 
-	kubectlPath, err = k8s.GetKubectlPath()
+	// Get configmap
+	cm, err := k8s.GetConfigMap(common.NAMESPACE, configMapName)
 	if err != nil {
-		common.Errorf("Error getting kubectl path")
 		return
 	}
-	// kubectl -n services get cm cray-configmap-ims-v2-image-create-kiwi-ng -o go-template='{{index .data "image_job_create.yaml.template"}}'
-	cmd = exec.Command(kubectlPath, "-n", common.NAMESPACE, "get", "cm", "cray-configmap-ims-v2-image-create-kiwi-ng", "-o", "go-template='{{index .data \"image_job_create.yaml.template\"}}'")
-	common.Infof("Running command: %s", cmd)
-	cmdOut, err = cmd.CombinedOutput()
-	common.Debugf("OUT: %s", cmdOut)
-	if err == nil && len(cmdOut) == 0 {
-		err = fmt.Errorf("Command succeeded but gave no output")
-		return
-	} else if err != nil {
-		common.Errorf("Error getting Open SuSE Image from cray-configmap-ims-v2-image-create-kiwi-ng")
+
+	// Retrieve image_job_create.yaml.template data field
+	common.Debugf("Retrieve Data field '%s' from ConfigMap", imageFieldName)
+	imageDataField, keyFound := cm.Data[imageFieldName]
+	if !keyFound {
+		err = fmt.Errorf("No field named '%s' found in Kubernetes ConfigMap %s in namespace %s", imageFieldName, configMapName, common.NAMESPACE)
 		return
 	}
+
+	// Make sure we can convert the field to a byte slice
+	common.Debugf("Convert %s field to byte slice", imageFieldName)
+	imageFieldBytes := []byte(imageDataField)
+
 	// Structure to parse yaml from kubectl and find images
 	type ImageName struct {
 		Spec struct {
@@ -77,7 +79,7 @@ func getOpensuseImage() (imagename string, err error) {
 		} `yaml:"spec"`
 	}
 	var in ImageName
-	err = yaml.Unmarshal(cmdOut, &in)
+	err = yaml.Unmarshal(imageFieldBytes, &in)
 	if err != nil {
 		common.Errorf("Error parsing command output as YAML")
 		return
@@ -101,8 +103,7 @@ func getSigningkeys(imagename string) (keys []string, err error) {
 	var cmd *exec.Cmd
 	var cmdOut []byte
 	// Run the command podman run --entrypoint "" registry.local/imagename ls /signing-keys
-	cmd = exec.Command("podman", "run", "--entrypoint", "\"\"", "registry.local/"+imagename, "ls", "/signing-keys")
-	//cmd = exec.Command("docker", "run", "--entrypoint=", "--rm", "artifactory.algol60.net/"+imagename, "ls", "/signing-keys")
+	cmd = exec.Command("podman", "run", "--entrypoint", "", "registry.local/"+imagename, "ls", "/signing-keys")
 	common.Infof("Running command: %s", cmd)
 	cmdOut, err = cmd.CombinedOutput()
 	common.Debugf("OUT: %s", cmdOut)
@@ -129,8 +130,7 @@ func verifySigningkeys(imagename string, keys []string) (err error) {
 	var cmd *exec.Cmd
 	var cmdOut []byte
 	// Run the command podman run --entrypoint "" registry.local/imagename cat /scripts/entrypoint.sh
-	cmd = exec.Command("podman", "run", "--entrypoint", "\"\"", "registry.local/"+imagename, "cat", "/scripts/entrypoint.sh")
-	//cmd = exec.Command("docker", "run", "--entrypoint=", "--rm", "artifactory.algol60.net/"+imagename, "cat", "/scripts/entrypoint.sh")
+	cmd = exec.Command("podman", "run", "--entrypoint", "", "registry.local/"+imagename, "cat", "/scripts/entrypoint.sh")
 	common.Infof("Running command: %s", cmd)
 	cmdOut, err = cmd.CombinedOutput()
 	common.Debugf("OUT: %s", cmdOut)

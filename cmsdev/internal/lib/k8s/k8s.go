@@ -354,6 +354,30 @@ func GetNodeNames(params ...string) ([]string, error) {
 	return names, err
 }
 
+// Given a namespace and name, returns the matching configmap
+func GetConfigMap(namespace, name string) (cm coreV1.ConfigMap, err error) {
+	common.Debugf("Retrieving Kubernetes ConfigMap in namespace %s with name %s", namespace, name)
+
+	clientset, err := GetClientset()
+	if err != nil {
+		return
+	}
+
+	cmlist, err := clientset.CoreV1().ConfigMaps(namespace).List(v1.ListOptions{})
+	if err != nil {
+		return
+	}
+
+	for _, cm = range cmlist.Items {
+		if cm.ObjectMeta.Name == name {
+			common.Debugf("Found Kubernetes ConfigMap in namespace %s with name %s", namespace, name)
+			return
+		}
+	}
+	err = fmt.Errorf("No Kubernetes ConfigMap found in namespace %s with name %s", namespace, name)
+	return
+}
+
 // Given a namespace and name, returns the matching service
 func GetService(namespace, name string) (service coreV1.Service, err error) {
 	clientset, err := GetClientset()
