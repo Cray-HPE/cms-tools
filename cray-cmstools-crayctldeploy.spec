@@ -40,6 +40,8 @@ Cray CMS tests and tools
 
 %build
 pushd cmsdev
+# Record the go version in the build output, just in case
+go version
 make build
 popd
 
