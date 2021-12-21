@@ -182,7 +182,7 @@ def watch_console(k8sClientApi, computeNode):
     Stream the console log file for the compute node being rebooted for this test
     and parse the output to determine success or failure.  This is meant to be run
     in a separate thread so something else can determine if nothing is going on
-    in a resonable amount of time.
+    in a reasonable amount of time.
     """
     global CONSOLE_ERROR_MSG
     logger.debug(f"Watching console for node: {computeNode}")
@@ -233,7 +233,7 @@ def process_console_output(buff):
     # PXE-E99 - signifies network error
     # PXE-E18: Server response timeout
     # PXE-E16: No offer received
-    # "Warning: dracut: FATAL: Don't know how to handle" - sucessful test
+    # "Warning: dracut: FATAL: Don't know how to handle" - successful test
 
     # all our global vars
     global CONSOLE_HAS_INPUT
@@ -449,7 +449,7 @@ def parse_command_line():
 
 def get_access_token(k8sClientApi):
     """
-    Get the admin secret from k8s for the api gateway - command line equivelent is:
+    Get the admin secret from k8s for the api gateway - command line equivalent is:
     #`kubectl get secrets admin-client-auth -o jsonpath='{.data.client-secret}' | base64 -d`
     """
     try:
@@ -504,5 +504,5 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # exit indicating success
-    logger.info("Sucessfully completed barebones image boot test.")
+    logger.info("Successfully completed barebones image boot test.")
     sys.exit(0)
