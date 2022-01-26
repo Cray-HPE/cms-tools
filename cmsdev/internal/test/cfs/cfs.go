@@ -5,7 +5,7 @@ package cfs
  *
  * cfs commons file
  *
- * Copyright 2019-2021 Hewlett Packard Enterprise Development LP
+ * Copyright 2019-2022 Hewlett Packard Enterprise Development LP
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -111,10 +111,6 @@ func IsCFSRunning() (passed bool) {
 		passed = false
 	}
 	if !checkCfsComponentsStatus() {
-		passed = false
-	}
-	// This function is defined in cfs_state_reporter.go
-	if !verifyCfsStateReporterOnNcns() {
 		passed = false
 	}
 	if !passed {
