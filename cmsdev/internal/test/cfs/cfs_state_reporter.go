@@ -5,7 +5,7 @@ package cfs
  *
  * Verify status of cfs-state-reporter on other NCNs
  *
- * Copyright 2021 Hewlett Packard Enterprise Development LP
+ * Copyright 2021-2022 Hewlett Packard Enterprise Development LP
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,182 +29,70 @@ package cfs
  */
 
 import (
-	"bytes"
 	"fmt"
-	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/knownhosts"
-	"io/ioutil"
+	resty "gopkg.in/resty.v1"
+	coreV1 "k8s.io/api/core/v1"
+	"regexp"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
 	"strings"
 )
 
-const systemctlCommandPath = "/usr/bin/systemctl"
-const systemctlCommandArgs = "--no-pager status cfs-state-reporter"
+const cfsStateReporterCheckPath = "/opt/cray/tests/install/ncn/scripts/python/cfs_state_reporter_check.py"
+const gossTestPort = 9009
+const gossTestEndpoint = "goss-cfs-state-reporter"
+const gossUrlFormat = "http://%s.hmn:%d/%s"
 
-var systemctlCommandString = systemctlCommandPath + " " + systemctlCommandArgs
+// Makes curl call to cfs_state_reporter_check goss endpoint on remote host and
+// examines the status code
+func checkCfsStateReporterOnRemoteHost(remoteHost string) (ok bool) {
+	var err error
+	var gossUrl string
+	var resp *resty.Response
 
-const systemctlSuccessString = "(code=exited, status=0/SUCCESS)"
-
-// We assume the local and remote user are root, and that the local user's
-// ssh keys and known_hosts files are in the default locations.
-const remoteUser = "root"
-const localSshDir = "/root/.ssh"
-
-var localKeyFile = localSshDir + "/" + "id_rsa"
-var localKnownHostsFile = localSshDir + "/" + "known_hosts"
-
-// We assume the default ssh port on the remote host
-const remoteSshPort = 22
-
-// Generate the ssh.ClientConfig object to use with our subsequent ssh sessions.
-// It will use public key authentication.
-func getSSHConfig() (config *ssh.ClientConfig, err error) {
-	common.Infof("Generating ssh client configuration")
-	key, err := ioutil.ReadFile(localKeyFile)
-	if err != nil {
-		common.Debugf("ioutil.ReadFile(\"%s\") returned error: %v", localKeyFile, err)
-		err = fmt.Errorf("unable to read private key: %v", err)
-		return
-	}
-
-	// Create the Signer for this private key.
-	signer, err := ssh.ParsePrivateKey(key)
-	if err != nil {
-		common.Debugf("ssh.ParsePrivateKey returned error: %v", err)
-		err = fmt.Errorf("unable to parse private key: %v", err)
-		return
-	}
-
-	hostKeyCallback, err := knownhosts.New(localKnownHostsFile)
-	if err != nil {
-		common.Debugf("knownhosts.New(\"%s\") returned error: %v", localKnownHostsFile, err)
-		return
-	}
-
-	config = &ssh.ClientConfig{
-		User: remoteUser,
-		Auth: []ssh.AuthMethod{
-			// Use the PublicKeys method for remote authentication.
-			ssh.PublicKeys(signer),
-		},
-		HostKeyCallback: hostKeyCallback,
-	}
-	common.Infof("Successfully Generated ssh client configuration")
-	return
-}
-
-// Return the ssh.Client object needed to create ssh Sessions to the specified remoteHost.
-func getSSHClient(remoteHost string, config *ssh.ClientConfig) (client *ssh.Client, err error) {
-	remoteHostPort := fmt.Sprintf("%s:%d", remoteHost, remoteSshPort)
-	common.Debugf("Creating ssh client for %s", remoteHostPort)
-	client, err = ssh.Dial("tcp", remoteHostPort, config)
-	if err != nil {
-		common.Debugf("ssh.Dial returned error: %v", err)
-		err = fmt.Errorf("Failed to dial: ", err)
-	}
-	common.Debugf("Successfully created ssh client for %s", remoteHostPort)
-	return
-}
-
-// Return the ssh.Session object needed to run commands on the specified client
-func getSSHSession(client *ssh.Client) (session *ssh.Session, err error) {
-	common.Debugf("Creating ssh session for client %v", client)
-	session, err = client.NewSession()
-	if err != nil {
-		common.Debugf("client.NewSession returned error: %v", err)
-		err = fmt.Errorf("Failed to create session: ", err)
-	}
-	common.Debugf("Successfully created ssh session for client %v", client)
-	return
-}
-
-// Run the specified remote command via ssh on the specified remote host.
-// If the remote command runs but returns a non-0 return code, this does not
-// generate an error. It is left to the caller to decide how to deal with that.
-// Errors are only returned in the case that there were problems with ssh itself.
-func runRemoteCommand(remoteHost, commandString string, config *ssh.ClientConfig) (outString, errString string, rc int, err error) {
-	client, err := getSSHClient(remoteHost, config)
-	if err != nil {
-		return
-	}
-	defer client.Close()
-	session, err := getSSHSession(client)
-	if err != nil {
-		return
-	}
-	defer session.Close()
-
-	var outBuffer, errBuffer bytes.Buffer
-	session.Stdout = &outBuffer
-	session.Stderr = &errBuffer
-	common.Debugf("Starting command \"%s\" via ssh on remote host %s", commandString, remoteHost)
-	err = session.Start(commandString)
-	if err != nil {
-		return
-	}
-
-	common.Debugf("Waiting for command to complete")
-	err = session.Wait()
-	outString = outBuffer.String()
-	if len(outString) > 0 {
-		common.Debugf("Command stdout: %s", outString)
-	} else {
-		common.Debugf("No stdout from command")
-	}
-	errString = errBuffer.String()
-	if len(errString) > 0 {
-		common.Warnf("Command stderr: %s", errString)
-	} else {
-		common.Debugf("No stderr from command")
-	}
-	if err != nil {
-		if exiterr, ok := err.(*ssh.ExitError); ok {
-			// This means the remote command failed
-			rc = exiterr.ExitStatus()
-			common.Debugf("Command return code: %d", rc)
-			// We do not have this function return an error in this case -- we will let the caller
-			// decide how to handle the fact that the remote command failed
-			err = nil
-		} else {
-			// Some other error happened running the remote command
-			err = fmt.Errorf("Error trying to execute command via ssh: %v", err)
-			return
-		}
-	} else {
-		// This means the remote command passed
-		common.Debugf("Command return code: 0")
-		rc = 0
-	}
-	return
-}
-
-// Checks the systemctl command output to see if our expected success string is in there.
-func validateSystemctlOutput(outString string) error {
-	if len(outString) == 0 {
-		return fmt.Errorf("Command gave no output: %s", systemctlCommandString)
-	} else if !strings.Contains(outString, systemctlSuccessString) {
-		return fmt.Errorf("Output of \"%s\" does not contain expected string: %s", systemctlCommandString, systemctlSuccessString)
-	}
-	return nil
-}
-
-// Runs our systemctl command via ssh on the remote host, and validates the output.
-// If ssh errors are encountered, a warning is logged, but the function returns success.
-func checkCfsStateReporterOnRemoteHost(remoteHost string, config *ssh.ClientConfig) bool {
+	ok = false
 	common.Infof("Checking cfs-state-reporter status on %s", remoteHost)
-	outString, _, _, err := runRemoteCommand(remoteHost, systemctlCommandString, config)
+	gossUrl = fmt.Sprintf(gossUrlFormat, remoteHost, gossTestPort, gossTestEndpoint)
+	common.Debugf("goss URL = %s", gossUrl)
+
+	// Create client to use for goss API call
+	// If performance was a concern this could be moved outside this function so we do not
+	// create a new client for every request, but the gains in this case would be negligible.
+	client := resty.New()
+	client.SetHeaders(map[string]string{
+		"Accept":     "application/json",
+		"User-Agent": "cmsdev",
+	})
+
+	common.Debugf("GET %s", gossUrl)
+	resp, err = client.R().Get(gossUrl)
 	if err != nil {
-		common.Warnf("Unable to check cfs-state-reporter status on %s: %v", remoteHost, err)
-		// We do not consider this to be a failure
-		return true
+		common.Error(err)
+		common.Errorf("Unable to run cfs-state-reporter check on %s. To do the check manually, run %s on %s",
+			remoteHost, cfsStateReporterCheckPath, remoteHost)
+		return
 	}
-	err = validateSystemctlOutput(outString)
-	if err != nil {
-		common.Errorf("cfs-state-reporter check failed on %s: %v", remoteHost, err)
-		return false
+	common.Debugf("resp=%v", resp)
+	common.PrettyPrintJSON(resp)
+
+	// 200 is the expected status code for test success
+	// 503 is the expected status code for test failure
+	if resp.StatusCode() == 200 {
+		ok = true
+		common.Debugf("200 status code from goss API endpoint indicates the cfs-state-reporter test passed on %s",
+			remoteHost)
+		common.Infof("cfs-state-reporter check PASSED on %s", remoteHost)
+	} else if resp.StatusCode() == 503 {
+		common.Debugf("503 status code from goss API endpoint indicates the cfs-state-reporter test failed on %s",
+			remoteHost)
+		common.Errorf("cfs-state-reporter check on %s failed. For details, run %s on %s",
+			remoteHost, cfsStateReporterCheckPath, remoteHost)
+	} else {
+		common.Errorf("Expected status code of 200 or 503 from goss API call, but received %d", resp.StatusCode())
+		common.Errorf("Unable to run cfs-state-reporter check on %s. To do the check manually, run %s on %s",
+			remoteHost, cfsStateReporterCheckPath, remoteHost)
 	}
-	common.Infof("cfs-state-reporter status looks good on %s", remoteHost)
-	return true
+	return
 }
 
 // Extract from /etc/hosts the list of all NCNs, except for the current host
@@ -214,17 +102,89 @@ func getNcns() (ncns []string, err error) {
 	// 2. But because the grep makes sure it is followed by whitespace or an end-of-line, we add the sed command,
 	//   to strip off any trailing whitespace
 	// 3. We use the sort command to remove duplicates
-	// 4. Finally, we use another grep command to exclude the local hostname from the results
-	result, err := common.RunPath("/bin/bash", "-c",
-		"grep -Eo 'ncn-[msw][0-9][0-9][0-9]([[:space:]]|$)' /etc/hosts | sed 's/[[:space:]]*$//g' | sort -u | grep -Ev \"^$(hostname)$\"")
+	var etcHostsNcns []string
+	var k8sNodes []coreV1.Node
+	var myHostname string
+	var removeNcnM001 bool
+
+	// First determine our hostname, so we can filter it from the list later
+	common.Debugf("Finding hostname of local host")
+	result, err := common.RunPath("/usr/bin/hostname", "-s")
+	if err != nil {
+		err = fmt.Errorf("Error determining hostname of local host: %v", err)
+		return
+	} else if result.Rc != 0 {
+		err = fmt.Errorf("Error determining hostname of local host: hostname command exit code=%d", result.Rc)
+		return
+	}
+	// Trim whitespace from the output
+	myHostname = strings.TrimSpace(result.OutString())
+	common.Debugf("According to hostname command, local hostname is '%s'", myHostname)
+	if len(myHostname) == 0 {
+		err = fmt.Errorf("Error determining hostname of local host: hostname command gave no output")
+		return
+	} else if len(myHostname) != 8 {
+		common.Debugf("Hostnames of the expected form will be exactly 8 characters long, but this one is %d", len(myHostname))
+		err = fmt.Errorf("Local hostname should be of form ncn-[msw]### but it is '%s'", myHostname)
+		return
+	} else if match, _ := regexp.MatchString("ncn-[msw][0-9][0-9][0-9]", myHostname); !match {
+		err = fmt.Errorf("Local hostname should be of form ncn-[msw]### but it is '%s'", myHostname)
+		return
+	}
+
+	// Now extract list of NCNs from /etc/hosts
+	common.Debugf("Getting list of NCNs from /etc/hosts")
+	result, err = common.RunPath("/bin/bash", "-c",
+		"grep -Eo 'ncn-[msw][0-9][0-9][0-9]([[:space:]]|$)' /etc/hosts | sed 's/[[:space:]]*$//g' | sort -u")
 	if err != nil {
 		err = fmt.Errorf("Error getting NCN hostnames from /etc/hosts: %v", err)
 		return
 	} else if result.Rc != 0 {
-		err = fmt.Errorf("Error getting NCN hostnames from /etc/hosts: bash command returned return code %d", result.Rc)
+		err = fmt.Errorf("Error getting NCN hostnames from /etc/hosts: bash command exit code=%d", result.Rc)
 		return
 	}
-	ncns = strings.Fields(result.OutString())
+	etcHostsNcns = strings.Fields(result.OutString())
+	common.Debugf("Found the following NCN hostnames in /etc/hosts: %s", strings.Join(etcHostsNcns, " "))
+
+	// We do not want to include ncn-m001 if it is still the PIT node, or if it is our local host
+	if myHostname == "ncn-m001" {
+		removeNcnM001 = true
+	} else {
+		// We want to see if ncn-m001 is still the PIT node.
+		// To check for this, we list the nodes in Kubernetes and see if ncn-m001 is included.
+		// Being the PIT node is not the only reason ncn-m001 may be excluded from this list,
+		// but it is by far the most likely.
+		common.Debugf("Getting list of Kubernetes nodes")
+		k8sNodes, err = k8s.GetNodes("ncn-m001")
+		if err != nil {
+			err = fmt.Errorf("Error getting list of nodes from Kubernetes: %v", err)
+			return
+		}
+		ncnM001Found := false
+		for _, node := range k8sNodes {
+			if node.ObjectMeta.Name == "ncn-m001" {
+				ncnM001Found = true
+				break
+			}
+		}
+		// If we did not find ncn-m001 in the list of k8s nodes, then we want to remove it from
+		// our lists of remote NCNs to test
+		removeNcnM001 = !ncnM001Found
+	}
+
+	// Now create our list of remote NCNs to test by going through the list from /etc/hosts and removing:
+	// 1. Our local hostnaame
+	// 2. ncn-m001, if removeNcnM001 is true
+	for _, ncn := range etcHostsNcns {
+		if ncn == myHostname {
+			continue
+		} else if removeNcnM001 && ncn == "ncn-m001" {
+			continue
+		}
+		ncns = append(ncns, ncn)
+	}
+	common.Debugf("List of remote NCNs to test: %s", strings.Join(ncns, " "))
+
 	return
 }
 
@@ -236,23 +196,17 @@ func verifyCfsStateReporterOnNcns() (ok bool) {
 
 	// First, let's check the cfs-state-reporter status on this host
 	common.Infof("Checking status of cfs-state-reporter on this host")
-	cmdResult, err := common.RunPath(systemctlCommandPath, strings.Fields(systemctlCommandArgs)...)
+	_, err := common.RunPath(cfsStateReporterCheckPath)
 	if err != nil {
-		common.Errorf("Error running \"%s\": %v", systemctlCommandString, err)
+		common.Errorf("Command failed or failed to run: \"%s\": %v", cfsStateReporterCheckPath, err)
 		ok = false
 	} else {
-		err = validateSystemctlOutput(cmdResult.OutString())
-		if err != nil {
-			common.Errorf("cfs-state-reporter check failed on this host: %v", err)
-			ok = false
-		} else {
-			common.Infof("cfs-state-reporter status looks good on this host")
-		}
+		common.Infof("cfs-state-reporter status looks good on this host")
 	}
 
 	common.Infof("Checking status of cfs-state-reporter on other NCNs")
 
-	common.Debugf("Getting list of other NCNs from /etc/hosts")
+	common.Debugf("Getting list of other NCNs")
 	ncnList, err := getNcns()
 	if err != nil {
 		common.Error(err)
@@ -265,17 +219,8 @@ func verifyCfsStateReporterOnNcns() (ok bool) {
 		return
 	}
 
-	// Get ssh configuration
-	config, err := getSSHConfig()
-	if err != nil {
-		common.Warnf("Unable to generate ssh configuration: %v", err)
-		common.Warnf("Unable to verify cfs-state-reporter status on other NCNs")
-		// Nothing more we can do without the ssh configuration
-		return
-	}
-
 	for _, ncnName := range ncnList {
-		if !checkCfsStateReporterOnRemoteHost(ncnName, config) {
+		if !checkCfsStateReporterOnRemoteHost(ncnName) {
 			ok = false
 		}
 	}
