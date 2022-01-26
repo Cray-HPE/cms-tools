@@ -1,4 +1,4 @@
-# Copyright 2019-2021 Hewlett Packard Enterprise Development LP
+# Copyright 2019-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -30,6 +30,10 @@ Source: %{name}-%{version}.tar.bz2
 Vendor: Cray Inc.
 BuildRequires: make
 BuildRequires: go >= 1.13
+# The following two requirements are for the cfs-state-reporter check, which
+# is done using a goss test
+Requires: csm-testing >= 1.9.1
+Requires: goss-servers >= 1.9.1
 Requires: python3 >= 3.6
 
 %description
