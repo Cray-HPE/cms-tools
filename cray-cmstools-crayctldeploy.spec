@@ -30,10 +30,6 @@ Source: %{name}-%{version}.tar.bz2
 Vendor: Cray Inc.
 BuildRequires: make
 BuildRequires: go >= 1.13
-# The following two requirements are for the cfs-state-reporter check, which
-# is done using a goss test
-Requires: csm-testing >= 1.9.1
-Requires: goss-servers >= 1.9.1
 Requires: python3 >= 3.6
 
 %description
