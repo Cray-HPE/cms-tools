@@ -349,7 +349,7 @@ def find_compute_node():
 
     # query for compute nodes that are enabled
     # cray hsm state components list --role Compute --enabled true
-    url = API_GW_SECURE + "smd/hsm/v1/State/Components"
+    url = API_GW_SECURE + "smd/hsm/v2/State/Components"
     headers = {"Authorization": f"Bearer {API_GW_TOKEN}"}
     params = {"Role":"Compute", "Enabled":"True"}
     r = requests.get(url, headers = headers, params = params)
