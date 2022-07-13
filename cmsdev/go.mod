@@ -42,6 +42,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/resty.v1 v1.12.0
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
 	k8s.io/client-go v12.0.0+incompatible
