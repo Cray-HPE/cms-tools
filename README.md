@@ -2,11 +2,24 @@
 
 CMS team tools repository
 
+## Contributing
+
+[Code owners](.github/CODEOWNERS): make a branch. Others, make a fork.
+
+This repository follows the [CSM Gitflow Development Process](https://github.com/Cray-HPE/community/wiki/Gitflow-Development-Process).
+
+## Changelog
+
+See the [CHANGELOG](CHANGELOG.md) for changes. This file uses the [Keep A Changelog](https://keepachangelog.com)
+format.
+
 ## Build Helpers
+
 This repo uses some build helpers from the 
 [cms-meta-tools](https://github.com/Cray-HPE/cms-meta-tools) repo. See that repo for more details.
 
 ## Local Builds
+
 If you wish to perform a local build, you will first need to clone or copy the contents of the
 cms-meta-tools repo to `./cms_meta_tools` in the same directory as the `Makefile`. When building
 on github, the cloneCMSMetaTools() function clones the cms-meta-tools repo into that directory.
@@ -16,8 +29,6 @@ builds a docker image), and .chart_version (if this repo builds a helm chart) fi
 on github, this is done by the setVersionFiles() function.
 
 ## Versioning
-The version of this repo is generated dynamically at build time by running the version.py script in 
-cms-meta-tools. The version is included near the very beginning of the github build output. 
 
 In order to make it easier to go from an artifact back to the source code that produced that artifact,
 a text file named gitInfo.txt is added to Docker images built from this repo. For Docker images,
@@ -28,12 +39,8 @@ For helm charts, a few annotation metadata fields are appended which contain sim
 
 For RPMs, a changelog entry is added with similar information.
 
-## New Release Branches
-When making a new release branch:
-    * Be sure to set the `.x` and `.y` files to the desired major and minor version number for this repo for this release. 
-    * If an `update_external_versions.conf` file exists in this repo, be sure to update that as well, if needed.
-
 ## Copyright and License
+
 This project is copyrighted by Hewlett Packard Enterprise Development LP and is under the MIT
 license. See the [LICENSE](LICENSE) file for details.
 
