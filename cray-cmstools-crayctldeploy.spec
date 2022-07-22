@@ -24,10 +24,11 @@ Name: cray-cmstools-crayctldeploy
 License: MIT
 Summary: Cray CMS tests and tools
 Group: System/Management
-Version: %(cat .version)
-Release: %(echo ${BUILD_METADATA})
-Source: %{name}-%{version}.tar.bz2
-Vendor: Cray Inc.
+Version: @RPM_VERSION@
+Release: @RPM_RELEASE@
+Source: %{name}-%{version}-%{release}.tar.bz2
+Vendor: HPE
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
 BuildRequires: make
 BuildRequires: go >= 1.13
 Requires: python3 >= 3.6
@@ -36,7 +37,7 @@ Requires: python3 >= 3.6
 Cray CMS tests and tools
 
 %prep
-%setup -q
+%setup -qn %{name}-%{version}-%{release}
 
 %build
 pushd cmsdev
