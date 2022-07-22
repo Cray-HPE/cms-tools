@@ -339,8 +339,8 @@ def create_session_template(imsEtag, imsPath):
 def find_compute_node():
     """
     Find a compute node to use for the boot test.  If the user has specified a particular
-    compute node, look for that first.  If the user has not specified a node or the one
-    the user specified is not available just use the first one returned by hsm.
+    compute node, look for that one, and fail if it is not available.  If the user has not specified
+    a node, just use the first one returned by hsm.
     """
 
     # log if the user has specified a compute node
@@ -387,9 +387,10 @@ def find_compute_node():
     if matchNode != "":
         return matchNode
 
-    # report if user specified node was not found
+    # fail if user specified node was not found
     if not INPUT_COMPUTE_NODE is None:
-        logger.warning(f"User specified node {INPUT_COMPUTE_NODE} not found, defaulting to node {firstNode}")
+        logger.error(f"User specified node {INPUT_COMPUTE_NODE} not found in HSM list of enabled compute nodes")
+        raise BBException()
     return firstNode
 
 def start_bos_session(template_name, compute_node):
