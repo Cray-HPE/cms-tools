@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Barebones boot test now fails if user specifies a compute node that is not available.
+- Modified RPM build process to use RPM release and version fields
 
 ## [1.4.0] - 2022-07-13
 
