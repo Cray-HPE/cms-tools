@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2022-07-25
+
 ### Changed
 
 - Barebones boot test now fails if user specifies a compute node that is not available.
