@@ -37,7 +37,7 @@ pipeline {
     }
 
     environment {
-        NAME = "cray-cmstools"
+        NAME = "cray-cmstools-crayctldeploy"
         DESCRIPTION = "Cray Management System - Tests"
         IS_STABLE = getBuildIsStable()
         CMSDEV_SPEC_FILE = "cray-cmstools-crayctldeploy.spec"

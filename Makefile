@@ -24,15 +24,14 @@
 # If you wish to perform a local build, you will need to clone or copy the contents of the
 # cms-meta-tools repo to ./cms_meta_tools
 
-NAME ?= cray-cmstools
+NAME ?= cray-cmstools-crayctldeploy
 RPM_VERSION ?= $(shell head -1 .version)
-
+RPM_RELEASE ?= $(shell head -1 .rpm_release)
 BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
 BUILD_DIR ?= $(PWD)/dist/rpmbuild
 
-CMSDEV_SPEC_NAME ?= ${NAME}-crayctldeploy
-CMSDEV_SPEC_FILE ?= ${CMSDEV_SPEC_NAME}.spec
-CMSDEV_SOURCE_NAME ?= ${CMSDEV_SPEC_NAME}-${RPM_VERSION}
+CMSDEV_SPEC_FILE ?= ${NAME}.spec
+CMSDEV_SOURCE_NAME ?= ${NAME}-${RPM_VERSION}-${RPM_RELEASE}
 CMSDEV_SOURCE_PATH := ${BUILD_DIR}/SOURCES/${CMSDEV_SOURCE_NAME}.tar.bz2
 
 all : runbuildprep lint prepare rpm
