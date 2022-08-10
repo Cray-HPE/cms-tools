@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2022-07-27
+
+### Changed
+
+- Barebones boot test now allows user to specify ID of IMS image used for test
+
 ## [1.5.0] - 2022-07-25
 
 ### Changed

@@ -79,6 +79,7 @@ BOS_SESSION_TEMPLATE_NAME = "csm-barebones-image-test"
 
 # optional input arguments
 INPUT_COMPUTE_NODE = None
+INPUT_IMS_IMAGE_ID = None
 
 # global vars for console processing
 # NOTE: these are used by multiple threads
@@ -278,16 +279,32 @@ def process_console_output(buff):
 def get_boot_image_name():
     """
     Look through the currently defined boot images to find the one we will use
-    for the barebones image boot test.  This replicates the command:
+    for the barebones image boot test. 
+    
+    If INPUT_IMS_IMAGE_ID is not specified, then select the first in the list which has
+    barebones in its name. This replicates the command:
     # cray ims images list --format json | jq '.[] | select(.name | contains("barebones"))'
+
+    Otherwise, select the IMS image with the specified ID (or give an error if it is not found).
     """
     url = API_GW_SECURE + "ims/images"
     headers = {"Authorization": f"Bearer {API_GW_TOKEN}"}
-    params = {"Role":"Compute", "Enabled":"True"}
-    r = requests.get(url, headers = headers, params = params)
+    
+    if not INPUT_IMS_IMAGE_ID == None:
+        # log that the user has specified an IMS image
+        logger.debug(f"User specified IMS image ID: {INPUT_IMS_IMAGE_ID}")
+        url += "/" + INPUT_IMS_IMAGE_ID
+    
+    r = requests.get(url, headers = headers)
     if r.status_code != 200:
-        logger.error(f"IMS image query incorrect return code: {r.status_code}: {r.text}")
+        logger.error(f"IMS image query (URL: {url}) incorrect return code: {r.status_code}: {r.text}")
         raise BBException()
+
+    if not INPUT_IMS_IMAGE_ID == None:
+        # In this case, only the specified image should be returned
+        image = r.json()
+        logger.debug(f"Found image: {image}")
+        return image['name'], image['link']['etag'],image['link']['path']
 
     # Look through the result for an image with 'barebones' in the name
     for image in r.json():
@@ -435,9 +452,11 @@ def parse_command_line():
     Parse the command line arguments.
     """
     global INPUT_COMPUTE_NODE
+    global INPUT_IMS_IMAGE_ID
 
     # get the command line arguments
     parser = argparse.ArgumentParser()
+    parser.add_argument('-i', "--id",    nargs='?', help='ID of IMS image to use for boot test')
     parser.add_argument('-x', "--xname", nargs='?', help='Compute node to use for boot test')
     args = parser.parse_args()
 
@@ -447,6 +466,13 @@ def parse_command_line():
         logger.debug(f"Input args.xname={args.xname}")
     else:
         logger.debug("Input arg xname not specified.")
+
+    # get specified IMS image ID if present
+    if not args.id == None:
+        INPUT_IMS_IMAGE_ID = args.id
+        logger.debug(f"Input args.id={args.id}")
+    else:
+        logger.debug("Input arg id not specified.")
 
 def get_access_token(k8sClientApi):
     """
