@@ -106,23 +106,18 @@ func IsBOSRunning() (passed bool) {
 	}
 
 	// Run basic API and CLI tests
-	// For CLI test both with and without specifying the version
+	// For CLI, currently only test by explicitly specifying v1. When support is added to cmsdev for BOSv2, that can be tested both
+	// by specifying v2 explicitly and by not specifying the version to the CLI.
 	if !versionTests() {
 		passed = false
 	}
 	if !sessionTemplateTestsAPI() {
 		passed = false
 	}
-	if !sessionTemplateTestsCLI(0) {
-		passed = false
-	}
 	if !sessionTemplateTestsCLI(1) {
 		passed = false
 	}
 	if !sessionTestsAPI() {
-		passed = false
-	}
-	if !sessionTestsCLI(0) {
 		passed = false
 	}
 	if !sessionTestsCLI(1) {
