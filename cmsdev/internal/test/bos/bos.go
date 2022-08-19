@@ -38,9 +38,6 @@ import (
 	"strings"
 )
 
-// CMS service endpoints
-var endpoints map[string]map[string]*common.Endpoint = common.GetEndpoints()
-
 func IsBOSRunning() (passed bool) {
 	passed = true
 
@@ -105,22 +102,13 @@ func IsBOSRunning() (passed bool) {
 		common.ArtifactsPodsPvcs(podNames, pvcNames)
 	}
 
-	// Run basic API and CLI tests
-	// For CLI, currently only test by explicitly specifying v1. When support is added to cmsdev for BOSv2, that can be tested both
-	// by specifying v2 explicitly and by not specifying the version to the CLI.
-	if !versionTests() {
+	// Defined in bos_api.go
+	if !apiTests() {
 		passed = false
 	}
-	if !sessionTemplateTestsAPI() {
-		passed = false
-	}
-	if !sessionTemplateTestsCLI(1) {
-		passed = false
-	}
-	if !sessionTestsAPI() {
-		passed = false
-	}
-	if !sessionTestsCLI(1) {
+
+	// Defined in bos_cli.go
+	if !cliTests() {
 		passed = false
 	}
 

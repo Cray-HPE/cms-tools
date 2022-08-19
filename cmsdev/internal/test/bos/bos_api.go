@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+//  (C) Copyright 2022 Hewlett Packard Enterprise Development LP
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -24,41 +24,38 @@
 package bos
 
 /*
- * bos_cli.go
+ * bos_api.go
  *
- * bos CLI helpers
+ * bos API definitions file
  *
  */
 
 import (
+	resty "gopkg.in/resty.v1"
+	"net/http"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
-	"strings"
 )
 
-func runBosCLI(cmdArgs ...string) []byte {
-	common.Infof("Testing BOS CLI (%s)", strings.Join(cmdArgs, " "))
-	return test.RunCLICommandJSON("bos", cmdArgs...)
+// BOS base URLs and URIs
+const bosBaseUrl = common.BASEURL + "/apis/bos"
+const bosV1BaseUri = "/v1"
+const bosV2BaseUri = "/v2"
+
+func bosRestfulVerifyStatus(method, uri string, params *common.Params, ExpectedStatus int) (*resty.Response, error) {
+	return test.RestfulVerifyStatus(method, bosBaseUrl+uri, *params, ExpectedStatus)
 }
 
-func runBosCLIList(cmdArgs ...string) []byte {
-	newCmdArgs := append(cmdArgs, "list")
-	return runBosCLI(newCmdArgs...)
-}
-
-func runBosCLIDescribe(target string, cmdArgs ...string) []byte {
-	newCmdArgs := append(cmdArgs, "describe", target)
-	return runBosCLI(newCmdArgs...)
-}
-
-func basicCLIListVerifyStringMapTest(cmdArgs ...string) bool {
-	cmdOut := runBosCLIList(cmdArgs...)
-	if cmdOut == nil {
+func basicGetUriVerifyStringMapTest(uri string, params *common.Params) bool {
+	common.Infof("GET %s test scenario", uri)
+	resp, err := bosRestfulVerifyStatus("GET", uri, params, http.StatusOK)
+	if err != nil {
+		common.Error(err)
 		return false
 	}
 
 	// Validate that object can be decoded into a string map at least
-	_, err := common.DecodeJSONIntoStringMap(cmdOut)
+	_, err = common.DecodeJSONIntoStringMap(resp.Body())
 	if err != nil {
 		common.Error(err)
 		return false
@@ -66,51 +63,41 @@ func basicCLIListVerifyStringMapTest(cmdArgs ...string) bool {
 	return true
 }
 
-func basicCLIDescribeVerifyStringMapTest(target string, cmdArgs ...string) bool {
-	cmdOut := runBosCLIDescribe(target, cmdArgs...)
-	if cmdOut == nil {
-		return false
-	}
-
-	// Validate that object can be decoded into a string map at least
-	_, err := common.DecodeJSONIntoStringMap(cmdOut)
-	if err != nil {
-		common.Error(err)
-		return false
-	}
-	return true
-}
-
-func cliTests() (passed bool) {
+func apiTests() (passed bool) {
 	passed = true
 
+	params := test.GetAccessTokenParams()
+	if params == nil {
+		return false
+	}
+
 	// Defined in bos_version.go
-	if !versionTestsCLI() {
+	if !versionTestsAPI(params) {
 		passed = false
 	}
 
 	// Defined in bos_healthz.go
-	if !healthzTestsCLI() {
+	if !healthzTestsAPI(params) {
 		passed = false
 	}
 
 	// Defined in bos_components.go
-	if !componentsTestsCLI() {
+	if !componentsTestsAPI(params) {
 		passed = false
 	}
 
 	// Defined in bos_options.go
-	if !optionsTestsCLI() {
+	if !optionsTestsAPI(params) {
 		passed = false
 	}
 
 	// Defined in bos_sessiontemplate.go
-	if !sessionTemplatesTestsCLI() {
+	if !sessionTemplatesTestsAPI(params) {
 		passed = false
 	}
 
 	// Defined in bos_session.go
-	if !sessionsTestsCLI() {
+	if !sessionsTestsAPI(params) {
 		passed = false
 	}
 

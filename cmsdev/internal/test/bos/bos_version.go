@@ -33,37 +33,86 @@ package bos
 import (
 	"net/http"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
-	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
-// smoke tests
-func versionTests() bool {
-	var baseurl string = common.BASEURL
-	const totalNumTests int = 1
+// This endpoint returns a list of BOS versions
+const bosBaseUri = "/"
 
-	params := test.GetAccessTokenParams()
-	if params == nil {
-		return false
+const bosV1VersionUri = bosV1BaseUri + "/version"
+const bosV2VersionUri = bosV2BaseUri + "/version"
+
+const bosV1VersionCLI = "version"
+const bosV2VersionCLI = "version"
+const bosDefaultVersionCLI = bosV2VersionCLI
+
+func versionTestsAPI(params *common.Params) (passed bool) {
+	passed = true
+	if !versionListTestAPI(params) {
+		passed = false
 	}
 
-	numTests, numTestsFailed := 0, 0
+	if !versionTestURI(bosV1BaseUri, params) {
+		passed = false
+	}
 
-	// scenario # 1, GET /version endpoint
-	url := baseurl + endpoints["bos"]["version"].Url
-	numTests++
-	test.RestfulTestHeader("GET /version", numTests, totalNumTests)
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	if !versionTestURI(bosV1VersionUri, params) {
+		passed = false
+	}
+
+	if !versionTestURI(bosV2BaseUri, params) {
+		passed = false
+	}
+
+	if !versionTestURI(bosV2VersionUri, params) {
+		passed = false
+	}
+
+	return
+}
+
+func versionTestsCLI() (passed bool) {
+	passed = true
+
+	// v1
+	if !versionTestCLICommand("v1", bosV1VersionCLI) {
+		passed = false
+	}
+
+	// v2
+	if !versionTestCLICommand("v2", bosV2VersionCLI) {
+		passed = false
+	}
+
+	// default (v2)
+	if !versionTestCLICommand(bosDefaultVersionCLI) {
+		passed = false
+	}
+
+	return
+}
+
+// There is no corresponding CLI test for the / endpoint
+func versionListTestAPI(params *common.Params) bool {
+	common.VerbosePrintDivider()
+	common.Infof("GET %s test scenario", bosBaseUri)
+	resp, err := bosRestfulVerifyStatus("GET", bosBaseUri, params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
-		numTestsFailed++
-	} else {
-		// Validate that object can be decoded into a string map at least
-		_, err = common.DecodeJSONIntoStringMap(resp.Body())
-		if err != nil {
-			common.Error(err)
-			numTestsFailed++
-		}
+		return false
 	}
-	test.RestfulTestResultSummary(numTestsFailed, numTests)
-	return numTestsFailed == 0
+	// Validate that object can be decoded into a list of string maps at least
+	_, err = common.DecodeJSONIntoStringMapList(resp.Body())
+	if err != nil {
+		common.Error(err)
+		return false
+	}
+	return true
+}
+
+func versionTestURI(uri string, params *common.Params) bool {
+	return basicGetUriVerifyStringMapTest(uri, params)
+}
+
+func versionTestCLICommand(cmdArgs ...string) bool {
+	return basicCLIListVerifyStringMapTest(cmdArgs...)
 }
