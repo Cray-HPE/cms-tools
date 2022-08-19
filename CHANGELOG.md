@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - cmsdev: Add testing of BOSv2 (both API and CLI). Restored testing of CLI without explicitly specifying the BOS version.
+- cmsdev: Include CLI command that failed in corresponding error messages
 
 ## [1.6.1] - 2022-08-17
 
