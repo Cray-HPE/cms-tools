@@ -47,7 +47,7 @@ const bosDefaultVersionCLI = bosV2VersionCLI
 
 func versionTestsAPI(params *common.Params) (passed bool) {
 	passed = true
-	
+
 	// / endpoint
 	// Verify that a GET to this endpoint returns status 200 and a list of dictionary objects
 	if !versionListTestAPI(params) {

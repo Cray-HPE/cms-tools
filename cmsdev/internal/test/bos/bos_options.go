@@ -56,7 +56,7 @@ func optionsTestsCLI() (passed bool) {
 	passed = true
 
 	// Make sure that "options list" CLI commmand succeeds and returns a dictionary object.
-	
+
 	// "v2 options list"
 	if !basicCLIListVerifyStringMapTest("v2", bosV2OptionsCLI) {
 		passed = false
