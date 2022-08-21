@@ -43,7 +43,9 @@ const bosDefaultOptionsCLI = bosV2OptionsCLI
 func optionsTestsAPI(params *common.Params) (passed bool) {
 	passed = true
 
-	if !optionsTestURI(bosV2OptionsUri, params) {
+	// Just do a GET of the options endpoint and make sure that the response has
+	// 200 status and a dictionary object
+	if !basicGetUriVerifyStringMapTest(bosV2OptionsUri, params) {
 		passed = false
 	}
 
@@ -53,23 +55,17 @@ func optionsTestsAPI(params *common.Params) (passed bool) {
 func optionsTestsCLI() (passed bool) {
 	passed = true
 
-	// v2
-	if !optionsTestCLICommand("v2", bosV2OptionsCLI) {
+	// Make sure that "options list" CLI commmand succeeds and returns a dictionary object.
+	
+	// "v2 options list"
+	if !basicCLIListVerifyStringMapTest("v2", bosV2OptionsCLI) {
 		passed = false
 	}
 
-	// default (v2)
-	if !optionsTestCLICommand(bosDefaultOptionsCLI) {
+	// "options list"
+	if !basicCLIListVerifyStringMapTest(bosDefaultOptionsCLI) {
 		passed = false
 	}
 
 	return
-}
-
-func optionsTestURI(uri string, params *common.Params) bool {
-	return basicGetUriVerifyStringMapTest(uri, params)
-}
-
-func optionsTestCLICommand(cmdArgs ...string) bool {
-	return basicCLIListVerifyStringMapTest(cmdArgs...)
 }

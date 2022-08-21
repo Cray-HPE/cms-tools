@@ -47,23 +47,34 @@ const bosDefaultVersionCLI = bosV2VersionCLI
 
 func versionTestsAPI(params *common.Params) (passed bool) {
 	passed = true
+	
+	// / endpoint
+	// Verify that a GET to this endpoint returns status 200 and a list of dictionary objects
 	if !versionListTestAPI(params) {
 		passed = false
 	}
 
-	if !versionTestURI(bosV1BaseUri, params) {
+	// For the remaining endpoints:
+	// Do a GET of the version endpoint and make sure that the response has
+	// 200 status and a dictionary object
+
+	// /v1 endpoint
+	if !basicGetUriVerifyStringMapTest(bosV1BaseUri, params) {
 		passed = false
 	}
 
-	if !versionTestURI(bosV1VersionUri, params) {
+	// /v1/version endpoint
+	if !basicGetUriVerifyStringMapTest(bosV1VersionUri, params) {
 		passed = false
 	}
 
-	if !versionTestURI(bosV2BaseUri, params) {
+	// /v2 endpoint
+	if !basicGetUriVerifyStringMapTest(bosV2BaseUri, params) {
 		passed = false
 	}
 
-	if !versionTestURI(bosV2VersionUri, params) {
+	// /v2/version endpoint
+	if !basicGetUriVerifyStringMapTest(bosV2VersionUri, params) {
 		passed = false
 	}
 
@@ -73,18 +84,20 @@ func versionTestsAPI(params *common.Params) (passed bool) {
 func versionTestsCLI() (passed bool) {
 	passed = true
 
-	// v1
-	if !versionTestCLICommand("v1", bosV1VersionCLI) {
+	// Make sure that "version list" CLI commmand succeeds and returns a dictionary object.
+
+	// v1 version list
+	if !basicCLIListVerifyStringMapTest("v1", bosV1VersionCLI) {
 		passed = false
 	}
 
-	// v2
-	if !versionTestCLICommand("v2", bosV2VersionCLI) {
+	// v2 version list
+	if !basicCLIListVerifyStringMapTest("v2", bosV2VersionCLI) {
 		passed = false
 	}
 
-	// default (v2)
-	if !versionTestCLICommand(bosDefaultVersionCLI) {
+	// version list
+	if !basicCLIListVerifyStringMapTest(bosDefaultVersionCLI) {
 		passed = false
 	}
 
@@ -107,12 +120,4 @@ func versionListTestAPI(params *common.Params) bool {
 		return false
 	}
 	return true
-}
-
-func versionTestURI(uri string, params *common.Params) bool {
-	return basicGetUriVerifyStringMapTest(uri, params)
-}
-
-func versionTestCLICommand(cmdArgs ...string) bool {
-	return basicCLIListVerifyStringMapTest(cmdArgs...)
 }

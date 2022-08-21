@@ -44,11 +44,16 @@ const bosDefaultHealthzCLI = bosV2HealthzCLI
 func healthzTestsAPI(params *common.Params) (passed bool) {
 	passed = true
 
-	if !healthzTestURI(bosV1HealthzUri, params) {
+	// Just do a GET of the options endpoint and make sure that the response has
+	// 200 status and a dictionary object
+
+	// v1 endpoint
+	if !basicGetUriVerifyStringMapTest(bosV1HealthzUri, params) {
 		passed = false
 	}
 
-	if !healthzTestURI(bosV2HealthzUri, params) {
+	// v2 endpoint
+	if !basicGetUriVerifyStringMapTest(bosV2HealthzUri, params) {
 		passed = false
 	}
 
@@ -58,28 +63,22 @@ func healthzTestsAPI(params *common.Params) (passed bool) {
 func healthzTestsCLI() (passed bool) {
 	passed = true
 
-	// v1
-	if !healthzTestCLICommand("v1", bosV1HealthzCLI) {
+	// Make sure that "healthz list" CLI commmand succeeds and returns a dictionary object.
+
+	// "v1 healthz list"
+	if !basicCLIListVerifyStringMapTest("v1", bosV1HealthzCLI) {
 		passed = false
 	}
 
-	// v2
-	if !healthzTestCLICommand("v2", bosV2HealthzCLI) {
+	// "v2 healthz list"
+	if !basicCLIListVerifyStringMapTest("v2", bosV2HealthzCLI) {
 		passed = false
 	}
 
-	// default (v2)
-	if !healthzTestCLICommand(bosDefaultHealthzCLI) {
+	// "healthz list"
+	if !basicCLIListVerifyStringMapTest(bosDefaultHealthzCLI) {
 		passed = false
 	}
 
 	return
-}
-
-func healthzTestURI(uri string, params *common.Params) bool {
-	return basicGetUriVerifyStringMapTest(uri, params)
-}
-
-func healthzTestCLICommand(cmdArgs ...string) bool {
-	return basicCLIListVerifyStringMapTest(cmdArgs...)
 }
