@@ -42,6 +42,16 @@ const bosV1SessionsCLI = "session"
 const bosV2SessionsCLI = "sessions"
 const bosDefaultSessionsCLI = bosV2SessionsCLI
 
+// The sessionsV1TestsURI, sessionsV2TestsURI, sessionsV1TestsCLICommand, and sessionsV2TestsCLICommand functions define the API and CLI versions of the
+// BOS v1 and v2 session subtests.
+// They all do essentially the same thing:
+// 1. List all sessions
+// 2. Verify that this succeeds and returns something of the right general form (for v1, this is expected to be a list of strings,
+//    whereas for v2 this should be a list of dictionary objects)
+// 3. If the list returned is empty, then the subtest is over. Otherwise, select the first element of the list. (If bosV2, extract the "name" field of that element).
+// 4. Do a GET/describe on that particular session
+// 5. Verify that this succeeds and returns something of the right general form, which has the expected session ID (v1) or name (v2)
+
 func sessionsTestsAPI(params *common.Params) (passed bool) {
 	passed = true
 

@@ -42,10 +42,14 @@ const bosBaseUrl = common.BASEURL + "/apis/bos"
 const bosV1BaseUri = "/v1"
 const bosV2BaseUri = "/v2"
 
+// A wrapper for the common test.RestfulVerifyStatus function that converts a BOS URI into the full URL before
+// calling that function
 func bosRestfulVerifyStatus(method, uri string, params *common.Params, ExpectedStatus int) (*resty.Response, error) {
 	return test.RestfulVerifyStatus(method, bosBaseUrl+uri, *params, ExpectedStatus)
 }
 
+// Given a BOS URI, do a GET request to it. Verify that the response has 200 status code and returns a dictionary (aka string map) object.
+// Return true if all of that worked fine. Otherwise, log an appropriate error and return false.
 func basicGetUriVerifyStringMapTest(uri string, params *common.Params) bool {
 	common.Infof("GET %s test scenario", uri)
 	resp, err := bosRestfulVerifyStatus("GET", uri, params, http.StatusOK)
@@ -63,6 +67,7 @@ func basicGetUriVerifyStringMapTest(uri string, params *common.Params) bool {
 	return true
 }
 
+// Run all of the BOS API subtests. Return true if they all pass, false otherwise.
 func apiTests() (passed bool) {
 	passed = true
 

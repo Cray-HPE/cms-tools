@@ -49,25 +49,39 @@ const bosV1SessionTemplateTemplateCLI = "sessiontemplatetemplate"
 const bosV2SessionTemplateTemplateCLI = "sessiontemplatetemplate"
 const bosDefaultSessionTemplateTemplateCLI = bosV2SessionTemplateTemplateCLI
 
+// The sessionTemplatesTestsURI and sessionTemplatesTestsCLICommand functions define the API and CLI versions of the BOS session template subtests.
+// They both do the same thing:
+// 1. List all session templates
+// 2. Verify that this succeeds and returns something of the right general form
+// 3. If the list returned is empty, then the subtest is over. Otherwise, select the first element of the list and extract the "name" field
+// 4. Do a GET/describe on that particular session template
+// 5. Verify that this succeeds and returns something of the right general form
+
 func sessionTemplatesTestsAPI(params *common.Params) (passed bool) {
 	passed = true
 
-	// v1 session template template
-	if !sessionTemplateTemplateTestURI(bosV1SessionTemplateTemplateUri, params) {
+	// session template template API tests
+	// Just do a GET of the sessiontemplatetemplate endpoint and make sure that the response has
+	// 200 status and a dictionary object
+
+	// v1
+	if !basicGetUriVerifyStringMapTest(bosV1SessionTemplateTemplateUri, params) {
 		passed = false
 	}
 
-	// v2 session template template
-	if !sessionTemplateTemplateTestURI(bosV2SessionTemplateTemplateUri, params) {
+	// v2
+	if !basicGetUriVerifyStringMapTest(bosV2SessionTemplateTemplateUri, params) {
 		passed = false
 	}
 
-	// v1 session templates
+	// session template API tests
+
+	// v1
 	if !sessionTemplatesTestsURI(bosV1SessionTemplatesUri, params) {
 		passed = false
 	}
 
-	// v2 session templates
+	// v2
 	if !sessionTemplatesTestsURI(bosV2SessionTemplatesUri, params) {
 		passed = false
 	}
@@ -78,32 +92,37 @@ func sessionTemplatesTestsAPI(params *common.Params) (passed bool) {
 func sessionTemplatesTestsCLI() (passed bool) {
 	passed = true
 
-	// v1 session template template
-	if !sessionTemplateTemplateTestCLICommand("v1", bosV1SessionTemplateTemplateCLI) {
+	// session template template CLI tests
+	// Make sure that "sessiontemplatetemplate list" CLI commmand succeeds and returns a dictionary object.
+
+	// v1 sessiontemplatetemplate list
+	if !basicCLIListVerifyStringMapTest("v1", bosV1SessionTemplateTemplateCLI) {
 		passed = false
 	}
 
-	// v2 session template template
-	if !sessionTemplateTemplateTestCLICommand("v2", bosV2SessionTemplateTemplateCLI) {
+	// v2 sessiontemplatetemplate list
+	if !basicCLIListVerifyStringMapTest("v2", bosV2SessionTemplateTemplateCLI) {
 		passed = false
 	}
 
-	// default (v2) session template template
-	if !sessionTemplateTemplateTestCLICommand(bosDefaultSessionTemplateTemplateCLI) {
+	// sessiontemplatetemplate list
+	if !basicCLIListVerifyStringMapTest(bosDefaultSessionTemplateTemplateCLI) {
 		passed = false
 	}
 
-	// v1 session templates
+	// session template CLI tests
+
+	// v1 sessiontemplate
 	if !sessionTemplatesTestsCLICommand("v1", bosV1SessionTemplatesCLI) {
 		passed = false
 	}
 
-	// v2 session templates
+	// v2 sessiontemplates
 	if !sessionTemplatesTestsCLICommand("v2", bosV2SessionTemplatesCLI) {
 		passed = false
 	}
 
-	// default (v2) session templates
+	// sessiontemplates
 	if !sessionTemplatesTestsCLICommand(bosDefaultSessionTemplatesCLI) {
 		passed = false
 	}
@@ -122,16 +141,6 @@ func ValidateSessionTemplateId(mapCmdOut []byte, expectedName string) bool {
 		return false
 	}
 	return true
-}
-
-// sessiontemplatetemplate API test
-func sessionTemplateTemplateTestURI(uri string, params *common.Params) bool {
-	return basicGetUriVerifyStringMapTest(uri, params)
-}
-
-// sessiontemplatetemplate CLI test
-func sessionTemplateTemplateTestCLICommand(cmdArgs ...string) bool {
-	return basicCLIListVerifyStringMapTest(cmdArgs...)
 }
 
 // session templates API tests
@@ -183,7 +192,7 @@ func sessionTemplatesTestsCLICommand(cmdArgs ...string) bool {
 		common.Error(err)
 		return false
 	} else if len(sessionTemplateId) == 0 {
-		common.Infof("skipping test CLI describe component {session_template_id}")
+		common.Infof("skipping test CLI describe session template {session_template_id}")
 		common.Infof("results from previous test is []")
 		return true
 	}

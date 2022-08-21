@@ -41,6 +41,14 @@ const bosV2ComponentsUri = bosV2BaseUri + "/components"
 const bosV2ComponentsCLI = "components"
 const bosDefaultComponentsCLI = bosV2ComponentsCLI
 
+// The componentsTestsURI and componentsTestsCLICommand functions define the API and CLI versions of the BOS components subtests.
+// They both do the same thing:
+// 1. List all components
+// 2. Verify that this succeeds and returns something of the right general form
+// 3. If the list returned is empty, then the subtest is over. Otherwise, select the first element of the list and extract the "id" field
+// 4. Do a GET/describe on that particular component
+// 5. Verify that this succeeds and returns something of the right general form
+
 func componentsTestsAPI(params *common.Params) (passed bool) {
 	passed = true
 
