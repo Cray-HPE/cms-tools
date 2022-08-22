@@ -9,8 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- cmsdev: Add testing of BOSv2 (both API and CLI). Restored testing of CLI without explicitly specifying the BOS version.
-- cmsdev: Include CLI command that failed in corresponding error messages
+- cmsdev:
+  - Add testing of BOSv2 (both API and CLI), including the new BOSv2 `components` and `options`. Restored testing of CLI without explicitly specifying the BOS version.
+  - Include CLI command that failed in corresponding error messages.
+  - Add testing of BOS (v1 and v2) `healthz` endpoints and CLI.
 
 ## [1.6.1] - 2022-08-17
 

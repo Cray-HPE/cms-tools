@@ -90,6 +90,7 @@ func sessionsTestsCLI() (passed bool) {
 }
 
 // v1 sessions API tests
+// See comment earlier in the file for a description of this function
 func sessionsV1TestsURI(uri string, params *common.Params) bool {
 	// test #1, list session
 	common.Infof("GET %s test scenario", uri)
@@ -123,6 +124,12 @@ func sessionsV1TestsURI(uri string, params *common.Params) bool {
 	return true
 }
 
+// Given a response object (as an array of bytes), validate that:
+// 1. It resolves to a JSON dictonary
+// 2. That dictionary has a "name" field
+// 3. The "name" field of that dictionary has a value which matches our expectedName string
+//
+// Return true if all of the above is true. Otherwise, log an appropriate error and return false.
 func ValidateV2Session(mapCmdOut []byte, expectedName string) bool {
 	// For BOSv2, the session object we get back should have a 'name' field matching the name that we requested.
 	// So let's validate that
@@ -135,6 +142,7 @@ func ValidateV2Session(mapCmdOut []byte, expectedName string) bool {
 }
 
 // v2 sessions API tests
+// See comment earlier in the file for a description of this function
 func sessionsV2TestsURI(uri string, params *common.Params) bool {
 	// test #1, list sessions
 	common.Infof("GET %s test scenario", uri)
@@ -185,6 +193,7 @@ func sessionsV2TestsURI(uri string, params *common.Params) bool {
 }
 
 // v1 sessions CLI tests
+// See comment earlier in the file for a description of this function
 func sessionsV1TestsCLICommand(cmdArgs ...string) bool {
 	// test #1, list sessions
 	cmdOut := runBosCLIList(cmdArgs...)
@@ -219,6 +228,7 @@ func sessionsV1TestsCLICommand(cmdArgs ...string) bool {
 }
 
 // v2 sessions CLI tests
+// See comment earlier in the file for a description of this function
 func sessionsV2TestsCLICommand(cmdArgs ...string) bool {
 	// test #1, list sessions
 	cmdOut := runBosCLIList(cmdArgs...)

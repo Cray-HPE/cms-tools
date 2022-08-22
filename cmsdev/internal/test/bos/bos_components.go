@@ -88,7 +88,7 @@ func ValidateComponentId(mapCmdOut []byte, expectedId string) bool {
 	return true
 }
 
-// component tests
+// See comment earler in file for a description of this function
 func componentsTestsURI(uri string, params *common.Params) bool {
 	// test #1, list components
 	common.Infof("GET %s test scenario", uri)
@@ -124,6 +124,7 @@ func componentsTestsURI(uri string, params *common.Params) bool {
 	return true
 }
 
+// See comment earler in file for a description of this function
 func componentsTestsCLICommand(cmdArgs ...string) bool {
 	// test #1, list components
 	cmdOut := runBosCLIList(cmdArgs...)

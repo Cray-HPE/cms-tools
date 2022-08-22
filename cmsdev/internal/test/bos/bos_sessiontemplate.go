@@ -130,10 +130,22 @@ func sessionTemplatesTestsCLI() (passed bool) {
 	return
 }
 
+// Given a response object (as an array of bytes), do the following:
+// 1. Verify that it is a JSON list object
+// 2. If the list object is empty, return a blank string.
+// 3. If the list is not empty, verify that its first element is a dictionary.
+// 4. Look up the "name" key in that dictionary, and return its value.
+// If any of the above does not work, return an appropriate error.
 func getFirstSessionTemplateId(listCmdOut []byte) (string, error) {
 	return common.GetStringFieldFromFirstItem("name", listCmdOut)
 }
 
+// Given a response object (as an array of bytes), validate that:
+// 1. It resolves to a JSON dictonary
+// 2. That dictionary has a "name" field
+// 3. The "name" field of that dictionary has a value which matches our expectedName string
+//
+// Return true if all of the above is true. Otherwise, log an appropriate error and return false.
 func ValidateSessionTemplateId(mapCmdOut []byte, expectedName string) bool {
 	err := common.ValidateStringFieldValue("BOS sessiontemplate", "name", expectedName, mapCmdOut)
 	if err != nil {
@@ -144,6 +156,7 @@ func ValidateSessionTemplateId(mapCmdOut []byte, expectedName string) bool {
 }
 
 // session templates API tests
+// See comment earlier in the file for a description of this function
 func sessionTemplatesTestsURI(uri string, params *common.Params) bool {
 	// test #1, list session templates
 	common.Infof("GET %s test scenario", uri)
@@ -179,6 +192,7 @@ func sessionTemplatesTestsURI(uri string, params *common.Params) bool {
 }
 
 // session templates CLI tests
+// See comment earlier in the file for a description of this function
 func sessionTemplatesTestsCLICommand(cmdArgs ...string) bool {
 	// test #1, list session templates
 	cmdOut := runBosCLIList(cmdArgs...)
