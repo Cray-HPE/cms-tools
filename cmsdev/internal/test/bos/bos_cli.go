@@ -33,17 +33,96 @@ package bos
 import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
-	"strconv"
+	"strings"
 )
 
-func runCLICommand(vnum int, cmdArgs ...string) []byte {
-	if vnum == 0 {
-		return test.RunCLICommandJSON("bos", cmdArgs...)
-	} else if vnum > 0 {
-		cliCmdArgs := append([]string{"v" + strconv.Itoa(vnum)}, cmdArgs...)
-		return test.RunCLICommandJSON("bos", cliCmdArgs...)
-	} else {
-		common.Errorf("PROGRAMMING LOGIC ERROR: sessionTestCLI: Negative vnum value (%d)", vnum)
-		return nil
+// Wrapper function for test.RunCLICommandJSON. Prepends "bos" to a CLI command list and then runs it.
+func runBosCLI(cmdArgs ...string) []byte {
+	common.Infof("Testing BOS CLI (%s)", strings.Join(cmdArgs, " "))
+	return test.RunCLICommandJSON("bos", cmdArgs...)
+}
+
+// Wrapper function for runBosCLI. Append "list" to a CLI command list and then runs it.
+func runBosCLIList(cmdArgs ...string) []byte {
+	newCmdArgs := append(cmdArgs, "list")
+	return runBosCLI(newCmdArgs...)
+}
+
+// Wrapper function for runBosCLI. Append "describe <target>" to a CLI command list and then runs it.
+func runBosCLIDescribe(target string, cmdArgs ...string) []byte {
+	newCmdArgs := append(cmdArgs, "describe", target)
+	return runBosCLI(newCmdArgs...)
+}
+
+// Given a BOS CLI command prefix, run that CLI command with "list" appended to the end.
+// Verify that the command succeeded and returns a dictionary (aka string map) object.
+// Return true if all of that worked fine. Otherwise, log an appropriate error and return false.
+func basicCLIListVerifyStringMapTest(cmdArgs ...string) bool {
+	cmdOut := runBosCLIList(cmdArgs...)
+	if cmdOut == nil {
+		return false
 	}
+
+	// Validate that object can be decoded into a string map at least
+	_, err := common.DecodeJSONIntoStringMap(cmdOut)
+	if err != nil {
+		common.Error(err)
+		return false
+	}
+	return true
+}
+
+// Given a BOS CLI command prefix and a target name, run that CLI command with "describe <target>" appended to the end.
+// Verify that the command succeeded and returns a dictionary (aka string map) object.
+// Return true if all of that worked fine. Otherwise, log an appropriate error and return false.
+func basicCLIDescribeVerifyStringMapTest(target string, cmdArgs ...string) bool {
+	cmdOut := runBosCLIDescribe(target, cmdArgs...)
+	if cmdOut == nil {
+		return false
+	}
+
+	// Validate that object can be decoded into a string map at least
+	_, err := common.DecodeJSONIntoStringMap(cmdOut)
+	if err != nil {
+		common.Error(err)
+		return false
+	}
+	return true
+}
+
+// Run all of the BOS CLI subtests. Return true if they all pass, false otherwise.
+func cliTests() (passed bool) {
+	passed = true
+
+	// Defined in bos_version.go
+	if !versionTestsCLI() {
+		passed = false
+	}
+
+	// Defined in bos_healthz.go
+	if !healthzTestsCLI() {
+		passed = false
+	}
+
+	// Defined in bos_components.go
+	if !componentsTestsCLI() {
+		passed = false
+	}
+
+	// Defined in bos_options.go
+	if !optionsTestsCLI() {
+		passed = false
+	}
+
+	// Defined in bos_sessiontemplate.go
+	if !sessionTemplatesTestsCLI() {
+		passed = false
+	}
+
+	// Defined in bos_session.go
+	if !sessionsTestsCLI() {
+		passed = false
+	}
+
+	return
 }

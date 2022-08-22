@@ -57,6 +57,15 @@ func DecodeJSONIntoStringList(listJsonBytes []byte) ([]string, error) {
 	return m, nil
 }
 
+func DecodeJSONIntoStringMapList(mapListJsonBytes []byte) ([]map[string]interface{}, error) {
+	var m []map[string]interface{}
+	err := json.Unmarshal(mapListJsonBytes, &m)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func GetStringFieldFromFirstItem(fieldName string, listJsonBytes []byte) (fieldValue string, err error) {
 	fieldValue = ""
 

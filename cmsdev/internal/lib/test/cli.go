@@ -118,7 +118,7 @@ func RunCLICommand(cmdList ...string) []byte {
 		cmdResult, err = common.RunName("bash", "-c", baseCmdStr)
 		if err != nil {
 			common.Error(err)
-			common.Errorf("Error running CLI command")
+			common.Errorf("Error running CLI command (%s)", strings.Join(cmdList, " "))
 			return nil
 		} else if cmdResult.Rc == 0 {
 			return cmdResult.OutBytes
@@ -132,7 +132,7 @@ func RunCLICommand(cmdList ...string) []byte {
 			}
 		}
 		if !configError {
-			common.Errorf("CLI command failed (and does not look like a CLI config issue)")
+			common.Errorf("CLI command failed (and does not look like a CLI config issue) (%s)", strings.Join(cmdList, " "))
 			return nil
 		}
 		common.Debugf("CLI command failure looks like it may be a CLI config issue")
@@ -147,10 +147,10 @@ func RunCLICommand(cmdList ...string) []byte {
 	cmdResult, err = common.RunName("bash", "-c", cmdStr)
 	if err != nil {
 		common.Error(err)
-		common.Errorf("Error running CLI command")
+		common.Errorf("Error running CLI command (%s)", strings.Join(cmdList, " "))
 		return nil
 	} else if cmdResult.Rc != 0 {
-		common.Errorf("CLI command failed")
+		common.Errorf("CLI command failed (%s)", strings.Join(cmdList, " "))
 		return nil
 	}
 	if len(tmpCliConfigFile) > 0 {
