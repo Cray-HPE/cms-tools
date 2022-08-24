@@ -43,11 +43,11 @@ const bosV2SessionTemplateTemplateUri = bosV2BaseUri + "/sessiontemplatetemplate
 
 const bosV1SessionTemplatesCLI = "sessiontemplate"
 const bosV2SessionTemplatesCLI = "sessiontemplates"
-const bosDefaultSessionTemplatesCLI = bosV2SessionTemplatesCLI
+const bosDefaultSessionTemplatesCLI = bosV1SessionTemplatesCLI
 
 const bosV1SessionTemplateTemplateCLI = "sessiontemplatetemplate"
 const bosV2SessionTemplateTemplateCLI = "sessiontemplatetemplate"
-const bosDefaultSessionTemplateTemplateCLI = bosV2SessionTemplateTemplateCLI
+const bosDefaultSessionTemplateTemplateCLI = bosV1SessionTemplateTemplateCLI
 
 // The sessionTemplatesTestsURI and sessionTemplatesTestsCLICommand functions define the API and CLI versions of the BOS session template subtests.
 // They both do the same thing:
