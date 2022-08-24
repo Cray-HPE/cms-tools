@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- cmsdev: Modify BOS tests to reflect change of default CLI version back to v1.
+
 ## [1.7.0] - 2022-08-22
 
 ### Added
