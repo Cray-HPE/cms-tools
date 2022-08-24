@@ -39,7 +39,6 @@ import (
 const bosV2ComponentsUri = bosV2BaseUri + "/components"
 
 const bosV2ComponentsCLI = "components"
-const bosDefaultComponentsCLI = bosV2ComponentsCLI
 
 // The componentsTestsURI and componentsTestsCLICommand functions define the API and CLI versions of the BOS components subtests.
 // They both do the same thing:
@@ -64,11 +63,6 @@ func componentsTestsCLI() (passed bool) {
 
 	// v2
 	if !componentsTestsCLICommand("v2", bosV2ComponentsCLI) {
-		passed = false
-	}
-
-	// default (v2)
-	if !componentsTestsCLICommand(bosDefaultComponentsCLI) {
 		passed = false
 	}
 
