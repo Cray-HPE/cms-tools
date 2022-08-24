@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2022-08-24
+
 ### Changed
 
 - cmsdev: Modify BOS tests to reflect change of default CLI version back to v1.
@@ -46,4 +48,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[1.0.0] - (no date)
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.8.0...HEAD
+
+[1.8.0]: https://github.com/Cray-HPE/cray-product-catalog/compare/1.7.0...1.8.0
+
+[1.7.0]: https://github.com/Cray-HPE/cray-product-catalog/compare/1.6.1...1.7.0
+
+[1.6.1]: https://github.com/Cray-HPE/cray-product-catalog/compare/1.6.0...1.6.1
+
+[1.6.0]: https://github.com/Cray-HPE/cray-product-catalog/compare/1.5.0...1.6.0
+
+[1.5.0]: https://github.com/Cray-HPE/cray-product-catalog/compare/1.4.0...1.5.0
+
+[1.4.0]: https://github.com/Cray-HPE/cray-product-catalog/compare/1.3.3...1.4.0
