@@ -88,7 +88,7 @@ func TftpServiceFileTransferTest(serviceName, ipxePodName string) (passed bool) 
 	var IPPort string
 	passed = true
 
-	// First, get the IP addresseses and port for the service
+	// First, get the IP addresses and port for the service
 	clusterIP, externalIP, mainPort, ok := GetTftpIPsPort(serviceName)
 	if !ok {
 		passed = false

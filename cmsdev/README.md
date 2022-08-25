@@ -13,7 +13,7 @@ cd /tmp/stash/cms-tools/cmsdev
 GOOS=linux GOARCH=amd64 go build -mod vendor .
 ```
 
-### Nteworthy file/directory locations
+### Noteworthy file/directory locations
 
 For all CMS components, the test includes a basic check for kubernetes pods. Most also include some calls to the service itself via API and CLI. These tests should absolutely be expanded, while keeping in mind that these are intended to be quick, non-destructive tests.
 
@@ -60,7 +60,7 @@ cmsdev ls services
 cmsdev ls bos --name
    # returns the service pod name of bos
 cmsdev ls services --count
-   # returms the number of currently installed cms services
+   # returns the number of currently installed cms services
 cmsdev ls services --status
    # returns a list of cms service pods with status
 

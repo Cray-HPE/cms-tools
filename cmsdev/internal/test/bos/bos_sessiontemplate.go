@@ -93,7 +93,7 @@ func sessionTemplatesTestsCLI() (passed bool) {
 	passed = true
 
 	// session template template CLI tests
-	// Make sure that "sessiontemplatetemplate list" CLI commmand succeeds and returns a dictionary object.
+	// Make sure that "sessiontemplatetemplate list" CLI command succeeds and returns a dictionary object.
 
 	// v1 sessiontemplatetemplate list
 	if !basicCLIListVerifyStringMapTest("v1", bosV1SessionTemplateTemplateCLI) {
