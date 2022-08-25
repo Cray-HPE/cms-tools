@@ -74,7 +74,7 @@ func IsConmanRunning() (passed bool) {
 }
 
 // We want to verify that there are:
-//      - exactly 1 main cray-conole-data- pod
+//      - exactly 1 main cray-console-data- pod
 //      - exactly 3 console-data-postgres-# pods (we allow just 1 or 2 below because that's what
 //			we do in the VCS test, which makes me think there may be cases when we see fewer)
 //      - 0 or more cray-console-data-wait-for-postgres-# pods

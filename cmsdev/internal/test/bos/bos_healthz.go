@@ -63,7 +63,7 @@ func healthzTestsAPI(params *common.Params) (passed bool) {
 func healthzTestsCLI() (passed bool) {
 	passed = true
 
-	// Make sure that "healthz list" CLI commmand succeeds and returns a dictionary object.
+	// Make sure that "healthz list" CLI command succeeds and returns a dictionary object.
 
 	// "v1 healthz list"
 	if !basicCLIListVerifyStringMapTest("v1", bosV1HealthzCLI) {
