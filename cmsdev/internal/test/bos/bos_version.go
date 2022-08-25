@@ -84,7 +84,7 @@ func versionTestsAPI(params *common.Params) (passed bool) {
 func versionTestsCLI() (passed bool) {
 	passed = true
 
-	// Make sure that "version list" CLI commmand succeeds and returns a dictionary object.
+	// Make sure that "version list" CLI command succeeds and returns a dictionary object.
 
 	// v1 version list
 	if !basicCLIListVerifyStringMapTest("v1", bosV1VersionCLI) {
