@@ -312,7 +312,6 @@ func runCmd(shouldPass bool, cmdName string, cmdArgs ...string) bool {
 		return false
 	} else if cmdResult.Rc != 0 {
 		if !cmdResult.Ran || shouldPass {
-			common.Error(err)
 			common.Errorf("Command failed")
 			return false
 		} else {
@@ -360,7 +359,6 @@ func runGitCmd(shouldPass bool, cmdArgs ...string) bool {
 			common.Infof("Important: This means the overall test will fail even if this command works on retry!")
 			tryInsecure = true
 		} else {
-			common.Error(err)
 			common.Errorf("Command failed")
 			return false
 		}

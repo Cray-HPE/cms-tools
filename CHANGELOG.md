@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Spelling corrections.
+- Removed two lines that dereferenced null error pointers in VCS test error paths.
 
 ## [1.8.0] - 2022-08-24
 
