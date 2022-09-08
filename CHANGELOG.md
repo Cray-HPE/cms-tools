@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- cmsdev: Add testing of 3 BOS CLI commands: "bos list", "bos v1 list", and "bos v2 list".
+
 ## [1.8.1] - 2022-09-06
 
 ### Changed
