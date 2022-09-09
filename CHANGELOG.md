@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- cmsdev
+  - Updated several dependencies to remedy CVE-2020-26160
+  - Build with Golang 1.15
+
 ## [1.9.0] - 2022-09-09
 
 ### Added

@@ -26,6 +26,7 @@ package k8s
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -302,7 +303,7 @@ func VerifyCronJobExists(namespace, name string) error {
 	if err != nil {
 		return err
 	}
-	allCronJobs, err := clientset.BatchV1beta1().CronJobs(namespace).List(v1.ListOptions{})
+	allCronJobs, err := clientset.BatchV1beta1().CronJobs(namespace).List(context.TODO(), v1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -322,7 +323,7 @@ func GetNodes(params ...string) ([]coreV1.Node, error) {
 	if err != nil {
 		return nodes, err
 	}
-	allNodes, err := clientset.CoreV1().Nodes().List(v1.ListOptions{})
+	allNodes, err := clientset.CoreV1().Nodes().List(context.TODO(), v1.ListOptions{})
 	if err != nil {
 		return nodes, err
 	}
@@ -363,7 +364,7 @@ func GetConfigMap(namespace, name string) (cm coreV1.ConfigMap, err error) {
 		return
 	}
 
-	cmlist, err := clientset.CoreV1().ConfigMaps(namespace).List(v1.ListOptions{})
+	cmlist, err := clientset.CoreV1().ConfigMaps(namespace).List(context.TODO(), v1.ListOptions{})
 	if err != nil {
 		return
 	}
@@ -384,7 +385,7 @@ func GetService(namespace, name string) (service coreV1.Service, err error) {
 	if err != nil {
 		return
 	}
-	services, err := clientset.CoreV1().Services(namespace).List(v1.ListOptions{})
+	services, err := clientset.CoreV1().Services(namespace).List(context.TODO(), v1.ListOptions{})
 	if err != nil {
 		return
 	}
@@ -406,7 +407,7 @@ func GetPods(namespace string, params ...string) ([]coreV1.Pod, error) {
 	if err != nil {
 		return pods, err
 	}
-	allPods, err := clientset.CoreV1().Pods(namespace).List(v1.ListOptions{})
+	allPods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), v1.ListOptions{})
 	if err != nil {
 		return pods, err
 	}
@@ -478,7 +479,7 @@ func GetPVCNames(namespace string, params ...string) ([]string, error) {
 	if err != nil {
 		return names, err
 	}
-	pvcs, err := clientset.CoreV1().PersistentVolumeClaims(namespace).List(v1.ListOptions{})
+	pvcs, err := clientset.CoreV1().PersistentVolumeClaims(namespace).List(context.TODO(), v1.ListOptions{})
 	if err != nil {
 		return names, err
 	}
@@ -504,6 +505,7 @@ func GetPodStatus(namespace, podName string) (string, error) {
 		return status, err
 	}
 	pod, err := clientset.CoreV1().Pods(namespace).Get(
+		context.TODO(),
 		podName,
 		v1.GetOptions{},
 	)
@@ -521,6 +523,7 @@ func GetPodStats(namespace, podName string) (stats *PodStats, err error) {
 		return
 	}
 	pod, err := clientset.CoreV1().Pods(namespace).Get(
+		context.TODO(),
 		podName,
 		v1.GetOptions{},
 	)
@@ -544,6 +547,7 @@ func GetPVCStatus(namespace, pvcName string) (status string, err error) {
 		return
 	}
 	pvc, err := clientset.CoreV1().PersistentVolumeClaims(namespace).Get(
+		context.TODO(),
 		pvcName,
 		v1.GetOptions{},
 	)
@@ -572,7 +576,7 @@ func GetPodLogs(namespace, podName string, containerName ...string) (string, err
 			&coreV1.PodLogOptions{Container: containerName[0]},
 		)
 	}
-	podLogs, err := req.Stream()
+	podLogs, err := req.Stream(context.TODO())
 	if err != nil {
 		return "", err
 	}
