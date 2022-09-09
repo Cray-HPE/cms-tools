@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0] - 2022-09-09
+
 ### Added
 
 - cmsdev: Add testing of 3 BOS CLI commands: "bos list", "bos v1 list", and "bos v2 list".
@@ -59,7 +61,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.8.1...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.9.0...HEAD
+
+[1.9.0]: https://github.com/Cray-HPE/cms-tools/compare/1.8.1...1.9.0
 
 [1.8.1]: https://github.com/Cray-HPE/cms-tools/compare/1.8.0...1.8.1
 
