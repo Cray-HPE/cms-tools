@@ -86,18 +86,33 @@ func versionTestsCLI() (passed bool) {
 
 	// Make sure that "version list" CLI command succeeds and returns a dictionary object.
 
-	// v1 version list
+	// /v1 endpoint - "cray bos v1 list"
+	if !basicCLIListVerifyStringMapTest("v1") {
+		passed = false
+	}
+
+	// v1 version list - "cray bos v1 version list"
 	if !basicCLIListVerifyStringMapTest("v1", bosV1VersionCLI) {
 		passed = false
 	}
 
-	// v2 version list
+	// /v2 endpoint - "cray bos v2 list"
+	if !basicCLIListVerifyStringMapTest("v2") {
+		passed = false
+	}
+
+	// v2 version list - "cray bos v2 version list"
 	if !basicCLIListVerifyStringMapTest("v2", bosV2VersionCLI) {
 		passed = false
 	}
 
-	// version list
+	// version list - "cray bos version list"
 	if !basicCLIListVerifyStringMapTest(bosDefaultVersionCLI) {
+		passed = false
+	}
+
+	// default endpoint - "cray bos list"
+	if !basicCLIListVerifyStringMapTest() {
 		passed = false
 	}
 
