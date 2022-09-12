@@ -96,7 +96,7 @@ pipeline {
                 }
             }
             steps {
-                sh "zypper in --download-only go1.15 && find /var/cache/zypp -name go1.15* -exec rpm ql {} \;"
+                sh "zypper in --download-only go1.15 && find /var/cache/zypp -name go1.15* -print | xargs -I {} rpm ql {}"
                 sh "zypper install go1.15 && make rpm"
             }
         }
