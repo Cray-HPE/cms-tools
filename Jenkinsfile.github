@@ -100,7 +100,7 @@ pipeline {
                     image "cmstools-builder:15.3"
                     reuseNode true
                     // Support docker in docker for clamav scan
-                    args "-v $(pwd)/dist/rpmbuild:/app/dist/rpmbuild -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
+                    args "-v ${env.WORKSPACE}/dist/rpmbuild:/app/dist/rpmbuild -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
                 }
             }
             steps {
