@@ -96,6 +96,7 @@ pipeline {
                 }
             }
             steps {
+                sh "echo /etc/group ; cat /etc/group"
                 sh "echo /etc/sudo.conf ; cat /etc/sudo.conf"
                 sh "echo /etc/sudoers ; cat /etc/sudoers"
                 sh "ls -al /etc/sudoers.d"
