@@ -96,6 +96,7 @@ pipeline {
                 }
             }
             steps {
+                sh "whoami ; groups"
                 sh "echo /etc/group ; cat /etc/group"
                 sh "echo /etc/sudo.conf ; cat /etc/sudo.conf"
                 sh "echo /etc/sudoers ; cat /etc/sudoers"
