@@ -30,7 +30,7 @@ Source: %{name}-%{version}-%{release}.tar.bz2
 Vendor: HPE
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
 BuildRequires: make
-BuildRequires: go1.15
+BuildRequires: go >= 1.15
 Requires: python3 >= 3.6
 
 %description
