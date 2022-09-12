@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- cmsdev
+  - Updated several dependencies to remedy CVE-2020-26160
+  - Build with Golang 1.18
+  - Stop building RPMs for SLES 15 SP2, because they are no longer needed on the CSM version for which this RPM is intended
+
 ## [1.9.0] - 2022-09-09
 
 ### Added
