@@ -96,8 +96,8 @@ pipeline {
                 }
             }
             steps {
-                sh "zypper in --download-only go1.15 && find /var/cache/zypp -name go1.15* -print | xargs -I {} rpm ql {}"
-                sh "zypper install go1.15 && make rpm"
+                sh "sudo zypper in --download-only go1.15 && sudo find /var/cache/zypp -name go1.15* -print | sudo xargs -I {} rpm ql {}"
+                sh "sudo zypper install go1.15 && make rpm"
             }
         }
 
