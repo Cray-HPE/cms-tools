@@ -1,4 +1,3 @@
-#!/usr/bin/sh
 #
 # MIT License
 #
@@ -22,7 +21,21 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+# Dockerfile for building cms-tools RPM for sles15sp4
 
-set -exo pipefail
-cd /app
-make rpm
+FROM arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp4_build_environment:latest
+
+# Remove go1.18 and install go1.15
+RUN zypper --non-interactive clean \
+ && zypper --non-interactive remove go1.18 \
+ && zypper --non-interactive install go1.15
+
+# Configure go env - installed as package but not quite configured
+ENV GOPATH=/usr/local/golib
+RUN export GOPATH=$GOPATH
+
+# Copy in all the necessary files
+#RUN mkdir -p /app/dist/rpmbuild
+#COPY cmsdev/ /app/cmsdev
+#COPY .version .rpm_release cray-cmstools-crayctldeploy.spec Makefile git_info.conf build_rpm.sh /app/
+#WORKDIR /app
