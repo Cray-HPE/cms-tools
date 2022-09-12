@@ -92,10 +92,11 @@ pipeline {
                     image "arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp2_build_environment:latest"
                     reuseNode true
                     // Support docker in docker for clamav scan
-                    args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999 --group-add sudo"
+                    args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
                 }
             }
             steps {
+                sh "find /etc/sudoers.d -type f -print | while read X ; do ; echo $X ; cat $X ; done"
                 sh "sudo zypper --non-interactive in --download-only go1.15 && sudo find /var/cache/zypp -name go1.15* -print | sudo xargs -I {} rpm ql {}"
                 sh "sudo zypper --non-interactive install go1.15 && make rpm"
             }
