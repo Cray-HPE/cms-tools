@@ -90,7 +90,7 @@ pipeline {
             steps {
                 sh "docker build -t cmstools-builder:15.3 -f Dockerfile.sles15sp3 ."
                 sh "mkdir -p dist/rpmbuild"
-                //sh "docker run -t -d -u 10000:10000 -v dist/rpmbuild:/app/dist/rpmbuild -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
+                //sh "docker run -t -d -u 10000:10000 -v $(pwd)/dist/rpmbuild:/app/dist/rpmbuild -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
             }
         }
         stage("Build SP2 RPMs") {
@@ -100,7 +100,7 @@ pipeline {
                     image "cmstools-builder:15.3"
                     reuseNode true
                     // Support docker in docker for clamav scan
-                    args "-v dist/rpmbuild:/app/dist/rpmbuild -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
+                    args "-v $(pwd)/dist/rpmbuild:/app/dist/rpmbuild -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
                 }
             }
             steps {
