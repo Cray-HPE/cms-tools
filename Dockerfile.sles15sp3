@@ -28,7 +28,7 @@ FROM arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp3_
 
 # Remove go1.14 and install go1.15
 RUN zypper --non-interactive clean \
- && zypper --non-interactive remove go1.14
+ && zypper --non-interactive remove go1.14 \
  && zypper --non-interactive install go1.15
 
 # Configure go env - installed as package but not quite configured
@@ -39,5 +39,5 @@ RUN export GOPATH=$GOPATH
 RUN mkdir -p /app/dist/rpmbuild
 COPY cmsdev/ /app/cmsdev
 COPY .version .rpm_release cray-cmstools-crayctldeploy.spec Makefile git_info.conf build_rpm.sh /app
+WORKDIR /app
 
-ENTRYPOINT ["/app/build_rpm.sh"]
