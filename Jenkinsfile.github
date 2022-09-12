@@ -89,13 +89,13 @@ pipeline {
                 stage("sles15sp3") {
                     steps {
                         sh "docker build -t cmstools-builder:15.3 -f Dockerfile.sles15sp3 ."
-                        sh "mkdir -p sles15sp3/dist/rpmbuild"
+                        //sh "mkdir -p sles15sp3/dist/rpmbuild"
                     }
                 }
                 stage("sles15sp4") {
                     steps {
                         sh "docker build -t cmstools-builder:15.4 -f Dockerfile.sles15sp4 ."
-                        sh "mkdir -p sles15sp4/dist/rpmbuild"
+                        //sh "mkdir -p sles15sp4/dist/rpmbuild"
                     }
                 }
             }
@@ -106,7 +106,7 @@ pipeline {
                     image "cmstools-builder:15.3"
                     reuseNode true
                     // Support docker in docker for clamav scan
-                    args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999 -e BUILD_DIR=${env.WORKSPACE}/sles15sp3/dist/rpmbuild"
+                    args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
                     //args "-v ${env.WORKSPACE}/sles15sp3/dist/rpmbuild:/app/dist/rpmbuild -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
                 }
             }
@@ -116,8 +116,8 @@ pipeline {
         }
         stage('Publish SP3 rpms') {
             steps {
-                publishCsmRpms(component: env.NAME, pattern: "sles15sp3/dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP3, arch: "x86_64", isStable: env.IS_STABLE)
-                publishCsmRpms(component: env.NAME, pattern: "sles15sp3/dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP3, arch: "src", isStable: env.IS_STABLE)
+                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP3, arch: "x86_64", isStable: env.IS_STABLE)
+                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP3, arch: "src", isStable: env.IS_STABLE)
             }
         }
         stage("Build SP4 RPMs") {
@@ -126,7 +126,7 @@ pipeline {
                     image "cmstools-builder:15.4"
                     reuseNode true
                     // Support docker in docker for clamav scan
-                    args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999 -e BUILD_DIR=${env.WORKSPACE}/sles15sp4/dist/rpmbuild"
+                    args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
                     //args "-v ${env.WORKSPACE}/sles15sp3/dist/rpmbuild:/app/dist/rpmbuild -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
                 }
             }
@@ -136,8 +136,8 @@ pipeline {
         }
         stage('Publish SP4 rpms') {
             steps {
-                publishCsmRpms(component: env.NAME, pattern: "sles15sp4/dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP4, arch: "x86_64", isStable: env.IS_STABLE)
-                publishCsmRpms(component: env.NAME, pattern: "sles15sp4/dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP4, arch: "src", isStable: env.IS_STABLE)
+                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP4, arch: "x86_64", isStable: env.IS_STABLE)
+                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP4, arch: "src", isStable: env.IS_STABLE)
             }
         }
     }
