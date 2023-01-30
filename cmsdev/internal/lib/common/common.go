@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  (C) Copyright 2019-2022 Hewlett Packard Enterprise Development LP
+//  (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -78,7 +78,6 @@ var PodServiceNamePrefixes = map[string]string{
 	"console-data":     "cray-console-data",
 	"console-node":     "cray-console-node",
 	"console-operator": "cray-console-operator",
-	"crus":             "cray-crus",
 	"ims":              "cray-ims",
 	"ipxe":             "cray-ipxe",
 	"tftp":             "cray-tftp",
@@ -90,7 +89,6 @@ var CMSServices = []string{
 	"bos",
 	"cfs",
 	"conman",
-	"crus",
 	"gitea",
 	"ims",
 	"ipxe",
@@ -372,16 +370,6 @@ func GetEndpoints() map[string]map[string]*Endpoint {
 		},
 		Url:     "/apis/cfs/healthz",
 		Version: "v2",
-	}
-
-	// CRUS service endpoints (only the ones we are testing with cmsdsev at the moment)
-	endpoints["crus"] = make(map[string]*Endpoint)
-	endpoints["crus"]["session"] = &Endpoint{
-		Methods: map[string]*endpointMethod{
-			"GET": newMethodEndpoint("", "Retrieve CRUS sessions", []int{200}),
-		},
-		Url:     "/apis/crus/session",
-		Version: "v1",
 	}
 
 	// IMS service endpoints
