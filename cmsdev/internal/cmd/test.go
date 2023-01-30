@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  (C) Copyright 2019-2022 Hewlett Packard Enterprise Development LP
+//  (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -35,7 +35,6 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/test/bos"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/test/cfs"
 	con "stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/test/conman"
-	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/test/crus"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/test/ims"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/test/ipxe_tftp"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/test/vcs"
@@ -50,7 +49,6 @@ var TestTimeouts = map[string]int64{
 	"bos":    300,
 	"cfs":    300,
 	"conman": 300,
-	"crus":   300,
 	"ipxe":   300,
 	"tftp":   300,
 	"vcs":    300,
@@ -70,8 +68,6 @@ func RunTest(service string) bool {
 		return cfs.IsCFSRunning()
 	case "conman":
 		return con.IsConmanRunning()
-	case "crus":
-		return crus.IsCRUSRunning()
 	case "ims":
 		return ims.IsIMSRunning()
 	case "ipxe", "tftp":
