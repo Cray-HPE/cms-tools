@@ -7,11 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.1] - 2023-03-16
+
+### Changed
+
+- cmsdev: Cosmetic changes made to appease latest gofmt version
+- cmsdev: Do not run tftp file transfer test from master NCNs
+
 ## [1.11.0] - 2023-01-30
 
 ### Removed
 
-- cmsdev: Removed CRUS component, to reflect its removal in CSM 1.6.
+- cmsdev: Removed CRUS component, to reflect its removal in CSM 1.5.
 
 ## [1.10.1] - 2022-12-20
 
@@ -82,7 +89,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.1...HEAD
+
+[1.11.1]: https://github.com/Cray-HPE/cms-tools/compare/1.11.0...1.11.1
 
 [1.11.0]: https://github.com/Cray-HPE/cms-tools/compare/1.10.1...1.11.0
 
