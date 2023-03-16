@@ -46,7 +46,8 @@ func AreTheyRunning() (passed bool) {
 	passed = true
 	var podNames []string
 	var ipxePodName, pvcName string
-	var ok bool
+	var ok, onMaster bool
+	var err error
 
 	// First validate IPXE k8s status
 	podNames, ok = test.GetPodNamesByPrefixKey("ipxe", 1, 1)
@@ -89,6 +90,17 @@ func AreTheyRunning() (passed bool) {
 		return
 	}
 
+	// The file transfer subtest cannot run from master NCNs
+	onMaster, err = common.RunningOnMaster()
+	if err != nil {
+		common.Error(err)
+		common.Errorf("Error checking node hostname")
+		passed = false
+		return
+	} else if onMaster == true {
+		common.Infof("tftp file transfer test cannot run on master NCNs -- skipping")
+		return
+	}
 	for _, srvName := range tftpServiceNames {
 		if !TftpServiceFileTransferTest(srvName, ipxePodName) {
 			passed = false
