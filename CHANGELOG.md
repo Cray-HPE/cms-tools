@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - cmsdev: Cosmetic changes made to appease latest gofmt version
+- cmsdev: Do not run tftp file transfer test from master NCNs
 
 ## [1.10.1] - 2022-12-20
 ### Added
