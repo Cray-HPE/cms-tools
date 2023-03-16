@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+//  (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -27,7 +27,9 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"reflect"
+	"regexp"
 )
 
 func DecodeJSONIntoStringMap(mapJsonBytes []byte) (map[string]interface{}, error) {
@@ -154,5 +156,20 @@ func ValidateStringFieldValue(objectName, fieldName, expectedFieldValue string, 
 		return
 	}
 	Debugf("%s has expected value for \"%s\" field", objectName, fieldName)
+	return
+}
+
+func RunningOnMaster() (isMaster bool, err error) {
+	// Checks the hostname of the node where cmsdev is running.
+	// Returns true if name begins with ncn-m###
+	// Returns false otherwise
+	var hostname string
+
+	hostname, err = os.Hostname()
+	if err != nil {
+		return
+	}
+	Debugf("Hostname is '%s'", hostname)
+	isMaster, _ = regexp.MatchString("^ncn-m[0-9]{3}.*$", hostname)
 	return
 }
