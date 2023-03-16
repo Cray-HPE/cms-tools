@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.1] - 2023-03-16
+
 ### Changed
 
 - cmsdev: Cosmetic changes made to appease latest gofmt version
@@ -87,7 +89,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.1...HEAD
+
+[1.11.1]: https://github.com/Cray-HPE/cms-tools/compare/1.11.0...1.11.1
 
 [1.11.0]: https://github.com/Cray-HPE/cms-tools/compare/1.10.1...1.11.0
 
