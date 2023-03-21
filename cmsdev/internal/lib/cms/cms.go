@@ -55,7 +55,7 @@ func loadCMSServiceData() {
 		switch each {
 		case "bos":
 			podNames, _ := k8s.GetPodNames(common.NAMESPACE, common.PodServiceNamePrefixes["bos"])
-			if len(podNames) != 0 {
+			if len(podNames) == 0 {
 				pvcNames, _ := k8s.GetPVCNames(common.NAMESPACE, common.PodServiceNamePrefixes["bosPvc"])
 				cmsServiceData["bos"] = &serviceData{
 					serviceAPIName:       podNames[0],
@@ -66,7 +66,7 @@ func loadCMSServiceData() {
 			}
 		case "cfs":
 			podNames, _ := k8s.GetPodNames(common.NAMESPACE, common.PodServiceNamePrefixes["cfsServices"])
-			if len(podNames) != 0 {
+			if len(podNames) == 0 {
 				cmsServiceData["cfs"] = &serviceData{
 					podNames: podNames,
 				}
@@ -80,7 +80,7 @@ func loadCMSServiceData() {
 			}
 		case "conman":
 			podNames, _ := k8s.GetPodNames(common.NAMESPACE, common.PodServiceNamePrefixes["conman"])
-			if len(podNames) != 0 {
+			if len(podNames) == 0 {
 				pvcNames, _ := k8s.GetPVCNames(common.NAMESPACE, common.PodServiceNamePrefixes["conmanPvc"])
 				cmsServiceData["conman"] = &serviceData{
 					serviceAPIName: podNames[0],
@@ -90,7 +90,7 @@ func loadCMSServiceData() {
 			}
 		case "ims":
 			podNames, _ := k8s.GetPodNames(common.NAMESPACE, common.PodServiceNamePrefixes["ims"])
-			if len(podNames) != 0 {
+			if len(podNames) == 0 {
 				pvcNames, _ := k8s.GetPVCNames(common.NAMESPACE, common.PodServiceNamePrefixes["imsPvc"])
 				cmsServiceData["ims"] = &serviceData{
 					serviceAPIName: podNames[0],
@@ -100,7 +100,7 @@ func loadCMSServiceData() {
 			}
 		case "ipxe":
 			podNames, _ := k8s.GetPodNames(common.NAMESPACE, common.PodServiceNamePrefixes["ipxe"])
-			if len(podNames) != 0 {
+			if len(podNames) == 0 {
 				cmsServiceData["ipxe"] = &serviceData{
 					serviceAPIName: podNames[0],
 					podNames:       podNames,
@@ -108,7 +108,7 @@ func loadCMSServiceData() {
 			}
 		case "tftp":
 			podNames, _ := k8s.GetPodNames(common.NAMESPACE, common.PodServiceNamePrefixes["tftp"])
-			if len(podNames) != 0 {
+			if len(podNames) == 0 {
 				pvcNames, _ := k8s.GetPVCNames(common.NAMESPACE, common.PodServiceNamePrefixes["tftpPvc"])
 				cmsServiceData["tftp"] = &serviceData{
 					serviceAPIName: podNames[0],
@@ -118,7 +118,7 @@ func loadCMSServiceData() {
 			}
 		case "vcs":
 			podNames, _ := k8s.GetPodNames(common.NAMESPACE, common.PodServiceNamePrefixes["vcs"])
-			if len(podNames) != 0 {
+			if len(podNames) == 0 {
 				pvcNames, _ := k8s.GetPVCNames(common.NAMESPACE, common.PodServiceNamePrefixes["vcs"])
 				cmsServiceData["vcs"] = &serviceData{
 					serviceAPIName: podNames[0],
