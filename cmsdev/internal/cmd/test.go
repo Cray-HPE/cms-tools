@@ -160,6 +160,10 @@ var testCmd = &cobra.Command{
 	Long: `test command runs service tests.
 Example Commands:
 
+cmsdev test -l
+  # list all valid services to test
+cmsdev test -l --exclude-aliases
+  # list all valid services to test, excluding aliases
 cmsdev test conman
   # runs conman tests
 cmsdev test tftp --no-log -q
@@ -167,25 +171,52 @@ cmsdev test tftp --no-log -q
 cmsdev test cfs -r --verbose
   # runs cfs tests with verbosity and retry on failure`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: add custom flag validation
-		if len(args) < 1 {
-			common.Usagef("argument required, provide 'all' or at least one cms service name: %s\n", strings.Join(common.CMSServices, " "))
-		}
-
-		// TODO: pass these flags as args in a more elegant way
 		noLogs, _ := cmd.Flags().GetBool("no-log")
 		logsDir, _ := cmd.Flags().GetString("log-dir")
 		retry, _ := cmd.Flags().GetBool("retry")
 		quiet, _ := cmd.Flags().GetBool("quiet")
 		verbose, _ := cmd.Flags().GetBool("verbose")
+		listTests, _ := cmd.Flags().GetBool("list")
+		excludeAliases, _ := cmd.Flags().GetBool("exclude-aliases")
 
 		if quiet && verbose {
 			common.Usagef("--quiet and --verbose are mutually exclusive")
 		}
 
 		var s string
-		allServices := false
 		services := make([]string, 0)
+
+		if listTests {
+			// --list was passed
+			if noLogs || logsDir != "" || retry || quiet || verbose {
+				common.Usagef("--no-log, --log-dir, --retry, --quiet, and --verbose are not valid with --list")
+			} else if len(args) > 0 {
+				common.Usagef("Invalid arguments specified with --list: %s", strings.Join(args, " "))
+			}
+			if !excludeAliases {
+				// Start with the "all" alias
+				services = append(services, "all")
+			}
+			// Append the remaining services (omitting aliases if specified)
+			for _, s = range common.CMSServices {
+				if excludeAliases && common.StringInArray(s, common.CMSServicesDuplicates) {
+					// Skip this one, as it is an alias of another one
+					continue
+				}
+				services = append(services, s)
+			}
+			common.Infof(strings.Join(services, " "))
+			return
+		}
+
+		// --list was not passed
+		if excludeAliases {
+			common.Usagef("--exclude-aliases is only valid with --list")
+		} else if len(args) < 1 {
+			common.Usagef("argument required, provide 'all' or at least one cms service name: %s\n", strings.Join(common.CMSServices, " "))
+		}
+
+		allServices := false
 		for _, a := range args {
 			s = strings.TrimSpace(a)
 			// do some command line args checking
@@ -260,4 +291,6 @@ func init() {
 	testCmd.Flags().BoolP("retry", "r", false, "retry on failure")
 	testCmd.Flags().BoolP("quiet", "q", false, "quiet mode")
 	testCmd.Flags().BoolP("verbose", "v", false, "verbose mode")
+	testCmd.Flags().BoolP("list", "l", false, "list valid service tests")
+	testCmd.Flags().BoolP("exclude-aliases", "", false, "exclude aliases from list of valid service tests")
 }

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- cmsdev: Add -l option to "tests" to list possible tests to run. --exclude-alises may be specified
+  to exclude aliases from this listing.
+
 ### Changed
 
 - cmsdev: Fixed null pointer exception when run before CSM is deployed.
