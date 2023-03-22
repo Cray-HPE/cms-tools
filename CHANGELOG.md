@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.3] - 2023-03-22
+
 ### Removed
 
 - cmsdev: Stop building SP3 RPM. This is only intended to run on NCNs of CSM 1.5 or higher, and those
@@ -106,7 +108,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.2...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.3...HEAD
+
+[1.11.3]: https://github.com/Cray-HPE/cms-tools/compare/1.11.2...1.11.3
 
 [1.11.2]: https://github.com/Cray-HPE/cms-tools/compare/1.11.1...1.11.2
 
