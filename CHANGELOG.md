@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.2] - 2023-03-22
+
 ### Added
 
 - cmsdev: Add -l option to "tests" to list possible tests to run. --exclude-alises may be specified
@@ -98,7 +100,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.1...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.2...HEAD
+
+[1.11.2]: https://github.com/Cray-HPE/cms-tools/compare/1.11.1...1.11.2
 
 [1.11.1]: https://github.com/Cray-HPE/cms-tools/compare/1.11.0...1.11.1
 
