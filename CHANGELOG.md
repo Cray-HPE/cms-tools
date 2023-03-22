@@ -92,6 +92,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+[1.10.3]: https://github.com/Cray-HPE/cms-tools/compare/1.10.2...1.10.3
+
 [1.10.2]: https://github.com/Cray-HPE/cms-tools/compare/1.10.1...1.10.2
 
 [1.10.1]: https://github.com/Cray-HPE/cms-tools/compare/1.10.0...1.10.1
