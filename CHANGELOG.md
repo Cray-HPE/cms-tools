@@ -11,8 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- cmsdev: Stop building SP3 RPM. This is only intended to run on NCNs of CSM 1.5 or higher, and those
-  will be running at least SP4.
+- cmsdev: Stop building SP3 RPM. This is version of the cmsdev tool is only intended to run on NCNs of CSM 1.4 or higher,
+  and those will be running at least SP4.
 - cmsdev: Remove cmsdev binary which somehow made it into the repository.
 
 ## [1.10.3] - 2023-03-22
@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cmsdev: Do not run tftp file transfer test from master NCNs
 
 ## [1.10.1] - 2022-12-20
+
 ### Added
 - Add Artifactory authentication to Jenkinsfile
 
