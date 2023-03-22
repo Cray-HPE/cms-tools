@@ -2,7 +2,7 @@
  *
  *  MIT License
  *
- *  (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+ *  (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a
  *  copy of this software and associated documentation files (the "Software"),
@@ -42,7 +42,6 @@ pipeline {
         IS_STABLE = getBuildIsStable()
         CMSDEV_SPEC_FILE = "cray-cmstools-crayctldeploy.spec"
         BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
-        PUBLISH_SP3 = "sle-15sp3"
         PUBLISH_SP4 = "sle-15sp4"
     }
 
@@ -86,33 +85,7 @@ pipeline {
                 sh "make prepare"
             }
         }
-        // Have to build special image for this because the Go versions in the sles15sp3 image is 1.14
-        stage("Create SP3 RPM builder images") {
-            steps {
-                sh "docker build -t cmstools-builder:15.3 -f Dockerfile.sles15sp3 ."
-            }
-        }
-        stage("Build SP3 RPMs") {
-            agent {
-                docker {
-                    image "cmstools-builder:15.3"
-                    reuseNode true
-                    // Support docker in docker for clamav scan
-                    args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
-                }
-            }
-            steps {
-                sh "make rpm"
-            }
-        }
-        stage('Publish SP3 rpms') {
-            steps {
-                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP3, arch: "x86_64", isStable: env.IS_STABLE)
-                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP3, arch: "src", isStable: env.IS_STABLE)
-                // Clean up RPMs after publish before building SP4 RPMs. Shouldn't be needed, but why not?
-                sh "rm -v dist/rpmbuild/RPMS/x86_64/*.rpm dist/rpmbuild/SRPMS/*.rpm"
-            }
-        }
+
         stage("Build SP4 RPMs") {
             agent {
                 docker {
@@ -126,6 +99,7 @@ pipeline {
                 sh "make rpm"
             }
         }
+
         stage('Publish SP4 rpms') {
             steps {
                 publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP4, arch: "x86_64", isStable: env.IS_STABLE)
