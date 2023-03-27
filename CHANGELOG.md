@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.4] - 2023-03-27
+
+### Removed
+
+- cmsdev: Remove the long unmaintained and unused non-test code paths.
+
 ## [1.11.3] - 2023-03-22
 
 ### Removed
@@ -108,7 +114,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.3...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.4...HEAD
+
+[1.11.4]: https://github.com/Cray-HPE/cms-tools/compare/1.11.3...1.11.4
 
 [1.11.3]: https://github.com/Cray-HPE/cms-tools/compare/1.11.2...1.11.3
 

@@ -1,6 +1,6 @@
 # CMSDEV Tool
 
-cmsdev is a test utility for CMS services. The tool executes tests for all CMS services. Additionally, cmsdev has been padded with additional functionality to make CMS development and system information gathering easier.
+cmsdev is a test utility for CMS services. The tool executes tests for all CMS services.
 
 ## Installation
 
@@ -34,7 +34,6 @@ Noteworthy files in the repo:
 | [cmsdev/internal/lib/](internal/lib/) | Library modules shared by the tests (e.g. kubernetes functions, test logging functions, API/CLI functions, etc) |
 
 ## Example Command Usage
-### Tests
 
 ```bash
 cmsdev test -q all
@@ -51,30 +50,6 @@ IMS_RECIPE_NAME=uan-recipe cmsdev test ims --no-log -v
    # (with distro type of sles15, by default)
 IMS_RECIPE_NAME=uan-recipe IMS_RECIPE_DISTRO=centos cmsdev test ims --no-log -v
    # same as previous, but with the distro type specified as well
-```
-
-### Misc commands 
-```bash
-cmsdev ls services
-   # lists the names of currently installed cms services
-cmsdev ls bos --name
-   # returns the service pod name of bos
-cmsdev ls services --count
-   # returns the number of currently installed cms services
-cmsdev ls services --status
-   # returns a list of cms service pods with status
-
-cmsdev get bos endpoints
-   # returns all bos endpoint descriptions
-cmsdev get ims logs 
-   # returns ims container logs 
-cmsdev get bos sessiontemplate --endpoint
-   # describe bos's sessiontemplate endpoint
-
-cmsdev get k token --print
-   # returns k8s access token
-cmsdev get k client-secret --print
-   # returns k8s client secret
 ```
 
 ## Contributing
