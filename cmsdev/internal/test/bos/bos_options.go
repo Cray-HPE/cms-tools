@@ -36,6 +36,7 @@ import (
 const bosV2OptionsUri = bosV2BaseUri + "/options"
 
 const bosV2OptionsCLI = "options"
+const bosDefaultOptionsCLI = bosV2OptionsCLI
 
 func optionsTestsAPI(params *common.Params) (passed bool) {
 	passed = true
@@ -56,6 +57,11 @@ func optionsTestsCLI() (passed bool) {
 
 	// "v2 options list"
 	if !basicCLIListVerifyStringMapTest("v2", bosV2OptionsCLI) {
+		passed = false
+	}
+
+	// "options list"
+	if !basicCLIListVerifyStringMapTest(bosDefaultOptionsCLI) {
 		passed = false
 	}
 
