@@ -41,7 +41,7 @@ const bosV2VersionUri = bosV2BaseUri + "/version"
 
 const bosV1VersionCLI = "version"
 const bosV2VersionCLI = "version"
-const bosDefaultVersionCLI = bosV1VersionCLI
+const bosDefaultVersionCLI = bosV2VersionCLI
 
 func versionTestsAPI(params *common.Params) (passed bool) {
 	passed = true
