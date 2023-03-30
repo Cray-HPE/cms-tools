@@ -37,7 +37,7 @@ const bosV2HealthzUri = bosV2BaseUri + "/healthz"
 
 const bosV1HealthzCLI = "healthz"
 const bosV2HealthzCLI = "healthz"
-const bosDefaultHealthzCLI = bosV1HealthzCLI
+const bosDefaultHealthzCLI = bosV2HealthzCLI
 
 func healthzTestsAPI(params *common.Params) (passed bool) {
 	passed = true

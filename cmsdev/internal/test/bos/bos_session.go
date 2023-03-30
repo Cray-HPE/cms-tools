@@ -38,7 +38,7 @@ const bosV2SessionsUri = bosV2BaseUri + "/sessions"
 
 const bosV1SessionsCLI = "session"
 const bosV2SessionsCLI = "sessions"
-const bosDefaultSessionsCLI = bosV1SessionsCLI
+const bosDefaultSessionsCLI = bosV2SessionsCLI
 
 // The sessionsV1TestsURI, sessionsV2TestsURI, sessionsV1TestsCLICommand, and sessionsV2TestsCLICommand functions define the API and CLI versions of the
 // BOS v1 and v2 session subtests.
@@ -80,8 +80,8 @@ func sessionsTestsCLI() (passed bool) {
 		passed = false
 	}
 
-	// default (v1) sessions
-	if !sessionsV1TestsCLICommand(bosDefaultSessionsCLI) {
+	// default (v2) sessions
+	if !sessionsV2TestsCLICommand(bosDefaultSessionsCLI) {
 		passed = false
 	}
 
