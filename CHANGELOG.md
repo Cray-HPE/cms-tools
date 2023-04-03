@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- cmsdev: Fixed typo in Kubernetes pod check function.
+- cmsdev: Added namespace detail to output of some Kubernetes check functions.
+
 ## [1.11.5] - 2023-03-30
 
 ### Changed

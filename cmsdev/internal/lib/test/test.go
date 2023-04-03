@@ -53,19 +53,19 @@ func GetPodNamesInNamespace(namespace, serviceName string, minExpectedCount, max
 		return
 	} else if minExpectedCount == maxExpectedCount {
 		if len(podNames) != minExpectedCount {
-			common.Errorf("Expected exactly %d pod pods but found %d: %s",
-				minExpectedCount, len(podNames), strings.Join(podNames, ", "),
+			common.Errorf("Expected exactly %d %s pods in %s namespace but found %d: %s",
+				minExpectedCount, serviceName, namespace, len(podNames), strings.Join(podNames, ", "),
 			)
 		} else {
 			passed = true
 		}
 	} else if len(podNames) < minExpectedCount {
-		common.Errorf("Expected at least %d pod pods but found %d: %s",
-			minExpectedCount, len(podNames), strings.Join(podNames, ", "),
+		common.Errorf("Expected at least %d %s pods in %s namespace but found %d: %s",
+			minExpectedCount, serviceName, namespace, len(podNames), strings.Join(podNames, ", "),
 		)
 	} else if maxExpectedCount > 0 && len(podNames) > maxExpectedCount {
-		common.Errorf("Expected at most %d pod pods but found %d: %s",
-			maxExpectedCount, len(podNames), strings.Join(podNames, ", "),
+		common.Errorf("Expected at most %d %s pods in %s namespace but found %d: %s",
+			maxExpectedCount, serviceName, namespace, len(podNames), strings.Join(podNames, ", "),
 		)
 	} else {
 		passed = true
@@ -86,7 +86,7 @@ func CheckPodStatsInNamespace(namespace, podName string, params ...string) (pass
 	passed = true
 
 	// get pod and container status details
-	common.Infof("checking pod status for %s expecting %s", podName, "Running")
+	common.Infof("checking pod status for %s in %s namespace; expecting Running", podName, namespace)
 	stats, err = k8s.GetPodStats(namespace, podName)
 	if err != nil {
 		common.Error(err)
@@ -155,7 +155,7 @@ func CheckPodStats(podName string, params ...string) bool {
 // Returns true if no errors, false otherwise
 func CheckPVCStatusInNamespace(namespace, pvcName string) (passed bool) {
 	passed = false
-	common.Infof("checking pvc status for %s expecting %s", pvcName, "Bound")
+	common.Infof("checking pvc status for %s in namespace %s; expecting Bound", pvcName, namespace)
 	status, err := k8s.GetPVCStatus(namespace, pvcName)
 	if err == nil {
 		if len(status) == 0 {
