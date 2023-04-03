@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.6] - 2023-04-03
+
 ### Changed
 
 - cmsdev: Fixed typo in Kubernetes pod check function.
@@ -125,7 +127,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.5...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.6...HEAD
+
+[1.11.6]: https://github.com/Cray-HPE/cms-tools/compare/1.11.5...1.11.6
 
 [1.11.5]: https://github.com/Cray-HPE/cms-tools/compare/1.11.4...1.11.5
 
