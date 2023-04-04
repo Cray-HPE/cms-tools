@@ -9,8 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- cmsdev: Bumps golang.org/x/sys from 0.0.0-20210615035016-665e8c7367d1 to 0.1.0
+- cmsdev: Bump golang.org/x/sys to 0.1.0
   - Resolves CVE-2022-29526
+- cmsdev: Bump golang.org/x/net to 0.7.0
+  - Resolves CVE-2022-41723
 
 ## [1.10.5] - 2023-03-30
 
