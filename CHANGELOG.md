@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.7] - 2023-04-04
+
 ### Changed
 
 - cmsdev: Bump golang.org/x/sys to 0.1.0
@@ -134,7 +136,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.6...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.7...HEAD
+
+[1.11.7]: https://github.com/Cray-HPE/cms-tools/compare/1.11.6...1.11.7
 
 [1.11.6]: https://github.com/Cray-HPE/cms-tools/compare/1.11.5...1.11.6
 
