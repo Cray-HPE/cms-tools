@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  (C) Copyright 2020-2022 Hewlett Packard Enterprise Development LP
+//  (C) Copyright 2020-2023 Hewlett Packard Enterprise Development LP
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -58,19 +58,25 @@ type ContainerEnvVar struct {
 }
 
 var KubectlPath, VcsUser, VcsPass string
+var kubeConfig *rest.Config
+
+func getKubeconfigEnvVar() (kubeconfigEnvVar string) {
+	kubeconfigEnvVar = os.Getenv("KUBECONFIG")
+	if len(kubeconfigEnvVar) == 0 {
+		kubeconfigEnvVar = filepath.Join(os.Getenv("HOME"), ".kube", "config")
+		common.Debugf("KUBECONFIG env var not set. Using default = %s", kubeconfigEnvVar)
+		return
+	}
+	common.Debugf("Found env var KUBECONFIG = %s", kubeconfigEnvVar)
+	return
+}
 
 func getKubeConfig() (*rest.Config, error) {
-	kubeconfig := os.Getenv("KUBECONFIG")
-	if len(kubeconfig) == 0 {
-		kubeconfig = filepath.Join(
-			os.Getenv("HOME"), ".kube", "config",
-		)
-		common.Debugf("KUBECONFIG env var not set. Using default = %s", kubeconfig)
-	} else {
-		common.Debugf("Found env var KUBECONFIG = %s", kubeconfig)
+	var err error
+	if kubeConfig == nil {
+		kubeConfig, err = clientcmd.BuildConfigFromFlags("", getKubeconfigEnvVar())
 	}
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-	return config, err
+	return kubeConfig, err
 }
 
 func GetClientset() (*kubernetes.Clientset, error) {
