@@ -82,10 +82,11 @@ func IsBOSRunning() (passed bool) {
 		expectedStatus := "Running"
 		if etcdRe.MatchString(podName) {
 			etcPodCount += 1
-			// There should be a corresponding pvc with the same name
-			common.Infof("There should be a corresponding pvc with the same name as this pod (%s)", podName)
-			pvcNames = append(pvcNames, podName)
-			if !test.CheckPVCStatus(podName) {
+			// There should be a corresponding pvc with the same name prepended with "data-"
+			pvcName := "data-" + podName
+			common.Infof("There should be a corresponding pvc for this pod (%s) with the name '%s'", podName, pvcName)
+			pvcNames = append(pvcNames, pvcName)
+			if !test.CheckPVCStatus(pvcName) {
 				passed = false
 			}
 		} else {
