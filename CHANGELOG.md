@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.7] - 2023-04-05
+
 ### Changed
 
 - cmsdev: Modify BOS test to make pod checks more flexible
@@ -122,7 +124,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.10.6...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.10.7...HEAD
+
+[1.10.7]: https://github.com/Cray-HPE/cms-tools/compare/1.10.6...1.10.7
 
 [1.10.6]: https://github.com/Cray-HPE/cms-tools/compare/1.10.5...1.10.6
 
