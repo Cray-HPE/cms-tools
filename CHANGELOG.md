@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- cmsdev: Modify BOS test to make pod checks more flexible
+
 ## [1.10.6] - 2023-04-04
 
 ### Changed
