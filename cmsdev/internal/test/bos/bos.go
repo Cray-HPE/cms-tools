@@ -36,22 +36,37 @@ import (
 	"strings"
 )
 
+var optionalCompletedPodNames = []string{
+	"cray-bos-wait-for-etcd-",
+	"cray-bos-bitnami-etcd-snapshotter-",
+	"cray-bos-etcd-post-install-",
+	"cray-bos-pre-upgrade-etcd-backup-",
+}
+
 func IsBOSRunning() (passed bool) {
 	passed = true
 
-	// We expect to find 4+ cray-bos pods
-	podNames, ok := test.GetPodNamesByPrefixKey("bos", 4, -1)
+	// Look for at least 3 bos pods, although we know there are more.
+	podNames, ok := test.GetPodNamesByPrefixKey("bos", 3, -1)
 	if !ok {
 		passed = false
 	}
 	common.Infof("Found %d bos pods", len(podNames))
-	// We expect the following bos pods
-	// Exactly 1 main cray-bos pod
-	// Exactly 3 cray-bos-etcd pods
-	// Optionally 1 or more cray-bos-wait-for-etcd pods
-	mainPodCount := 0
+	// The BOS pod zoo has become rather unruly. Parts of this test were
+	// passing more by accident than anything else. Given that, this
+	// section of the check has been simplified to just make sure that there
+	// are 3 etcd pods, and that any transient pods, if they exist, have succeeded.
+
+	// Check for:
+	// Exactly 3 BOS etcd pods
+	// All pods are expected to be Running except for the following, which are expected to
+	// be Succeeded if they exist:
+	// - cray-bos-wait-for-etcd
+	// - cray-bos-bitnami-etcd-snapshotter
+	// - cray-bos-etcd-post-install
+	// - cray-bos-pre-upgrade-etcd-backup
 	etcPodCount := 0
-	waitForEtcdRe := regexp.MustCompile("cray-bos-wait-for-etcd-[0-9][0-9]*-")
+	etcdRe := regexp.MustCompile("cray-bos-bitnami-etcd-[0-9]")
 	pvcNames := make([]string, 0, 3)
 	for _, podName := range podNames {
 		common.Infof("Getting pod status for %s", podName)
@@ -64,32 +79,30 @@ func IsBOSRunning() (passed bool) {
 			common.Infof("Pod %s status is %s", podName, status)
 		}
 
-		if waitForEtcdRe.MatchString(podName) {
-			if status != "" && status != "Succeeded" {
-				common.VerboseFailedf("Pod %s has status %s, but we expect it to be Succeeded", podName, status)
+		expectedStatus := "Running"
+		if etcdRe.MatchString(podName) {
+			etcPodCount += 1
+			// There should be a corresponding pvc with the same name prepended with "data-"
+			pvcName := "data-" + podName
+			common.Infof("There should be a corresponding pvc for this pod (%s) with the name '%s'", podName, pvcName)
+			pvcNames = append(pvcNames, pvcName)
+			if !test.CheckPVCStatus(pvcName) {
 				passed = false
 			}
 		} else {
-			if strings.HasPrefix(podName, "cray-bos-etcd-") {
-				etcPodCount += 1
-				// There should be a corresponding pvc with the same name
-				common.Infof("There should be a corresponding pvc with the same name as this pod (%s)", podName)
-				pvcNames = append(pvcNames, podName)
-				if !test.CheckPVCStatus(podName) {
-					passed = false
+			for _, podPrefix := range optionalCompletedPodNames {
+				if strings.HasPrefix(podName, podPrefix) {
+					// These pods, if they exist, are expected to be Succeeded
+					expectedStatus = "Succeeded"
+					break
 				}
-			} else {
-				mainPodCount += 1
-			}
-			if status != "" && status != "Running" {
-				common.VerboseFailedf("Pod %s has status %s, but we expect it to be Running", podName, status)
-				passed = false
 			}
 		}
-	}
-	if mainPodCount == 0 {
-		common.VerboseFailedf("Did not find any main cray-bos pod")
-		passed = false
+
+		if status != "" && status != expectedStatus {
+			common.VerboseFailedf("Pod %s has status %s, but we expect it to be %s", podName, status, expectedStatus)
+			passed = false
+		}
 	}
 	if etcPodCount != 3 {
 		common.VerboseFailedf("Found %d cray-bos-etcd- pod(s), but expect to find 3", etcPodCount)
