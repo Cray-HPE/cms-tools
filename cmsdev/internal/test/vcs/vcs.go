@@ -64,7 +64,7 @@ func IsVCSRunning() (passed bool) {
 	// In addition to the main gitea-vcs pod (which should be in Running state), we expect:
 	// - 1 or more gitea-vcs-postgres pod (in Running state)
 	// - 0 or more gitea-vcs-wait-for-postgres-<num>- pods (in Succeeded state)
-	// - 0 or more gitea-vcs-postgresql-db-backup- pods
+	// - 0 or more logical-backup-gitea-vcs-postgres- pods
 
 	listedPodsOnError := false
 	mainPodCount := 0
@@ -84,7 +84,7 @@ func IsVCSRunning() (passed bool) {
 			if !test.CheckPVCStatus(pvcName) {
 				passed = false
 			}
-		} else if strings.HasPrefix(podName, "gitea-vcs-postgresql-db-backup-") {
+		} else if strings.HasPrefix(podName, "logical-backup-gitea-vcs-postgres-") {
 			common.Infof("checking pod start time for %s", podName)
 			podStarted, err := k8s.GetPodStartTime(common.NAMESPACE, podName)
 			if err != nil {
@@ -151,25 +151,25 @@ func IsVCSRunning() (passed bool) {
 	}
 
 	// Verify if postgres backup k8s cronjob exists
-	err := k8s.VerifyCronJobExists(common.NAMESPACE, "gitea-vcs-postgresql-db-backup")
+	err := k8s.VerifyCronJobExists(common.NAMESPACE, "logical-backup-gitea-vcs-postgres")
 	if err == nil {
-		common.Infof("kubernetes CronJob found in namespace %s with name %s", common.NAMESPACE, "gitea-vcs-postgresql-db-backup")
+		common.Infof("kubernetes CronJob found in namespace %s with name %s", common.NAMESPACE, "logical-backup-gitea-vcs-postgres")
 	} else {
 		common.VerboseFailedf(err.Error())
 		passed = false
 	}
 
 	if latestBackupPod.Name == "" {
-		common.Warnf("No gitea-vcs-postgresql-db-backup pods found -- db has not yet been backed up")
+		common.Warnf("No logical-backup-gitea-vcs-postgres pods found -- db has not yet been backed up")
 	} else if latestBackupPod.Status == "Succeeded" {
 		common.Infof("The latest gitea-vcs-postgresql-db backup pod (%s) completed successfully", latestBackupPod.Name)
 	} else if latestBackupPod.Status == "Running" || latestBackupPod.Status == "Pending" {
-		common.VerboseFailedf("The most recent gitea-vcs-postgresql-db-backup pod (%s) has not yet completed; re-run this test after it is done", latestBackupPod.Name)
+		common.VerboseFailedf("The most recent logical-backup-gitea-vcs-postgres pod (%s) has not yet completed; re-run this test after it is done", latestBackupPod.Name)
 	} else if latestBackupPod.Status == "Failed" {
-		common.VerboseFailedf("The most recent gitea-vcs-postgresql-db-backup pod (%s) failed", latestBackupPod.Name)
+		common.VerboseFailedf("The most recent logical-backup-gitea-vcs-postgres pod (%s) failed", latestBackupPod.Name)
 		passed = false
 	} else {
-		common.VerboseFailedf("The most recent gitea-vcs-postgresql-db-backup pod (%s) has an unexpected status (%s)", latestBackupPod.Name, latestBackupPod.Status)
+		common.VerboseFailedf("The most recent logical-backup-gitea-vcs-postgres pod (%s) has an unexpected status (%s)", latestBackupPod.Name, latestBackupPod.Status)
 		passed = false
 	}
 
