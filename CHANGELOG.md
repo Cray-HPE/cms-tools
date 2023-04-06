@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - cmsdev: Limit redundant logging and output related to KUBECONFIG environment variable
+- cmsdev: Update VCS test to reflect change to logical DB backups in CSM 1.5
 
 ## [1.11.7] - 2023-04-04
 
