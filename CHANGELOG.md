@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.8] - 2023-04-06
+
 ### Changed
 
 - cmsdev: Limit redundant logging and output related to KUBECONFIG environment variable
@@ -142,7 +144,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.7...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.8...HEAD
+
+[1.11.8]: https://github.com/Cray-HPE/cms-tools/compare/1.11.7...1.11.8
 
 [1.11.7]: https://github.com/Cray-HPE/cms-tools/compare/1.11.6...1.11.7
 
