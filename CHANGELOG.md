@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- cmsdev: Removed reference to long removed `cmslogs` tool from [`cmsdev` README file](cmsdev/README.md)
+
 ## [1.10.7] - 2023-04-05
 
 ### Changed
