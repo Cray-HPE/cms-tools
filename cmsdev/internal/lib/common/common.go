@@ -109,6 +109,28 @@ var CMSServicesDuplicates = []string{
 	"ipxe",
 }
 
+// List of Kubernetes things to collect for debug in case of failure
+var kubernetesThingsToCollect = []string{
+	"nodes",
+	"namespaces",
+	"pods",
+	"pv",
+	"pvc",
+	"services",
+	"daemonsets",
+	"statefulsets",
+	"deployments",
+	"etcd",
+	"configmaps",
+	"secrets",
+	"endpoints",
+	"postgresqls",
+	"cronjobs",
+	"jobs",
+	"sealedsecrets",
+	"etcdbackups",
+}
+
 var runTags []string
 var runStartTimes []time.Time
 var artifactDirectory, artifactFilePrefix, runTag, testService string
@@ -169,66 +191,40 @@ func ArtifactCommand(label, cmdName string, cmdArgs ...string) {
 	}
 }
 
+func ArtifactGetAllThings(thing string) {
+	ArtifactCommand("k8s-get-"+thing, "kubectl", "get", thing, "-A", "-o", "wide", "--show-labels=true")
+}
+
 func ArtifactDescribeNodes() {
 	ArtifactCommand("k8s-describe-nodes", "kubectl", "describe", "nodes")
 }
 
-func ArtifactGetAllPods() {
-	ArtifactCommand("k8s-get-pods", "kubectl", "get", "pods", "-A", "-o", "wide", "--show-labels=true")
-}
-
-func ArtifactGetAllPvcs() {
-	ArtifactCommand("k8s-get-pvc", "kubectl", "get", "pvc", "-A", "-o", "wide", "--show-kind=true", "--show-labels=true")
-}
-
-func ArtifactDescribeNamespacePods(namespace string, podNames ...string) {
+func ArtifactDescribeNamespacePods(namespace string, podNames []string) {
+	Infof("Collecting information about current Kubernetes state of following '%s' namespace pods: %s",
+		namespace, strings.Join(podNames, " "))
 	for _, podName := range podNames {
 		describeLabel := "k8s-describe-pod-" + namespace + "-" + podName
 		ArtifactCommand(describeLabel, "kubectl", "describe", "pod", "-n", namespace, podName, "--show-events=true")
 		logsLabel := "k8s-logs-" + namespace + "-" + podName
-		ArtifactCommand(logsLabel, "kubectl", "logs", "-n", namespace, podName, "--all-containers=true", "--timestamps=true")
+		ArtifactCommand(logsLabel, "kubectl", "logs", "-n", namespace, podName, "--all-containers=true", "--timestamps=true", "--prefix=true")
 	}
 }
 
-func ArtifactDescribePods(podNames ...string) {
-	ArtifactDescribeNamespacePods(NAMESPACE, podNames...)
-}
-
-func ArtifactDescribeNamespacePvcs(namespace string, pvcNames ...string) {
+func ArtifactDescribeNamespacePvcs(namespace string, pvcNames []string) {
+	Infof("Collecting information about current Kubernetes state of following '%s' namespace PVCs: %s",
+		namespace, strings.Join(pvcNames, " "))
 	for _, pvcName := range pvcNames {
 		describeLabel := "k8s-describe-pvc-" + namespace + "-" + pvcName
 		ArtifactCommand(describeLabel, "kubectl", "describe", "pvc", "-n", namespace, pvcName, "--show-events=true")
 	}
 }
 
-func ArtifactDescribePvcs(pvcNames ...string) {
-	ArtifactDescribeNamespacePvcs(NAMESPACE, pvcNames...)
-}
-
-func ArtifactsPodsPvcsNamespace(namespace string, podNames, pvcNames []string) {
-	Infof("Collecting information about current kubernetes state")
-	if len(podNames) > 0 {
-		ArtifactDescribeNamespacePods(namespace, podNames...)
+func ArtifactsKubernetes() {
+	Infof("Collecting information about current Kubernetes state")
+	for _, thing := range kubernetesThingsToCollect {
+		ArtifactGetAllThings(thing)
 	}
-	if len(pvcNames) > 0 {
-		ArtifactDescribeNamespacePvcs(namespace, pvcNames...)
-	}
-	ArtifactGetAllPods()
-	ArtifactGetAllPvcs()
 	ArtifactDescribeNodes()
-}
-
-func ArtifactsPodsPvcs(podNames, pvcNames []string) {
-	ArtifactsPodsPvcsNamespace(NAMESPACE, podNames, pvcNames)
-}
-
-func ArtifactsPodsNamespace(namespace string, podNames []string) {
-	var noPvcs []string
-	ArtifactsPodsPvcsNamespace(namespace, podNames, noPvcs)
-}
-
-func ArtifactsPods(podNames []string) {
-	ArtifactsPodsNamespace(NAMESPACE, podNames)
 }
 
 // Determines index of string in slice, otherwise returns -1

@@ -66,7 +66,13 @@ func IsConmanRunning() (passed bool) {
 	}
 
 	if !passed {
-		common.ArtifactsPodsPvcs(allPodNames, allPvcNames)
+		common.ArtifactsKubernetes()
+		if len(allPodNames) > 0 {
+			common.ArtifactDescribeNamespacePods(common.NAMESPACE, allPodNames)
+		}
+		if len(allPvcNames) > 0 {
+			common.ArtifactDescribeNamespacePods(common.NAMESPACE, allPvcNames)
+		}
 	}
 	return
 }

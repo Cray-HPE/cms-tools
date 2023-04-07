@@ -85,7 +85,13 @@ func AreTheyRunning() (passed bool) {
 	}
 
 	if !passed {
-		common.ArtifactsPodsPvcs(podNames, pvcNames)
+		common.ArtifactsKubernetes()
+		if len(podNames) > 0 {
+			common.ArtifactDescribeNamespacePods(common.NAMESPACE, podNames)
+		}
+		if len(pvcNames) > 0 {
+			common.ArtifactDescribeNamespacePods(common.NAMESPACE, pvcNames)
+		}
 		common.Infof("Because of previous failures, skipping remaining tftp checks")
 		return
 	}
