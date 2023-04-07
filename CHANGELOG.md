@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - cmsdev: Changed default log directory to `/opt/cray/tests/install/logs/cmsdev/` to be consistent with other CSM tests.
 - cmsdev: Simplified Kubernetes artifact collection functions; collect additional information
+- cmsdev: Collect Kubernetes artifacts on failure by default
 
 ### Removed
 

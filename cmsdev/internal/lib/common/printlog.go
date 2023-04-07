@@ -49,6 +49,7 @@ const DEFAULT_LOG_FILE_DIR string = "/opt/cray/tests/install/logs/cmsdev"
 const RELATIVE_PATH_TO_THIS_FILE = "cmsdev/internal/lib/common/printlog.go"
 
 var srcPrefixSubstring string
+var logFileDir string
 
 // log file handle
 var logFile *logrus.Logger
@@ -391,6 +392,7 @@ func CreateLogFile(path, version string, logs, retry, quiet, verbose bool) {
 	}
 	runTag = strings.Join(runTags, "-")
 	testLog = logFile.WithFields(logrus.Fields{"version": version, "args": strings.Join(args, ",")})
+	logFileDir = path
 	Infof("cmsdev starting")
 	fmt.Printf("Starting main run, version: %s, tag: %s\n", version, runTag)
 }

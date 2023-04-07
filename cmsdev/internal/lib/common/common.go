@@ -586,8 +586,13 @@ func UnsetTestService() {
 func InitArtifacts() {
 	artifactDirectory = os.Getenv("ARTIFACTS")
 	if len(artifactDirectory) == 0 {
-		Warnf("ARTIFACTS environment variable not set; no artifacts will be saved")
-		return
+		if len(logFileDir) == 0 {
+			Warnf("ARTIFACTS environment variable not set and test logging disabled; no artifacts will be saved")
+			return
+		}
+		// Default to log_directory/timestamp
+		artifactDirectory = logFileDir + "/" + "artifacts-" + time.Now().Format(time.RFC3339Nano)
+		Debugf("ARTIFACTS environment variable not set. Defaulting to '%s'", artifactDirectory)
 	}
 	err := CreateDirectoryIfNeeded(artifactDirectory)
 	if err != nil {
@@ -606,7 +611,7 @@ func init() {
 	logFile, testLog = nil, nil
 	printInfo, printWarn, printError, printResults = true, true, true, true
 	printVerbose = false
-	runTag, artifactDirectory, artifactFilePrefix, testService = "", "", "", ""
+	runTag, artifactDirectory, artifactFilePrefix, testService, logFileDir = "", "", "", "", ""
 	// Call the init function for the printlog source file
 	printlogInit()
 }
