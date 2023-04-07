@@ -110,7 +110,13 @@ func IsBOSRunning() (passed bool) {
 	}
 
 	if !passed {
-		common.ArtifactsPodsPvcs(podNames, pvcNames)
+		common.ArtifactsKubernetes()
+		if len(podNames) > 0 {
+			common.ArtifactDescribeNamespacePods(common.NAMESPACE, podNames)
+		}
+		if len(pvcNames) > 0 {
+			common.ArtifactDescribeNamespacePods(common.NAMESPACE, pvcNames)
+		}
 	}
 
 	// Defined in bos_api.go

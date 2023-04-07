@@ -250,6 +250,8 @@ cmsdev test cfs -r --verbose
 			common.SetTestService(services[0])
 			ok := DoTest(services[0], retry)
 			common.UnsetTestService()
+			// Compress test artifacts, if any
+			common.CompressArtifacts()
 			if ok {
 				common.Success()
 			} else {
@@ -268,6 +270,8 @@ cmsdev test cfs -r --verbose
 			}
 			common.UnsetTestService()
 		}
+		// Compress test artifacts, if any
+		common.CompressArtifacts()
 		if len(failed) > 0 {
 			common.Failuref("%d service tests FAILED (%s), %d passed (%s)", len(failed), strings.Join(failed, ", "),
 				len(passed), strings.Join(passed, ", "))

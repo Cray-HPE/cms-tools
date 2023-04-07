@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  (C) Copyright 2019-2022 Hewlett Packard Enterprise Development LP
+//  (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -43,12 +43,13 @@ import (
 	"time"
 )
 
-const DEFAULT_LOG_FILE_DIR string = "/opt/cray/tests"
+const DEFAULT_LOG_FILE_DIR string = "/opt/cray/tests/install/logs/cmsdev"
 
 // Relative path to this source file within its repo
 const RELATIVE_PATH_TO_THIS_FILE = "cmsdev/internal/lib/common/printlog.go"
 
 var srcPrefixSubstring string
+var logFileDir string
 
 // log file handle
 var logFile *logrus.Logger
@@ -360,7 +361,7 @@ func CreateLogFile(path, version string, logs, retry, quiet, verbose bool) {
 	} else if len(path) == 0 {
 		path = DEFAULT_LOG_FILE_DIR
 	}
-	err = CreateDirectoryIfNeeded(path)
+	err, _ = CreateDirectoryIfNeeded(path)
 	if err != nil {
 		fmt.Printf("Error with log directory: %s\n", path)
 		panic(err)
@@ -391,6 +392,7 @@ func CreateLogFile(path, version string, logs, retry, quiet, verbose bool) {
 	}
 	runTag = strings.Join(runTags, "-")
 	testLog = logFile.WithFields(logrus.Fields{"version": version, "args": strings.Join(args, ",")})
+	logFileDir = path
 	Infof("cmsdev starting")
 	fmt.Printf("Starting main run, version: %s, tag: %s\n", version, runTag)
 }
