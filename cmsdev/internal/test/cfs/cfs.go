@@ -114,7 +114,10 @@ func IsCFSRunning() (passed bool) {
 		passed = false
 	}
 	if !passed {
-		common.ArtifactsPods(podNames)
+		common.ArtifactsKubernetes()
+		if len(podNames) > 0 {
+			common.ArtifactDescribeNamespacePods(common.NAMESPACE, podNames)
+		}
 	}
 	return
 }
