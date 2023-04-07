@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  (C) Copyright 2019-2022 Hewlett Packard Enterprise Development LP
+//  (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -43,7 +43,7 @@ import (
 	"time"
 )
 
-const DEFAULT_LOG_FILE_DIR string = "/opt/cray/tests"
+const DEFAULT_LOG_FILE_DIR string = "/opt/cray/tests/install/logs/cmsdev"
 
 // Relative path to this source file within its repo
 const RELATIVE_PATH_TO_THIS_FILE = "cmsdev/internal/lib/common/printlog.go"
