@@ -23,7 +23,6 @@ On an installed system, these are important files and directories:
 | ------------------|-------------|
 | /usr/local/bin/cmsdev | The man himself |
 | /opt/cray/tests/cmsdev.log | Detailed log file (not to be mistaken with the output from when it is run). [See an example file](examples/cmsdev.log) |
-| /usr/local/bin/cmslogs | Utility to collect most of these files to help debug test failures. [See the README here](../cmslogs) for more details |
 
 Noteworthy files in the repo:
 
@@ -53,4 +52,5 @@ IMS_RECIPE_NAME=uan-recipe IMS_RECIPE_DISTRO=centos cmsdev test ims --no-log -v
 ```
 
 ## Contributing
+
 Pull requests are welcome.
