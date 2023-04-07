@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.9] - 2023-04-07
+
 ### Changed
 
 - cmsdev: Changed default log directory to `/opt/cray/tests/install/logs/cmsdev/` to be consistent with other CSM tests.
@@ -155,7 +157,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.8...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.9...HEAD
+
+[1.11.9]: https://github.com/Cray-HPE/cms-tools/compare/1.11.8...1.11.9
 
 [1.11.8]: https://github.com/Cray-HPE/cms-tools/compare/1.11.7...1.11.8
 
