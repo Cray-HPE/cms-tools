@@ -361,7 +361,7 @@ func CreateLogFile(path, version string, logs, retry, quiet, verbose bool) {
 	} else if len(path) == 0 {
 		path = DEFAULT_LOG_FILE_DIR
 	}
-	err = CreateDirectoryIfNeeded(path)
+	err, _ = CreateDirectoryIfNeeded(path)
 	if err != nil {
 		fmt.Printf("Error with log directory: %s\n", path)
 		panic(err)
