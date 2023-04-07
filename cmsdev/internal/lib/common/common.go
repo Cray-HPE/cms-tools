@@ -36,6 +36,7 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -132,8 +133,11 @@ var kubernetesThingsToCollect = []string{
 }
 
 var runTags []string
+var runTag, testService string
 var runStartTimes []time.Time
-var artifactDirectory, artifactFilePrefix, runTag, testService string
+
+var artifactDirectory, artifactFilePrefix string
+var artifactDirectoryCreated, artifactsLogged bool
 
 // Set and unset the run sub-tag
 func SetRunSubTag(tag string) {
@@ -183,6 +187,7 @@ func ArtifactCommand(label, cmdName string, cmdArgs ...string) {
 		Warnf("Error starting command; %s", err.Error())
 		return
 	}
+	artifactsLogged = true
 	err = cmd.Wait()
 	if err != nil {
 		Warnf("Command failed; %s", err.Error())
@@ -543,21 +548,39 @@ func Restful(method, url string, params Params) (*resty.Response, error) {
 
 }
 
-func CreateDirectoryIfNeeded(path string) error {
+func CreateDirectoryIfNeeded(path string) (error, bool) {
+	// bool is True if we create the directory, false if it
+	// already exists.
+
 	// First see if the path already exists
 	fileInfo, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		// It does not exist, so let's create it
-		return os.MkdirAll(path, 0755)
+		return os.MkdirAll(path, 0755), true
 	} else if err != nil {
-		return err
+		return err, false
 	}
 
 	// It exists, so make sure it is a directory
 	if fileInfo.IsDir() {
-		return nil
+		return nil, false
 	}
-	return fmt.Errorf("Path exists but is not a directory: %s", path)
+	return fmt.Errorf("Path exists but is not a directory: %s", path), false
+}
+
+func RemoveEmptyDirectory(path string) error {
+	// First see if the path already exists
+	dirInfo, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		// It does not exist, so nothing to do
+		return fmt.Errorf("Path does not exist: %s", path)
+	}
+	// It exists, so make sure it is a directory
+	if !dirInfo.IsDir() {
+		return fmt.Errorf("Path exists but is not a directory: %s", path)
+	}
+	// Remove it
+	return os.Remove(path)
 }
 
 func SetTestService(service string) {
@@ -584,6 +607,8 @@ func UnsetTestService() {
 }
 
 func InitArtifacts() {
+	var err error
+
 	artifactDirectory = os.Getenv("ARTIFACTS")
 	if len(artifactDirectory) == 0 {
 		if len(logFileDir) == 0 {
@@ -593,15 +618,58 @@ func InitArtifacts() {
 		// Default to log_directory/timestamp
 		artifactDirectory = logFileDir + "/" + "artifacts-" + time.Now().Format(time.RFC3339Nano)
 		Debugf("ARTIFACTS environment variable not set. Defaulting to '%s'", artifactDirectory)
+	} else {
+		Debugf("ARTIFACTS environment variable set to '%s'", artifactDirectory)
 	}
-	err := CreateDirectoryIfNeeded(artifactDirectory)
+	err, artifactDirectoryCreated = CreateDirectoryIfNeeded(artifactDirectory)
 	if err != nil {
 		Warnf(err.Error())
 		Warnf("Error with artifact directory \"%s\"; no artifacts will be saved", artifactDirectory)
 		artifactDirectory = ""
 		return
 	}
-	Infof("artifactDirectory=" + artifactDirectory)
+	Infof("artifactDirectory=%s", artifactDirectory)
+}
+
+func CompressArtifacts() {
+	if len(artifactDirectory) == 0 {
+		// No artifact directory set, so nothing to do.
+		return
+	}
+	if !artifactsLogged {
+		// No artifacts logged, but there is an artifact directory.
+		// If we created it, then we will delete it.
+		if !artifactDirectoryCreated {
+			Debugf("No artifacts saved. We did not create the artifact directory, so we will not remove it.")
+			return
+		}
+		Infof("No artifacts saved. Removing empty artifact directory: '%s'", artifactDirectory)
+		err := RemoveEmptyDirectory(artifactDirectory)
+		artifactDirectory = ""
+		if err != nil {
+			Warnf(err.Error())
+		}
+		return
+	}
+	// Artifacts were logged, so compress them and delete the uncompressed artifacts
+	compressedArtifactsFile := artifactDirectory + ".tar.bz2"
+	Infof("Compressing saved test artifacts to '%s'", compressedArtifactsFile)
+	artifactParentDirectory := filepath.Dir(artifactDirectory)
+	artifactDirectoryBasename := filepath.Base(artifactDirectory)
+	Debugf("artifactParentDirectory=%s, artifactDirectoryBasename=%s", artifactParentDirectory,
+		artifactDirectoryBasename)
+	cmdResult, err := RunName("tar", "-C", artifactParentDirectory, "--remove-files", "--bzip2",
+		"-cvf", compressedArtifactsFile, artifactDirectoryBasename)
+	artifactDirectory = ""
+	if err != nil {
+		Warnf(err.Error())
+		return
+	}
+	if cmdResult.Rc == 0 {
+		// Command passed
+		return
+	}
+	Warnf("Error compressing artifacts (tar return code = %d)", cmdResult.Rc)
 }
 
 func init() {
@@ -610,7 +678,7 @@ func init() {
 	runTags = append(runTags, AlnumString(5))
 	logFile, testLog = nil, nil
 	printInfo, printWarn, printError, printResults = true, true, true, true
-	printVerbose = false
+	artifactDirectoryCreated, artifactsLogged, printVerbose = false, false, false
 	runTag, artifactDirectory, artifactFilePrefix, testService, logFileDir = "", "", "", "", ""
 	// Call the init function for the printlog source file
 	printlogInit()
