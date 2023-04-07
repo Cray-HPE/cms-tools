@@ -24,7 +24,7 @@ On an installed system, these are important files and directories:
 | File or Directory | Description |
 | ------------------|-------------|
 | `/usr/local/bin/cmsdev` | The man himself |
-| `/opt/cray/tests/cmsdev.log` | Detailed log file (not to be mistaken with the output from when it is run). [See an example file](examples/cmsdev.log) |
+| `/opt/cray/tests/install/logs/cmsdev/cmsdev.log` | Detailed log file (not to be mistaken with the output from when it is run). [See an example file](examples/cmsdev.log) |
 
 Noteworthy files in the repository:
 
@@ -34,23 +34,12 @@ Noteworthy files in the repository:
 | [`cmsdev/internal/test`/](internal/test/) | Every CMS component which is tested has a directory here that contains all test code |
 | [`cmsdev/internal/lib/`](internal/lib/) | Library modules shared by the tests (e.g. Kubernetes functions, test logging functions, API/CLI functions, etc) |
 
-## Example Command Usage
+## Command Usage
+
+Run the command with the `-h` flag for a usage statement.
 
 ```bash
-cmsdev test -q all
-   # runs all CMS CT tests with minimal output
-cmsdev test bos cfs
-   # runs bos and cfs tests
-cmsdev test conman -q -r
-   # runs conman tests quietly, retrying on failure
-cmsdev test ims -v --no-log
-   # runs ims tests verbosely with logging disabled
-     default=/opt/cray/tests/cmsdev.log, --output to override default
-IMS_RECIPE_NAME=uan-recipe cmsdev test ims --no-log -v
-   # same as previous, but also verifies that an IMS recipe with the specified name exists
-   # (with distro type of sles15, by default)
-IMS_RECIPE_NAME=uan-recipe IMS_RECIPE_DISTRO=centos cmsdev test ims --no-log -v
-   # same as previous, but with the distro type specified as well
+cmsdev test -h
 ```
 
 ## Contributing
