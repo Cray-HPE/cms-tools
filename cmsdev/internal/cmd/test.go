@@ -30,6 +30,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/test/bos"
@@ -149,11 +150,33 @@ func DoTest(service string, retry bool) bool {
 	}
 }
 
-// testCmd command functions
-var testCmd = &cobra.Command{
-	Use:   "test",
-	Short: "cms test services command",
-	Long: `test command runs service tests.
+func GetTestNamesList(excludeAliases bool) []string {
+	var s string
+	services := make([]string, 0)
+
+	if !excludeAliases {
+		// Start with the "all" alias
+		services = append(services, "all")
+	}
+	// Append the remaining services (omitting aliases if specified)
+	for _, s = range common.CMSServices {
+		if excludeAliases && common.StringInArray(s, common.CMSServicesDuplicates) {
+			// Skip this one, as it is an alias of another one
+			continue
+		}
+		services = append(services, s)
+	}
+	return services
+}
+
+func GetTestNamesString(excludeAliases bool) string {
+	return strings.Join(GetTestNamesList(excludeAliases), " ")
+}
+
+var longHelpText = fmt.Sprintf(`test command runs service tests.
+
+Valid service tests: %s
+
 Example Commands:
 
 cmsdev test -l
@@ -165,7 +188,13 @@ cmsdev test conman
 cmsdev test tftp --no-log -q
   # runs tftp tests in quiet mode with logging disabled
 cmsdev test cfs -r --verbose
-  # runs cfs tests with verbosity and retry on failure`,
+  # runs cfs tests with verbosity and retry on failure`, GetTestNamesString(false))
+
+// testCmd command functions
+var testCmd = &cobra.Command{
+	Use:   "test",
+	Short: "cms test services command",
+	Long:  longHelpText,
 	Run: func(cmd *cobra.Command, args []string) {
 		noLogs, _ := cmd.Flags().GetBool("no-log")
 		logsDir, _ := cmd.Flags().GetString("log-dir")
@@ -179,9 +208,6 @@ cmsdev test cfs -r --verbose
 			common.Usagef("--quiet and --verbose are mutually exclusive")
 		}
 
-		var s string
-		services := make([]string, 0)
-
 		if listTests {
 			// --list was passed
 			if noLogs || logsDir != "" || retry || quiet || verbose {
@@ -189,19 +215,7 @@ cmsdev test cfs -r --verbose
 			} else if len(args) > 0 {
 				common.Usagef("Invalid arguments specified with --list: %s", strings.Join(args, " "))
 			}
-			if !excludeAliases {
-				// Start with the "all" alias
-				services = append(services, "all")
-			}
-			// Append the remaining services (omitting aliases if specified)
-			for _, s = range common.CMSServices {
-				if excludeAliases && common.StringInArray(s, common.CMSServicesDuplicates) {
-					// Skip this one, as it is an alias of another one
-					continue
-				}
-				services = append(services, s)
-			}
-			common.Infof(strings.Join(services, " "))
+			common.Infof(GetTestNamesString(excludeAliases))
 			return
 		}
 
@@ -209,9 +223,11 @@ cmsdev test cfs -r --verbose
 		if excludeAliases {
 			common.Usagef("--exclude-aliases is only valid with --list")
 		} else if len(args) < 1 {
-			common.Usagef("argument required, provide 'all' or at least one cms service name: %s\n", strings.Join(common.CMSServices, " "))
+			common.Usagef("Argument required, provide one or more of the following: %s\n", GetTestNamesString(false))
 		}
 
+		var s string
+		services := make([]string, 0)
 		allServices := false
 		for _, a := range args {
 			s = strings.TrimSpace(a)
@@ -219,22 +235,15 @@ cmsdev test cfs -r --verbose
 			if s == "all" {
 				allServices = true
 			} else if !common.StringInArray(s, common.CMSServices) {
-				common.Usagef("supported cms services are 'all' or any of the following: %s", strings.Join(common.CMSServices, " "))
+				common.Usagef("Invalid test: '%s'. Supported tests are: %s", s, GetTestNamesString(false))
 			} else if !allServices {
 				services = append(services, s)
 			}
 		}
 		if allServices {
-			services = make([]string, 0)
-			for _, s = range common.CMSServices {
-				if common.StringInArray(s, common.CMSServicesDuplicates) {
-					// Skip this one, as it is a duplicate of another one
-					continue
-				}
-				services = append(services, s)
-			}
+			services = GetTestNamesList(true)
 		} else if len(services) == 0 {
-			common.Usagef("Either 'all' or at least one CMS service must be specified: %s", strings.Join(common.CMSServices, " "))
+			common.Usagef("Argument required, provide one or more of the following: %s\n", GetTestNamesString(false))
 		}
 
 		logs := !noLogs
