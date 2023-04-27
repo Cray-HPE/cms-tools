@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- cmsdev: Add list of service tests to --help output.
+
 ## [1.11.9] - 2023-04-07
 
 ### Changed
