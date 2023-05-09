@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.11] - 2023-05-09
+
 ### Changed
 
 - cmsdev: iPXE/TFTP test improvements:
@@ -169,7 +171,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.10...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.11...HEAD
+
+[1.11.11]: https://github.com/Cray-HPE/cms-tools/compare/1.11.10...1.11.11
 
 [1.11.10]: https://github.com/Cray-HPE/cms-tools/compare/1.11.9...1.11.10
 
