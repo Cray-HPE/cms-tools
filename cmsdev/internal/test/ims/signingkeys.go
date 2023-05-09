@@ -48,24 +48,11 @@ const imageFieldName = "image_job_create.yaml.template"
 func getOpensuseImage() (imagename string, err error) {
 	imagename = ""
 
-	// Get configmap
-	cm, err := k8s.GetConfigMap(common.NAMESPACE, configMapName)
+	// Retrieve image_job_create.yaml.template data field from the config map
+	imageFieldBytes, err := k8s.GetConfigMapDataField(common.NAMESPACE, configMapName, imageFieldName)
 	if err != nil {
 		return
 	}
-
-	// Retrieve image_job_create.yaml.template data field
-	common.Debugf("Retrieve Data field '%s' from ConfigMap", imageFieldName)
-	imageDataField, keyFound := cm.Data[imageFieldName]
-	if !keyFound {
-		err = fmt.Errorf("No field named '%s' found in Kubernetes ConfigMap %s in namespace %s", imageFieldName, configMapName, common.NAMESPACE)
-		return
-	}
-
-	// Make sure we can convert the field to a byte slice
-	common.Debugf("Convert %s field to byte slice", imageFieldName)
-	imageFieldBytes := []byte(imageDataField)
-
 	// Structure to parse yaml from kubectl and find images
 	type ImageName struct {
 		Spec struct {
@@ -81,7 +68,7 @@ func getOpensuseImage() (imagename string, err error) {
 	var in ImageName
 	err = yaml.Unmarshal(imageFieldBytes, &in)
 	if err != nil {
-		common.Errorf("Error parsing command output as YAML")
+		common.Errorf("Error parsing config map data as YAML")
 		return
 	}
 	common.Debugf("SPEC: %s", in)

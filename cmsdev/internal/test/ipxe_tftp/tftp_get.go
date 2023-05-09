@@ -25,6 +25,7 @@ package ipxe_tftp
  * tftp_get.go
  *
  * Tests a tftp get from all advertised IPs
+ * Tests retrieving both the default iPXE binary and the debug iPXE binary.
  *
  */
 
@@ -36,55 +37,191 @@ import (
 	"regexp"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
+	"strings"
 )
 
-const ipxePathname = "/shared_tftp"
-const ipxeBasename = "ipxe.efi"
-const ipxeFilename = ipxePathname + "/" + ipxeBasename
-const ipxeContainerName string = "cray-ipxe"
+const IpxeConfigMapName = "cray-ipxe-settings"
+const IpxeConfigMapSettingsFieldName = "settings.yaml"
+const IpxeContainerName string = "cray-ipxe"
+const IpxePathname = "/shared_tftp"
+
+// Names of fields in settings configmap
+const BinaryNameField = "cray_ipxe_binary_name"
+const BinaryNameActiveField = "cray_ipxe_binary_name_active"
+const DebugBinaryNameField = "cray_ipxe_debug_binary_name"
+const DebugBinaryNameActiveField = "cray_ipxe_debug_binary_name_active"
+const BuildX86Field = "cray_ipxe_build_x86"
+
+// Default values of unset fields in settings configmap
+const DefaultIpxeBasename = "ipxe.efi"
+const DefaultIpxeDebugBasename = "debug-ipxe.efi"
+const DefaultBuildx86 = false
+
+type IpxeSettings struct {
+	BinaryName, BinaryNameActive, DebugBinaryName, DebugBinaryNameActive string
+	BuildX86                                                             bool
+}
+
+// Retrieve the cray-ipxe-settings Kubernetes ConfigMap,
+// look up the data."settings.yaml" data and return it
+func GetIpxeSettings() (ipxeSettings IpxeSettings, ok bool) {
+	ok = false
+
+	// Retrieve settings data field from the config map
+	common.Infof("Retrieving iPXE settings from Kubernetes %s configmap", IpxeConfigMapName)
+	ipxeSettingsBytes, err := k8s.GetConfigMapDataField(common.NAMESPACE, IpxeConfigMapName,
+		IpxeConfigMapSettingsFieldName)
+	if err != nil {
+		common.Error(err)
+		return
+	}
+	ipxeSettingsMap, err := common.DecodeYAMLIntoStringMap(ipxeSettingsBytes)
+	if err != nil {
+		common.Error(err)
+		return
+	}
+	ipxeSettings.BinaryName, err = common.GetStringFieldFromMapObjectWithDefault(BinaryNameField, ipxeSettingsMap,
+		DefaultIpxeBasename)
+	if err != nil {
+		common.Error(err)
+		return
+	}
+	ipxeSettings.BinaryNameActive, err = common.GetStringFieldFromMapObjectWithDefault(BinaryNameActiveField,
+		ipxeSettingsMap, "")
+	if err != nil {
+		common.Error(err)
+		return
+	}
+	ipxeSettings.DebugBinaryName, err = common.GetStringFieldFromMapObjectWithDefault(DebugBinaryNameField,
+		ipxeSettingsMap,
+		DefaultIpxeDebugBasename)
+	if err != nil {
+		common.Error(err)
+		return
+	}
+	ipxeSettings.DebugBinaryNameActive, err = common.GetStringFieldFromMapObjectWithDefault(DebugBinaryNameActiveField,
+		ipxeSettingsMap, "")
+	if err != nil {
+		common.Error(err)
+		return
+	}
+	ipxeSettings.BuildX86, err = common.GetBoolFieldFromMapObjectWithDefault(BuildX86Field, ipxeSettingsMap,
+		DefaultBuildx86)
+	if err != nil {
+		common.Error(err)
+		return
+	}
+	ok = true
+	return
+}
+
+// Retrieve the iPXE settings from the Kubernetes configmap. Use them to determine the names of the iPXE binaries
+// being generated.
+func GetIpxeBinaryNames() (ipxeBasenames []string, passed bool) {
+	var settings IpxeSettings
+	passed = true
+
+	settings, passed = GetIpxeSettings()
+	if !passed {
+		return
+	}
+
+	// Based on the settings, determine the list of iPXE binaries to test
+	ipxeBasenames = make([]string, 0, 4)
+
+	if settings.BuildX86 {
+		if len(settings.BinaryNameActive) > 0 {
+			ipxeBasenames = append(ipxeBasenames, settings.BinaryNameActive)
+			if len(settings.BinaryName) > 0 && settings.BinaryName != settings.BinaryNameActive {
+				// This means that the next rebuild of this binary will change its name.
+				common.Warnf("%s and %s are set to different values in the %s configmap. This should be temporary but"+
+					" could cause a test failure. Re-run the test if it fails.", BinaryNameField,
+					BinaryNameActiveField, IpxeConfigMapName)
+			}
+		} else if len(settings.BinaryName) > 0 {
+			ipxeBasenames = append(ipxeBasenames, settings.BinaryName)
+			// This implies that the binaries may not have been generated yet, since the Active field should be
+			// populated when they are generated
+			common.Warnf("%s is set but %s is unset in the %s configmap, implying the binary has not been generated "+
+				"yet. This may cause a test failure but should be temporary. Re-run the test if it fails.",
+				BinaryNameField, BinaryNameActiveField, IpxeConfigMapName)
+		}
+		if len(settings.DebugBinaryNameActive) > 0 {
+			ipxeBasenames = append(ipxeBasenames, settings.DebugBinaryNameActive)
+			if len(settings.DebugBinaryName) > 0 && settings.DebugBinaryName != settings.DebugBinaryNameActive {
+				// This means that the next rebuild of this binary will change its name.
+				common.Warnf("%s and %s are set to different values in the %s configmap. This should be temporary"+
+					" but could cause a test failure. Re-run the test if it fails.", DebugBinaryNameField,
+					DebugBinaryNameActiveField, IpxeConfigMapName)
+			}
+		} else if len(settings.DebugBinaryName) > 0 {
+			ipxeBasenames = append(ipxeBasenames, settings.DebugBinaryName)
+			// This implies that the binaries may not have been generated yet, since the Active field should be
+			// populated when they are generated
+			common.Warnf("%s is set but %s is unset in the %s configmap, implying the binary has not been generated "+
+				"yet. This may cause a test failure but should be temporary. Re-run the test if it fails.",
+				DebugBinaryNameField, DebugBinaryNameActiveField, IpxeConfigMapName)
+		}
+		if len(ipxeBasenames) == 0 {
+			common.Errorf("%s is true in %s configmap, but the binary names are blank", IpxeConfigMapName,
+				BuildX86Field)
+			passed = false
+			return
+		}
+	}
+
+	if len(ipxeBasenames) == 0 {
+		common.Infof("Based on the %s configmap, no iPXE binaries are being built.", IpxeConfigMapName)
+		return
+	}
+	common.Infof("Based on the %s configmap, the following iPXE binaries are being built: %s", IpxeConfigMapName,
+		strings.Join(ipxeBasenames, ", "))
+	return
+}
 
 // Just a wrapper function for calling k8s.RunCommandInContainer on the ipxe container
 func RunCommandInIpxeContainer(podName string, cmdStrings ...string) (string, error) {
-	return k8s.RunCommandInContainer(podName, common.NAMESPACE, ipxeContainerName, cmdStrings...)
+	return k8s.RunCommandInContainer(podName, common.NAMESPACE, IpxeContainerName, cmdStrings...)
 }
 
 // Verify:
 // 1) can run command on ipxe container
-// 2) ipxe.efi file exists
-// 3) can get md5sum of file
+// 2) IpxePathname directory exists and is not empty
 // If any are not true, log the error and return false. Otherwise return true.
 func IpxeContainerReady(ipxePodName string) bool {
 	// Can we even run a basic command in the container?
-	common.Infof("Trying to run test command in ipxe container")
+	common.Infof("Trying to run test command in %s container (%s pod, %s namespace)", IpxeContainerName, ipxePodName,
+		common.NAMESPACE)
 	if _, err := RunCommandInIpxeContainer(ipxePodName, "date"); err != nil {
 		common.Error(err)
 		common.Errorf("Unable to run even basic command in ipxe container")
 		return false
 	}
 
-	// Verify the ipxe.efi file exists in the container (well, in the shared storage space, but
-	// we're all friends here -- let's not split hairs)
-	common.Infof("Trying to list %s file in ipxe container", ipxeFilename)
-	if _, err := RunCommandInIpxeContainer(ipxePodName, "ls", "-al", ipxeFilename); err != nil {
+	// Verify the IpxePathname directory exists in the container (well, in the shared storage space, but we're all
+	// friends here -- let's not split hairs)
+	common.Infof("Trying to list contents of %s directory in %s container (%s pod, %s namespace)", IpxePathname,
+		IpxeContainerName, ipxePodName, common.NAMESPACE)
+	if _, err := RunCommandInIpxeContainer(ipxePodName, "sh", "-c", "ls "+IpxePathname+"/*"); err != nil {
+		// If sh -c 'ls /shared_tftp/*' fails, it means either the directory does not exist,
+		// it is not a directory, or it is an empty directory
 		common.Error(err)
-		common.Errorf("%s file does not appear to exist in the ipxe container", ipxeFilename)
+		common.Errorf("In the ipxe container, it seems that %s either does not exist, is not a directory, or is empty",
+			IpxePathname)
 		return false
 	}
 
-	// Finally, let's make sure that the md5sum of the file can be generated
-	common.Infof("Trying to generate md5sum of %s file in ipxe container", ipxeFilename)
-	if _, ok := GetMd5sumInIpxePod(ipxePodName); !ok {
-		return false
-	}
 	return true
 }
 
 // 1) Get the port number, external IP, and cluster IP for the specified tftp service
-// 2) For each IP, perform a tftp get test
+// 2) For each IP, perform a tftp get test for each iPXE binary specified
 // Return true if no errors, false otherwise
-func TftpServiceFileTransferTest(serviceName, ipxePodName string) (passed bool) {
+func TftpServiceFileTransferTest(serviceName, ipxePodName string, ipxeBasenames []string) (passed bool) {
 	var IPPort string
 	passed = true
+
+	common.Infof("Performing TFTP file transfer test for service %s", serviceName)
 
 	// First, get the IP addresses and port for the service
 	clusterIP, externalIP, mainPort, ok := GetTftpIPsPort(serviceName)
@@ -97,22 +234,30 @@ func TftpServiceFileTransferTest(serviceName, ipxePodName string) (passed bool) 
 			common.Infof("Cannot run file transfer test without valid IP address")
 			return
 		}
-		common.Infof("Will run as much of the file transfer test as we can, despite previous failures")
+		common.Infof("Will run as many file transfer tests as we can, despite previous failures")
 	}
 
-	if len(clusterIP) > 0 {
-		IPPort = fmt.Sprintf("%s:%d", clusterIP, mainPort)
-		common.Infof("Testing tftp file transfer from cluster IP:port (%s)", IPPort)
-		if !TftpIPPortFileTransferTest(IPPort, ipxePodName) {
-			passed = false
+	if len(ipxeBasenames) == 0 {
+		common.Infof("No iPXE binaries are being built. Will not be able to perform the actual file transfer test.")
+		return
+	}
+
+	for _, ipxeBasename := range ipxeBasenames {
+		common.Infof("Performing file transfer tests for %s binary from service %s", ipxeBasename, serviceName)
+		if len(clusterIP) > 0 {
+			IPPort = fmt.Sprintf("%s:%d", clusterIP, mainPort)
+			common.Infof("Testing tftp file transfer of %s from cluster IP:port (%s)", ipxeBasename, IPPort)
+			if !TftpIPPortFileTransferTest(IPPort, ipxePodName, ipxeBasename) {
+				passed = false
+			}
 		}
-	}
 
-	if len(externalIP) > 0 {
-		IPPort = fmt.Sprintf("%s:%d", externalIP, mainPort)
-		common.Infof("Testing tftp file transfer from external IP:port (%s)", IPPort)
-		if !TftpIPPortFileTransferTest(IPPort, ipxePodName) {
-			passed = false
+		if len(externalIP) > 0 {
+			IPPort = fmt.Sprintf("%s:%d", externalIP, mainPort)
+			common.Infof("Testing tftp file transfer of %s from external IP:port (%s)", ipxeBasename, IPPort)
+			if !TftpIPPortFileTransferTest(IPPort, ipxePodName, ipxeBasename) {
+				passed = false
+			}
 		}
 	}
 
@@ -168,7 +313,8 @@ func SyncCloseLocalFile(name string, file *os.File) (ok bool) {
 // 1) Perform a tftp get of the ipxe.efi file using the provided tftp client
 // 2) Generate the md5sum of the received file
 // If no problems, return the md5sum and true. Otherwise, return an empty string and false.
-func GetFileAndSum(tftpClient *tftp.Client, IPPort, ipxePodName, localFileName string, localFile *os.File) (string, bool) {
+func GetFileAndSum(tftpClient *tftp.Client, IPPort, ipxePodName, ipxeBasename, localFileName string,
+	localFile *os.File) (string, bool) {
 	common.Infof("Opening tftp receive for %s from %s", ipxeBasename, IPPort)
 	writerTo, err := tftpClient.Receive(ipxeBasename, "octet")
 	if err != nil {
@@ -185,17 +331,17 @@ func GetFileAndSum(tftpClient *tftp.Client, IPPort, ipxePodName, localFileName s
 		SyncCloseLocalFile(localFileName, localFile)
 		return "", false
 	}
-	common.Infof("tftp transfer of %s from %s to %s completed (%d bytes)", ipxeBasename, IPPort, localFileName, numBytes)
+	common.Infof("tftp transfer of %s from %s to %s completed (%d bytes)", ipxeBasename, IPPort, localFileName,
+		numBytes)
 	common.Infof("Closing local file %s", localFileName)
 	if !SyncCloseLocalFile(localFileName, localFile) {
 		return "", false
 	}
-	return GetMd5sumInIpxePod(ipxePodName)
+	return GetMd5sumInIpxePod(ipxePodName, ipxeBasename)
 }
 
-// Take the output of the md5sum command, along with the filename of the target file,
-// and extract just the md5sum string. If no errors, return that string and true. Otherwise
-// return an empty string and false.
+// Take the output of the md5sum command, along with the filename of the target file, and extract just the md5sum
+// string. If no errors, return that string and true. Otherwise return an empty string and false.
 func GetMd5sumFromCmdOut(cmdOut, fileName string) (string, bool) {
 	reString := fmt.Sprintf("^[0-9a-f]{32}  %s\n$", fileName)
 	md5sumRe, err := regexp.Compile(reString)
@@ -204,18 +350,19 @@ func GetMd5sumFromCmdOut(cmdOut, fileName string) (string, bool) {
 		common.Errorf("Error compiling regular expression to parse md5sum command output")
 		return "", false
 	} else if !md5sumRe.MatchString(cmdOut) {
-		common.Errorf("The command output does not match the expected format for an md5sum command")
+		common.Errorf("Command output does not match the expected format for an md5sum command")
 		return "", false
 	}
 	return string(cmdOut[:32]), true
 }
 
-// Call the md5sum command on the ipxe.efi file in the ipxe pod
+// Call the md5sum command on the ipxe.efi file in the ipxe pod.
 // Return the md5sum string for the file and true, if no errors.
 // Otherwise return an empty string and false.
-func GetMd5sumInIpxePod(podName string) (cksum string, ok bool) {
+func GetMd5sumInIpxePod(podName, ipxeBasename string) (cksum string, ok bool) {
 	ok = false
 	cksum = ""
+	ipxeFilename := IpxePathname + "/" + ipxeBasename
 
 	cmdOut, err := RunCommandInIpxeContainer(podName, "md5sum", ipxeFilename)
 	if err != nil {
@@ -272,12 +419,15 @@ func GetTftpIPsPort(serviceName string) (clusterIP, externalIP string, port int3
 	}
 
 	if len(srv.Spec.Ports) > 1 {
-		common.Warnf("%d ports defined for service %s in namespace %s", len(srv.Spec.Ports), serviceName, common.NAMESPACE)
+		common.Warnf("%d ports defined for service %s in namespace %s", len(srv.Spec.Ports), serviceName,
+			common.NAMESPACE)
 		for _, extraport := range srv.Spec.Ports[1:] {
 			if extraport.Port > 0 {
-				common.Warnf("Service %s, namespace %s, extra port = %d", serviceName, common.NAMESPACE, extraport.Port)
+				common.Warnf("Service %s, namespace %s, extra port = %d", serviceName, common.NAMESPACE,
+					extraport.Port)
 			} else {
-				common.Errorf("Invalid extra port (%d) for service %s in namespace %s", extraport.Port, serviceName, common.NAMESPACE)
+				common.Errorf("Invalid extra port (%d) for service %s in namespace %s", extraport.Port, serviceName,
+					common.NAMESPACE)
 				ok = false
 			}
 		}
@@ -288,7 +438,7 @@ func GetTftpIPsPort(serviceName string) (clusterIP, externalIP string, port int3
 // Perform a tftp get of the ipxe.efi file from the specified IP address and port.
 // Verify via md5sum that the received file matches the remote file
 // If error, return false, otherwise return true.
-func TftpIPPortFileTransferTest(IPPort, ipxePodName string) bool {
+func TftpIPPortFileTransferTest(IPPort, ipxePodName, ipxeBasename string) bool {
 	var remoteSumBefore, remoteSumAfter, localSum, localFileName string
 	var ok bool
 	var localFile *os.File
@@ -308,16 +458,16 @@ func TftpIPPortFileTransferTest(IPPort, ipxePodName string) bool {
 	}
 	defer RemoveLocalFile(localFileName)
 
-	// The file is frequently re-generated, meaning that if we just take the md5sum and transfer the file,
+	// The file is periodically re-generated, meaning that if we just take the md5sum and transfer the file,
 	// we may not have recorded the right sum. Therefore we must take the sum both before and after the transfer.
 	// If they do not match, we must repeat the process until they do
 
-	remoteSumBefore, ok = GetMd5sumInIpxePod(ipxePodName)
+	remoteSumBefore, ok = GetMd5sumInIpxePod(ipxePodName, ipxeBasename)
 	if !ok {
 		SyncCloseLocalFile(localFileName, localFile)
 		return false
 	}
-	remoteSumAfter, ok = GetFileAndSum(tftpClient, IPPort, ipxePodName, localFileName, localFile)
+	remoteSumAfter, ok = GetFileAndSum(tftpClient, IPPort, ipxePodName, ipxeBasename, localFileName, localFile)
 	if !ok {
 		return false
 	}
@@ -328,7 +478,7 @@ func TftpIPPortFileTransferTest(IPPort, ipxePodName string) bool {
 			return false
 		}
 		remoteSumBefore = remoteSumAfter
-		remoteSumAfter, ok = GetFileAndSum(tftpClient, IPPort, ipxePodName, localFileName, localFile)
+		remoteSumAfter, ok = GetFileAndSum(tftpClient, IPPort, ipxePodName, ipxeBasename, localFileName, localFile)
 		if !ok {
 			return false
 		}
