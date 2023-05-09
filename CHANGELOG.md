@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- cmsdev: iPXE/TFTP test improvements:
+  - Now uses cray-ipxe-settings ConfigMap to determine which iPXE binaries are being built and what their names are
+  - Now tests TFTP file transfer test for all binaries being built.
+
 ## [1.11.10] - 2023-04-27
 
 ### Changed
