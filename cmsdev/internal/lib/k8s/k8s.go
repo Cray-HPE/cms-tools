@@ -385,6 +385,28 @@ func GetConfigMap(namespace, name string) (cm coreV1.ConfigMap, err error) {
 	return
 }
 
+// Given a namespace, configmap name, and data field name, return the specified data field as a byte slice.
+func GetConfigMapDataField(namespace, cm_name, field_name string) (field_bytes []byte, err error) {
+	var cm coreV1.ConfigMap
+
+	cm, err = GetConfigMap(namespace, cm_name)
+	if err != nil {
+		return
+	}
+
+	common.Debugf("Retrieve Data field '%s' from ConfigMap '%s' in namespace '%s'", field_name, cm_name, namespace)
+	dataField, keyFound := cm.Data[field_name]
+	if !keyFound {
+		err = fmt.Errorf("No field named '%s' found in Kubernetes ConfigMap %s in namespace %s", field_name, cm_name, namespace)
+		return
+	}
+
+	// Make sure we can convert the field to a byte slice
+	common.Debugf("Convert %s field to byte slice", field_name)
+	field_bytes = []byte(dataField)
+	return
+}
+
 // Given a namespace and name, returns the matching service
 func GetService(namespace, name string) (service coreV1.Service, err error) {
 	clientset, err := GetClientset()

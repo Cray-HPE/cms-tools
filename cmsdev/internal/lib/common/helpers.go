@@ -27,6 +27,7 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"os"
 	"reflect"
 	"regexp"
@@ -35,6 +36,15 @@ import (
 func DecodeJSONIntoStringMap(mapJsonBytes []byte) (map[string]interface{}, error) {
 	var m map[string]interface{}
 	err := json.Unmarshal(mapJsonBytes, &m)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func DecodeYAMLIntoStringMap(mapYamlBytes []byte) (map[string]interface{}, error) {
+	var m map[string]interface{}
+	err := yaml.Unmarshal(mapYamlBytes, &m)
 	if err != nil {
 		return nil, err
 	}
@@ -126,8 +136,52 @@ func GetStringFieldFromMap(fieldName string, mapJsonBytes []byte) (fieldValue st
 	return
 }
 
+func GetBoolFieldFromMapObjectWithDefault(fieldName string, mapObject map[string]interface{}, defaultValue bool) (fieldValue bool, err error) {
+	Debugf("Getting value of \"%s\" field from map object (value should be boolean)", fieldName)
+	fieldValue = defaultValue
+
+	fieldRawValue, ok := mapObject[fieldName]
+	if !ok {
+		Debugf("Map does not have \"%s\" field, returning default value \"%t\"", fieldName, defaultValue)
+		return
+	}
+
+	fieldValue, ok = fieldRawValue.(bool)
+	if !ok {
+		err = fmt.Errorf(
+			"Map has \"%s\" field but its value is type %s, not bool",
+			fieldName, reflect.TypeOf(fieldRawValue).String())
+		return
+	}
+
+	Debugf("Value of \"%s\" field in map object is \"%t\"", fieldName, fieldValue)
+	return
+}
+
+func GetStringFieldFromMapObjectWithDefault(fieldName string, mapObject map[string]interface{}, defaultValue string) (fieldValue string, err error) {
+	Debugf("Getting value of \"%s\" field from map object (value should be a string)", fieldName)
+	fieldValue = defaultValue
+
+	fieldRawValue, ok := mapObject[fieldName]
+	if !ok {
+		Debugf("Map does not have \"%s\" field, returning default value \"%s\"", fieldName, defaultValue)
+		return
+	}
+
+	fieldValue, ok = fieldRawValue.(string)
+	if !ok {
+		err = fmt.Errorf(
+			"Map has \"%s\" field but its value is type %s, not string",
+			fieldName, reflect.TypeOf(fieldRawValue).String())
+		return
+	}
+
+	Debugf("Value of \"%s\" field in map object is \"%s\"", fieldName, fieldValue)
+	return
+}
+
 func GetStringFieldFromMapObject(fieldName string, mapObject map[string]interface{}) (fieldValue string, err error) {
-	Debugf("Getting value of \"%s\" field from map object", fieldName)
+	Debugf("Getting value of \"%s\" field from map object (value should be a string)", fieldName)
 
 	fieldRawValue, ok := mapObject[fieldName]
 	if !ok {

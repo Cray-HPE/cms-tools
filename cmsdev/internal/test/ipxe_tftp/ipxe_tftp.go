@@ -96,20 +96,37 @@ func AreTheyRunning() (passed bool) {
 		return
 	}
 
+	// Even though the file transfer subtest will not run if this is a master NCN,
+	// we always have the test check the configmap, just to make sure it doesn't have
+	// errors.
+	ipxeBinaryNames, ok := GetIpxeBinaryNames()
+	if !ok {
+		passed = false
+	}
+
 	// The file transfer subtest cannot run from master NCNs
 	onMaster, err = common.RunningOnMaster()
 	if err != nil {
 		common.Error(err)
 		common.Errorf("Error checking node hostname")
 		passed = false
-		return
 	} else if onMaster == true {
 		common.Infof("tftp file transfer test cannot run on master NCNs -- skipping")
-		return
+	} else {
+		for _, srvName := range tftpServiceNames {
+			if !TftpServiceFileTransferTest(srvName, ipxePodName, ipxeBinaryNames) {
+				passed = false
+			}
+		}
 	}
-	for _, srvName := range tftpServiceNames {
-		if !TftpServiceFileTransferTest(srvName, ipxePodName) {
-			passed = false
+
+	if !passed {
+		common.ArtifactsKubernetes()
+		if len(podNames) > 0 {
+			common.ArtifactDescribeNamespacePods(common.NAMESPACE, podNames)
+		}
+		if len(pvcNames) > 0 {
+			common.ArtifactDescribeNamespacePods(common.NAMESPACE, pvcNames)
 		}
 	}
 
