@@ -68,9 +68,15 @@ type IMSPublicKeyRecord struct {
 	Created, Id, Name, Public_key string
 }
 
+type IMSRecipeKeyValuePair struct {
+	Key, Value string
+}
+
 type IMSRecipeRecord struct {
-	Id, Created, Recipe_type, Linux_distribution, Name string
-	Link                                               map[string]string
+	Id, Created, Recipe_type, Linux_distribution, Name, Arch string
+	Link                                                     map[string]string
+	Require_dkms                                             bool
+	Template_dictionary                                      []IMSRecipeKeyValuePair
 }
 
 type IMSVersionRecord struct {
