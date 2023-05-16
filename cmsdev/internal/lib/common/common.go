@@ -487,53 +487,37 @@ func Restful(method, url string, params Params) (*resty.Response, error) {
 	var resp *resty.Response
 
 	client := resty.New()
+	client.SetHeaders(map[string]string{
+		"Accept":       "application/json",
+		"User-Agent":   "cmsdev",
+		"Content-Type": "application/json",
+	})
+	client.SetAuthToken(params.Token)
 
 	switch method {
 	case "GET":
-		client.SetHeaders(map[string]string{
-			"Accept":     "application/json",
-			"User-Agent": "cmsdev",
-		})
-		resp, err = client.R().
-			SetAuthToken(params.Token).
-			Get(url)
+		resp, err = client.R().Get(url)
 	case "POST":
 		if len(params.JsonStr) != 0 {
 			// payload passed as string
 			resp, err = client.R().
-				SetAuthToken(params.Token).
-				SetHeader("Content-Type", "application/json").
 				SetBody(params.JsonStr).
 				Post(url)
 		} else {
 			// payload passed as byte array
 			resp, err = client.R().
-				SetAuthToken(params.Token).
-				SetHeader("Content-Type", "application/json").
 				SetBody(params.JsonStrArray).
 				Post(url)
 		}
 	case "PATCH":
-		client.SetHeaders(map[string]string{
-			"Accept":     "application/json",
-			"User-Agent": "cmsdev",
-		})
 		resp, err = client.R().
-			SetAuthToken(params.Token).
 			SetBody(params.JsonStrArray).
 			Patch(url)
 	case "DELETE":
-		client.SetHeaders(map[string]string{
-			"Content-Type": "application/json",
-			"User-Agent":   "cmsdev",
-		})
-		resp, err = client.R().
-			SetAuthToken(params.Token).
-			Delete(url)
+		resp, err = client.R().Delete(url)
 	}
 
 	return resp, err
-
 }
 
 func CreateDirectoryIfNeeded(path string) (error, bool) {
