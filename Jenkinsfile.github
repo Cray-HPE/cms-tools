@@ -43,6 +43,7 @@ pipeline {
         CMSDEV_SPEC_FILE = "cray-cmstools-crayctldeploy.spec"
         BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
         PUBLISH_SP4 = "sle-15sp4"
+        PUBLISH_SP5 = "sle-15sp5"
     }
 
     stages {
@@ -104,6 +105,27 @@ pipeline {
             steps {
                 publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP4, arch: "x86_64", isStable: env.IS_STABLE)
                 publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP4, arch: "src", isStable: env.IS_STABLE)
+            }
+        }
+
+        stage("Build SP5 RPMs") {
+            agent {
+                docker {
+                    image "arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp5_build_environment:latest"
+                    reuseNode true
+                    // Support docker in docker for clamav scan
+                    args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
+                }
+            }
+            steps {
+                sh "make rpm"
+            }
+        }
+
+        stage('Publish SP5 rpms') {
+            steps {
+                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP5, arch: "x86_64", isStable: env.IS_STABLE)
+                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP5, arch: "src", isStable: env.IS_STABLE)
             }
         }
     }
