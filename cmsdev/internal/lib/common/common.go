@@ -640,14 +640,14 @@ func CompressArtifacts() {
 		return
 	}
 	// Artifacts were logged, so compress them and delete the uncompressed artifacts
-	compressedArtifactsFile := artifactDirectory + ".tar.bz2"
+	compressedArtifactsFile := artifactDirectory + ".tgz"
 	Infof("Compressing saved test artifacts to '%s'", compressedArtifactsFile)
 	artifactParentDirectory := filepath.Dir(artifactDirectory)
 	artifactDirectoryBasename := filepath.Base(artifactDirectory)
 	Debugf("artifactParentDirectory=%s, artifactDirectoryBasename=%s", artifactParentDirectory,
 		artifactDirectoryBasename)
-	cmdResult, err := RunName("tar", "-C", artifactParentDirectory, "--remove-files", "--bzip2",
-		"-cvf", compressedArtifactsFile, artifactDirectoryBasename)
+	cmdResult, err := RunName("tar", "-C", artifactParentDirectory, "--remove-files",
+		"-czvf", compressedArtifactsFile, artifactDirectoryBasename)
 	artifactDirectory = ""
 	if err != nil {
 		Warnf(err.Error())
