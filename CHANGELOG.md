@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.9] - 2023-06-27
+
+### Fixed
+
+- cmsdev: Compress artifacts using gzip instead of bzip2
+
 ## [1.10.8] - 2023-04-07
 
 ### Changed
