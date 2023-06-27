@@ -45,22 +45,30 @@ var tftpServiceNames = []string{
 func AreTheyRunning() (passed bool) {
 	passed = true
 	var podNames []string
-	var ipxePodName, pvcName string
+	var arch, pvcName string
 	var ok, onMaster bool
 	var err error
 
-	// First validate IPXE k8s status
-	podNames, ok = test.GetPodNamesByPrefixKey("ipxe", 1, 1)
-	if !ok {
-		passed = false
-		common.Infof("Found %d ipxe pod(s)", len(podNames))
-	} else {
-		ipxePodName = podNames[0]
-		common.Infof("Found ipxe pod: %s", ipxePodName)
-	}
+	iPxePodNameByArch := make(map[string]string)
 
-	if !test.CheckPodListStats(podNames) {
-		passed = false
+	// Binaries for each architecture are built in an iPXE pod for that architecture
+	for _, arch = range IpxeBinaryArchitectures {
+		// Find iPXE pod and verify status
+		podNames, ok = test.GetPodNamesInNamespace(common.NAMESPACE, IpxePodPrefixByArch[arch], 1, 1)
+		if !ok {
+			passed = false
+			common.Infof("Found %d %s iPXE pod(s)", len(podNames), arch)
+		} else {
+			iPxePodNameByArch[arch] = podNames[0]
+			common.Infof("Found %s iPXE pod: %s", arch, iPxePodNameByArch[arch])
+			if !IpxeContainerReady(iPxePodNameByArch[arch]) {
+				passed = false
+			}
+		}
+
+		if !test.CheckPodListStats(podNames) {
+			passed = false
+		}
 	}
 
 	// Next validate TFTP k8s status
@@ -80,10 +88,6 @@ func AreTheyRunning() (passed bool) {
 		}
 	}
 
-	if len(ipxePodName) > 0 && !IpxeContainerReady(ipxePodName) {
-		passed = false
-	}
-
 	if !passed {
 		common.ArtifactsKubernetes()
 		if len(podNames) > 0 {
@@ -99,8 +103,7 @@ func AreTheyRunning() (passed bool) {
 	// Even though the file transfer subtest will not run if this is a master NCN,
 	// we always have the test check the configmap, just to make sure it doesn't have
 	// errors.
-	ipxeBinaryNames, ok := GetIpxeBinaryNames()
-	if !ok {
+	if !GetIpxeBinaryNames() {
 		passed = false
 	}
 
@@ -114,7 +117,7 @@ func AreTheyRunning() (passed bool) {
 		common.Infof("tftp file transfer test cannot run on master NCNs -- skipping")
 	} else {
 		for _, srvName := range tftpServiceNames {
-			if !TftpServiceFileTransferTest(srvName, ipxePodName, ipxeBinaryNames) {
+			if !TftpServiceFileTransferTest(srvName, iPxePodNameByArch) {
 				passed = false
 			}
 		}
