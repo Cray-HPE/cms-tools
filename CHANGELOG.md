@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.0] - 2023-06-27
+
+### Added
+
+- cmsdev: Added support for ARM binaries to iPXE/TFTP test
+
 ## [1.11.13] - 2023-06-27
 
 ### Fixed
@@ -183,7 +189,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.11.11...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.12.0...HEAD
+
+[1.12.0]: https://github.com/Cray-HPE/cms-tools/compare/1.11.13...1.12.0
+
+[1.11.13]: https://github.com/Cray-HPE/cms-tools/compare/1.11.12...1.11.13
+
+[1.11.12]: https://github.com/Cray-HPE/cms-tools/compare/1.11.11...1.11.12
 
 [1.11.11]: https://github.com/Cray-HPE/cms-tools/compare/1.11.10...1.11.11
 
