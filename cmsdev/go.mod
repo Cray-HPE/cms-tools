@@ -28,7 +28,7 @@ require (
 	github.com/fatih/color v1.12.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pin/tftp v2.1.0+incompatible
-	github.com/sirupsen/logrus v1.8.1
+	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/viper v1.8.1
 	gopkg.in/resty.v1 v1.12.0
