@@ -15,6 +15,9 @@ updates:
       - "go-deps"
       - "dependabot"
     open-pull-requests-limit: 12
+    groups:
+      k8s:
+        patterns: [ "k8s.io/*" ]
     ignore:
       - dependency-name: "k8s.io/*"
         versions: [ ">0.22.13" ]
