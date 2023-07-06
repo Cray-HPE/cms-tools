@@ -14,7 +14,7 @@ updates:
     labels:
       - "go-deps"
       - "dependabot"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 12
 
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
@@ -26,7 +26,7 @@ updates:
     labels:
       - "github-actions-deps"
       - "dependabot"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 12
 
   - package-ecosystem: "pip"
     directory: "/"
@@ -37,4 +37,4 @@ updates:
     labels:
       - "python-deps"
       - "dependabot"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 12
