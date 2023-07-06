@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `github.com/sirupsen/logrus` from 1.8.1 to 1.9.3 (#123)
 - Bump `github.com/fatih/color` from 1.12.0 to 1.15.0 (#121)
 - Bump `k8s.io/api`, `k8s.io/apimachinery`, and `k8s.io/client-go` from 0.21.14 to 0.22.13 (#127)
+- Bump `github.com/spf13/cobra` from 1.2.1 to 1.7.0 (#122)
 
 ## [1.12.0] - 2023-06-27
 
