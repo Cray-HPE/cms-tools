@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Dependencies
 - Bump `github.com/sirupsen/logrus` from 1.8.1 to 1.9.3 (#123)
 - Bump `github.com/fatih/color` from 1.12.0 to 1.15.0 (#121)
+- Bump `k8s.io/client-go` from 0.21.14 to 0.27.3 (#120)
 
 ## [1.12.0] - 2023-06-27
 
