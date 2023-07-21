@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `k8s.io/api`, `k8s.io/apimachinery`, and `k8s.io/client-go` from 0.21.14 to 0.22.13 (#127)
 - Bump `github.com/spf13/cobra` from 1.2.1 to 1.7.0 (#122)
 - Bump `github.com/spf13/viper` from 1.8.1 to 1.16.0 (#119)
+- Bump `github.com/pelletier/go-toml/v2` from 2.0.8 to 2.0.9 ([#129](https://github.com/Cray-HPE/cms-tools/pull/129))
 
 ## [1.12.0] - 2023-06-27
 
