@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `github.com/pelletier/go-toml/v2` from 2.0.8 to 2.0.9 ([#129](https://github.com/Cray-HPE/cms-tools/pull/129))
 - Bump `github.com/imdario/mergo` from 0.3.5 to 0.3.16 ([#131](https://github.com/Cray-HPE/cms-tools/pull/131))
 - Bump `sigs.k8s.io/structured-merge-diff/v4` from 4.2.1 to 4.2.3 ([#128](https://github.com/Cray-HPE/cms-tools/pull/128))
+- Bump `github.com/mattn/go-isatty` from 0.0.17 to 0.0.19 ([#130](https://github.com/Cray-HPE/cms-tools/pull/130))
 
 ## [1.12.0] - 2023-06-27
 
