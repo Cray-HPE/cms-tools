@@ -59,7 +59,8 @@ updates:
       - dependency-type: "all"
     ignore:
       # Only look for patch version updates
-      - update-types: ["version-update:semver-major", "version-update:semver-minor" ]
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor" ]
       - dependency-name: "k8s.io/*"
         versions: [ ">0.22.13" ]
 
@@ -78,4 +79,5 @@ updates:
       - dependency-type: "all"
     ignore:
       # Only look for patch version updates
-      - update-types: ["version-update:semver-major", "version-update:semver-minor" ]
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor" ]
