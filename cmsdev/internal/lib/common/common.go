@@ -479,20 +479,10 @@ func PrintEndpoints(service string, params ...string) {
 	}
 }
 
-// Restful() performs CMS RESTful calls
-// returns true on success, otherwise false
-// returns populated message string if success == false
-func Restful(method, url string, params Params) (*resty.Response, error) {
+// doRest() performs RESTful calls using the provided client and parameters.
+func doRest(method, url string, params Params, client *resty.Client) (*resty.Response, error) {
 	var err error
 	var resp *resty.Response
-
-	client := resty.New()
-	client.SetHeaders(map[string]string{
-		"Accept":       "application/json",
-		"User-Agent":   "cmsdev",
-		"Content-Type": "application/json",
-	})
-	client.SetAuthToken(params.Token)
 
 	switch method {
 	case "GET":
@@ -518,6 +508,31 @@ func Restful(method, url string, params Params) (*resty.Response, error) {
 	}
 
 	return resp, err
+}
+
+// Restful() performs CMS RESTful calls
+func Restful(method, url string, params Params) (*resty.Response, error) {
+	client := resty.New()
+	client.SetHeaders(map[string]string{
+		"Accept":       "application/json",
+		"User-Agent":   "cmsdev",
+		"Content-Type": "application/json",
+	})
+	client.SetAuthToken(params.Token)
+	return doRest(method, url, params, client)
+}
+
+// Restful() performs CMS RESTful calls on behalf of the specified tenant
+func RestfulTenant(method, url, tenant string, params Params) (*resty.Response, error) {
+	client := resty.New()
+	client.SetHeaders(map[string]string{
+		"Accept":           "application/json",
+		"User-Agent":       "cmsdev",
+		"Content-Type":     "application/json",
+		"Cray-Tenant-Name": tenant,
+	})
+	client.SetAuthToken(params.Token)
+	return doRest(method, url, params, client)
 }
 
 func CreateDirectoryIfNeeded(path string) (error, bool) {

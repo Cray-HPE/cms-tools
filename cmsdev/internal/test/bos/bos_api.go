@@ -46,11 +46,32 @@ func bosRestfulVerifyStatus(method, uri string, params *common.Params, ExpectedS
 	return test.RestfulVerifyStatus(method, bosBaseUrl+uri, *params, ExpectedStatus)
 }
 
+func bosTenantRestfulVerifyStatus(method, uri, tenant string, params *common.Params, ExpectedStatus int) (*resty.Response, error) {
+	return test.TenantRestfulVerifyStatus(method, bosBaseUrl+uri, tenant, *params, ExpectedStatus)
+}
+
 // Given a BOS URI, do a GET request to it. Verify that the response has 200 status code and returns a dictionary (aka string map) object.
 // Return true if all of that worked fine. Otherwise, log an appropriate error and return false.
 func basicGetUriVerifyStringMapTest(uri string, params *common.Params) bool {
 	common.Infof("GET %s test scenario", uri)
 	resp, err := bosRestfulVerifyStatus("GET", uri, params, http.StatusOK)
+	if err != nil {
+		common.Error(err)
+		return false
+	}
+
+	// Validate that object can be decoded into a string map at least
+	_, err = common.DecodeJSONIntoStringMap(resp.Body())
+	if err != nil {
+		common.Error(err)
+		return false
+	}
+	return true
+}
+
+func basicTenantGetUriVerifyStringMapTest(uri, tenant string, params *common.Params) bool {
+	common.Infof("GET %s (tenant: %s) test scenario", uri, tenant)
+	resp, err := bosTenantRestfulVerifyStatus("GET", uri, tenant, params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
 		return false

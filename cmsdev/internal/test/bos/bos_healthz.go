@@ -55,6 +55,11 @@ func healthzTestsAPI(params *common.Params) (passed bool) {
 		passed = false
 	}
 
+	// v2 endpoint as random tenant (BOS does not verify if tenant exists for GET operations)
+	if !basicTenantGetUriVerifyStringMapTest(bosV2HealthzUri, "cmsdev-tenant", params) {
+		passed = false
+	}
+
 	return
 }
 

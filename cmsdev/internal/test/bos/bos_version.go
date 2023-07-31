@@ -71,8 +71,18 @@ func versionTestsAPI(params *common.Params) (passed bool) {
 		passed = false
 	}
 
+	// v2 endpoint as random tenant (BOS does not verify that tenant exists on GET requests)
+	if !basicTenantGetUriVerifyStringMapTest(bosV2BaseUri, "cmsdev-tenant", params) {
+		passed = false
+	}
+
 	// /v2/version endpoint
 	if !basicGetUriVerifyStringMapTest(bosV2VersionUri, params) {
+		passed = false
+	}
+
+	// /v2/version endpoint as random tenant (BOS does not verify that tenant exists on GET requests)
+	if !basicTenantGetUriVerifyStringMapTest(bosV2VersionUri, "cmsdev-tenant", params) {
 		passed = false
 	}
 
