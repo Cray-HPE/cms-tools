@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- cmsdev: Build using Golang 1.20 (up from 1.18)
+
 ### Dependencies
 - Bump `github.com/sirupsen/logrus` from 1.8.1 to 1.9.3 (#123)
 - Bump `github.com/fatih/color` from 1.12.0 to 1.15.0 (#121)

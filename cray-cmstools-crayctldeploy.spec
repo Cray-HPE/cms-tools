@@ -1,4 +1,4 @@
-# Copyright 2019-2022 Hewlett Packard Enterprise Development LP
+# Copyright 2019-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -30,7 +30,7 @@ Source: %{name}-%{version}-%{release}.tar.bz2
 Vendor: HPE
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
 BuildRequires: make
-BuildRequires: go1.18
+BuildRequires: go1.20
 Requires: python3 >= 3.6
 
 %description

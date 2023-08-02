@@ -22,7 +22,7 @@
 
 module stash.us.cray.com/SCMS/cms-tools/cmsdev
 
-go 1.18
+go 1.20
 
 require (
 	github.com/fatih/color v1.15.0
