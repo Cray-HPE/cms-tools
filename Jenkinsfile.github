@@ -87,10 +87,25 @@ pipeline {
             }
         }
 
+        stage("Build Docker images") {
+            parallel {
+                stage("Build SP4 Docker image") {
+                    steps {
+                        sh "docker build -f Dockerfile.sle15sp4 -t cms-tools-build-sp4:latest ."
+                    }
+                }
+                stage("Build SP5 Docker image") {
+                    steps {
+                        sh "docker build -f Dockerfile.sle15sp5 -t cms-tools-build-sp5:latest ."
+                    }
+                }
+            }
+        }
+
         stage("Build SP4 RPMs") {
             agent {
                 docker {
-                    image "arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp4_build_environment:latest"
+                    image "cms-tools-build-sp4:latest"
                     reuseNode true
                     // Support docker in docker for clamav scan
                     args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
@@ -111,7 +126,7 @@ pipeline {
         stage("Build SP5 RPMs") {
             agent {
                 docker {
-                    image "arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp5_build_environment:latest"
+                    image "cms-tools-build-sp5:latest"
                     reuseNode true
                     // Support docker in docker for clamav scan
                     args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"

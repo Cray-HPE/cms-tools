@@ -9,7 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- cmsdev: Build using Golang 1.20 (up from 1.18)
+- cmsdev
+  - Install Golang 1.20 in RPM build environment
+  - Build using Golang 1.20 (up from 1.18)
+  - Parallelize part of build process
 
 ### Dependencies
 - Bump `github.com/sirupsen/logrus` from 1.8.1 to 1.9.3 (#123)
