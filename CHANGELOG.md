@@ -7,12 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0] - 2023-08-10
+
 ### Changed
 
 - cmsdev
-  - Install Golang 1.20 in RPM build environment
   - Build using Golang 1.20 (up from 1.18)
-  - Parallelize part of build process
+  - Build RPM as `noos`
 
 ### Dependencies
 - Bump `github.com/sirupsen/logrus` from 1.8.1 to 1.9.3 (#123)
@@ -207,7 +208,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.12.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.13.0...HEAD
+
+[1.13.0]: https://github.com/Cray-HPE/cms-tools/compare/1.12.0...1.13.0
 
 [1.12.0]: https://github.com/Cray-HPE/cms-tools/compare/1.11.13...1.12.0
 
