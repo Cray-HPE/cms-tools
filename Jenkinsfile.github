@@ -26,6 +26,8 @@
 @Library('cms-meta-tools') _
 @Library('csm-shared-library') __
 
+def goImage = 'artifactory.algol60.net/csm-docker/stable/csm-docker-sle-go'
+
 pipeline {
     agent {
         label "metal-gcp-builder"
@@ -42,8 +44,7 @@ pipeline {
         IS_STABLE = getBuildIsStable()
         CMSDEV_SPEC_FILE = "cray-cmstools-crayctldeploy.spec"
         BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
-        PUBLISH_SP4 = "sle-15sp4"
-        PUBLISH_SP5 = "sle-15sp5"
+        GO_VERSION = sh(returnStdout: true, script: 'grep -Eo "^go .*" cmsdev/go.mod | cut -d " " -f2').trim()
     }
 
     stages {
@@ -75,25 +76,26 @@ pipeline {
             }
         }
 
-        stage("Add RPM Metadata") {
+        stage("Prepare") {
+            agent {
+                docker {
+                    label 'docker'
+                    reuseNode true
+                    image "${goImage}:${env.GO_VERSION}"
+                }
+            }
             steps {
                 runLibraryScript("addRpmMetaData.sh", env.CMSDEV_SPEC_FILE)
-            }
-        }
-
-        stage("Prepare") {
-            steps {
                 sh "make prepare"
             }
         }
 
-        stage("Build SP4 RPMs") {
+        stage("Build RPMs") {
             agent {
                 docker {
-                    image "arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp4_build_environment:latest"
+                    label 'docker'
                     reuseNode true
-                    // Support docker in docker for clamav scan
-                    args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
+                    image "${goImage}:${env.GO_VERSION}"
                 }
             }
             steps {
@@ -101,31 +103,10 @@ pipeline {
             }
         }
 
-        stage('Publish SP4 rpms') {
+        stage('Publish RPMs') {
             steps {
-                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP4, arch: "x86_64", isStable: env.IS_STABLE)
-                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP4, arch: "src", isStable: env.IS_STABLE)
-            }
-        }
-
-        stage("Build SP5 RPMs") {
-            agent {
-                docker {
-                    image "arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp5_build_environment:latest"
-                    reuseNode true
-                    // Support docker in docker for clamav scan
-                    args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
-                }
-            }
-            steps {
-                sh "make rpm"
-            }
-        }
-
-        stage('Publish SP5 rpms') {
-            steps {
-                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP5, arch: "x86_64", isStable: env.IS_STABLE)
-                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP5, arch: "src", isStable: env.IS_STABLE)
+                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: "noos", arch: "x86_64", isStable: env.IS_STABLE)
+                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: "noos", arch: "src", isStable: env.IS_STABLE)
             }
         }
     }
