@@ -29,6 +29,7 @@ package bos
  */
 
 import (
+	resty "gopkg.in/resty.v1"
 	"net/http"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
@@ -47,10 +48,16 @@ const bosDefaultComponentsCLI = bosV2ComponentsCLI
 // 4. Do a GET/describe on that particular component
 // 5. Verify that this succeeds and returns something of the right general form
 
-func componentsTestsAPI(params *common.Params) (passed bool) {
-	passed = true
+func componentsTestsAPI(params *common.Params, tenantList []string) (passed bool) {
+	// Test with no tenant specified in the query.
+	passed = componentsTestsURI(bosV2ComponentsUri, params, "")
 
-	if !componentsTestsURI(bosV2ComponentsUri, params) {
+	if len(tenantList) == 0 {
+		common.Infof("Skipping tenanted components tests, because no tenants are defined on the system")
+		return
+	}
+
+	if !componentsTestsURI(bosV2ComponentsUri, params, getAnyTenant(tenantList)) {
 		passed = false
 	}
 
@@ -87,16 +94,24 @@ func ValidateComponentId(mapCmdOut []byte, expectedId string) bool {
 }
 
 // See comment earler in file for a description of this function
-func componentsTestsURI(uri string, params *common.Params) bool {
+func componentsTestsURI(uri string, params *common.Params, tenantName string) (passed bool) {
+	var resp *resty.Response
+	var err error
+
 	// test #1, list components
-	common.Infof("GET %s test scenario", uri)
-	resp, err := bosRestfulVerifyStatus("GET", uri, params, http.StatusOK)
+	if len(tenantName) == 0 {
+		common.Infof("GET %s test scenario", uri)
+		resp, err = bosRestfulVerifyStatus("GET", uri, params, http.StatusOK)
+	} else {
+		common.Infof("GET %s (tenant: %s) test scenario", uri, tenantName)
+		resp, err = bosTenantRestfulVerifyStatus("GET", uri, tenantName, params, http.StatusOK)
+	}
 	if err != nil {
 		common.Error(err)
 		return false
 	}
 
-	// use results from previous test, grab the first component
+	// use results from previous test, grab the first component ID
 	componentId, err := getFirstComponentId(resp.Body())
 	if err != nil {
 		common.Error(err)
@@ -110,8 +125,13 @@ func componentsTestsURI(uri string, params *common.Params) bool {
 	// a component id is available
 	// test #2 describe component
 	uri += "/" + componentId
-	common.Infof("GET %s test scenario", uri)
-	resp, err = bosRestfulVerifyStatus("GET", uri, params, http.StatusOK)
+	if len(tenantName) == 0 {
+		common.Infof("GET %s test scenario", uri)
+		resp, err = bosRestfulVerifyStatus("GET", uri, params, http.StatusOK)
+	} else {
+		common.Infof("GET %s (tenant: %s) test scenario", uri, tenantName)
+		resp, err = bosTenantRestfulVerifyStatus("GET", uri, tenantName, params, http.StatusOK)
+	}
 	if err != nil {
 		common.Error(err)
 		return false

@@ -46,6 +46,10 @@ func bosRestfulVerifyStatus(method, uri string, params *common.Params, ExpectedS
 	return test.RestfulVerifyStatus(method, bosBaseUrl+uri, *params, ExpectedStatus)
 }
 
+func bosTenantRestfulVerifyStatus(method, uri, tenant string, params *common.Params, ExpectedStatus int) (*resty.Response, error) {
+	return test.TenantRestfulVerifyStatus(method, bosBaseUrl+uri, tenant, *params, ExpectedStatus)
+}
+
 // Given a BOS URI, do a GET request to it. Verify that the response has 200 status code and returns a dictionary (aka string map) object.
 // Return true if all of that worked fine. Otherwise, log an appropriate error and return false.
 func basicGetUriVerifyStringMapTest(uri string, params *common.Params) bool {
@@ -65,8 +69,25 @@ func basicGetUriVerifyStringMapTest(uri string, params *common.Params) bool {
 	return true
 }
 
+func basicTenantGetUriVerifyStringMapTest(uri, tenant string, params *common.Params) bool {
+	common.Infof("GET %s (tenant: %s) test scenario", uri, tenant)
+	resp, err := bosTenantRestfulVerifyStatus("GET", uri, tenant, params, http.StatusOK)
+	if err != nil {
+		common.Error(err)
+		return false
+	}
+
+	// Validate that object can be decoded into a string map at least
+	_, err = common.DecodeJSONIntoStringMap(resp.Body())
+	if err != nil {
+		common.Error(err)
+		return false
+	}
+	return true
+}
+
 // Run all of the BOS API subtests. Return true if they all pass, false otherwise.
-func apiTests() (passed bool) {
+func apiTests(tenantList []string) (passed bool) {
 	passed = true
 
 	params := test.GetAccessTokenParams()
@@ -75,17 +96,17 @@ func apiTests() (passed bool) {
 	}
 
 	// Defined in bos_version.go
-	if !versionTestsAPI(params) {
+	if !versionTestsAPI(params, tenantList) {
 		passed = false
 	}
 
 	// Defined in bos_healthz.go
-	if !healthzTestsAPI(params) {
+	if !healthzTestsAPI(params, tenantList) {
 		passed = false
 	}
 
 	// Defined in bos_components.go
-	if !componentsTestsAPI(params) {
+	if !componentsTestsAPI(params, tenantList) {
 		passed = false
 	}
 
@@ -95,12 +116,12 @@ func apiTests() (passed bool) {
 	}
 
 	// Defined in bos_sessiontemplate.go
-	if !sessionTemplatesTestsAPI(params) {
+	if !sessionTemplatesTestsAPI(params, tenantList) {
 		passed = false
 	}
 
 	// Defined in bos_session.go
-	if !sessionsTestsAPI(params) {
+	if !sessionsTestsAPI(params, tenantList) {
 		passed = false
 	}
 

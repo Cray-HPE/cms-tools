@@ -43,7 +43,27 @@ var optionalCompletedPodNames = []string{
 	"cray-bos-pre-upgrade-etcd-backup-",
 }
 
+// For tests which need a tenant name, if they can work even with a nonexistent tenant, use the
+// following name if no actual tenants exist
+const defaultTenantName = "cmsdev-tenant"
+
+// Return a random tenant from the list
+// If the list is empty, return defaultTenantName
+func getAnyTenant(tenantList []string) string {
+	if len(tenantList) > 0 {
+		if tenantName, err := common.GetRandomStringFromList(tenantList); err == nil {
+			common.Debugf("Randomly selected tenant name '%s'", tenantName)
+			return tenantName
+		}
+	}
+	common.Debugf("Returning default tenant name '%s'", defaultTenantName)
+	return defaultTenantName
+}
+
 func IsBOSRunning() (passed bool) {
+	var err error
+	var tenantList []string
+
 	passed = true
 
 	// Look for at least 3 bos pods, although we know there are more.
@@ -119,8 +139,17 @@ func IsBOSRunning() (passed bool) {
 		}
 	}
 
+	// Get list of defined tenants on the system (if any)
+	tenantList, err = k8s.GetTenants()
+	if err != nil {
+		common.VerboseFailedf(err.Error())
+		passed = false
+		// Set tenantList to an empty list -- some tenant tests can still run even if no tenants are known
+		tenantList = []string{}
+	}
+
 	// Defined in bos_api.go
-	if !apiTests() {
+	if !apiTests(tenantList) {
 		passed = false
 	}
 

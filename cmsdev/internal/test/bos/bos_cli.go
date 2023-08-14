@@ -52,6 +52,28 @@ func runBosCLIDescribe(target string, cmdArgs ...string) []byte {
 	return runBosCLI(newCmdArgs...)
 }
 
+// Runs a BOS CLI list with the specified arguments (with no tenant specified)
+// Parses the result to convert it to a list of dictionaries with string keys
+// Returns the result and a boolean indicating whether or not this was successful (true == no errors)
+func bosListCli(cmdArgs ...string) (dictList []map[string]interface{}, passed bool) {
+	var err error
+
+	passed = false
+	cmdOut := runBosCLIList(cmdArgs...)
+	if cmdOut == nil {
+		return
+	}
+
+	// Decode JSON into a list of string maps
+	dictList, err = common.DecodeJSONIntoStringMapList(cmdOut)
+	if err != nil {
+		common.Error(err)
+		return
+	}
+	passed = true
+	return
+}
+
 // Given a BOS CLI command prefix, run that CLI command with "list" appended to the end.
 // Verify that the command succeeded and returns a dictionary (aka string map) object.
 // Return true if all of that worked fine. Otherwise, log an appropriate error and return false.

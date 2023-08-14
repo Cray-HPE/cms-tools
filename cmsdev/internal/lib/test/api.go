@@ -75,6 +75,23 @@ func RestfulVerifyStatus(method, url string, params common.Params, ExpectedStatu
 	return
 }
 
+func TenantRestfulVerifyStatus(method, url, tenant string, params common.Params, ExpectedStatus int) (resp *resty.Response, err error) {
+	common.Infof("%s %s (tenant: %s)", method, url, tenant)
+	resp, err = common.RestfulTenant(method, url, tenant, params)
+	if err != nil {
+		err = fmt.Errorf("%s %s (tenant: %s) failed: %v", method, url, tenant, err)
+		return
+	}
+	common.Debugf("resp=%v", resp)
+	common.PrettyPrintJSON(resp)
+	if resp.StatusCode() != ExpectedStatus {
+		err = fmt.Errorf("%s %s (tenant: %s): expected status code %d, got %d", method, url, tenant, ExpectedStatus, resp.StatusCode())
+		return
+	}
+	common.Infof("Received status code %d, as expected", resp.StatusCode())
+	return
+}
+
 func RestfulTestResultSummary(numFailed, testTotal int) {
 	common.Infof("%d passed, %d failed", testTotal-numFailed, numFailed)
 }

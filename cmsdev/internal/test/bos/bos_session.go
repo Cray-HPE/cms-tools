@@ -24,12 +24,16 @@ package bos
 /*
  * bos_session.go
  *
- * bos session tests
+ * BOS session tests utility functions
  *
  */
 
 import (
+	"errors"
+	"fmt"
+	resty "gopkg.in/resty.v1"
 	"net/http"
+	"reflect"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
 
@@ -40,235 +44,254 @@ const bosV1SessionsCLI = "session"
 const bosV2SessionsCLI = "sessions"
 const bosDefaultSessionsCLI = bosV2SessionsCLI
 
-// The sessionsV1TestsURI, sessionsV2TestsURI, sessionsV1TestsCLICommand, and sessionsV2TestsCLICommand functions define the API and CLI versions of the
-// BOS v1 and v2 session subtests.
-// They all do essentially the same thing:
-// 1. List all sessions
-// 2. Verify that this succeeds and returns something of the right general form (for v1, this is expected to be a list of strings,
-//    whereas for v2 this should be a list of dictionary objects)
-// 3. If the list returned is empty, then the subtest is over. Otherwise, select the first element of the list. (If bosV2, extract the "name" field of that element).
-// 4. Do a GET/describe on that particular session
-// 5. Verify that this succeeds and returns something of the right general form. For BOS v2, also verify that it has the expected name
-//    (in v1, the session ID is not in the returned object)
+// A BOS v2 session is uniquely identified by its name and tenant. The tenant may null, blank,
+// or, equivalently, not present in the actual record. In all such cases, the
+// following struct uses an empty string value for Tenant.
+type v2SessionData struct {
+	Name, Tenant string
+}
 
-func sessionsTestsAPI(params *common.Params) (passed bool) {
+// Returns true if the Name field of the object is "", false otherwise
+func (sessionData v2SessionData) IsNil() bool {
+	return sessionData.Name == ""
+}
+
+// Returns a string representation of the object
+func (sessionData v2SessionData) String() string {
+	if len(sessionData.Tenant) > 0 {
+		return fmt.Sprintf("name: '%s', tenant: '%s'", sessionData.Name, sessionData.Tenant)
+	}
+	return fmt.Sprintf("name: '%s', no tenant", sessionData.Name)
+}
+
+// Compares two sessionData objects. Returns true if both fields match, false otherwise. If false,
+// appropriate errors are also logged noting the discrepancies
+func (sessionData v2SessionData) HasExpectedValues(expectedSessionData v2SessionData) (passed bool) {
+	// Let's be optimistic and assume that they will match
 	passed = true
 
-	// v1 sessions
-	if !sessionsV1TestsURI(bosV1SessionsUri, params) {
+	// Validate that name fields match
+	if sessionData.Name != expectedSessionData.Name {
+		common.Errorf("BOS session name '%s' does not match expected name '%s'", sessionData.Name, expectedSessionData.Name)
 		passed = false
+	} else {
+		common.Debugf("BOS session name '%s' matches expected value", sessionData.Name)
 	}
 
-	// v2 sessions
-	if !sessionsV2TestsURI(bosV2SessionsUri, params) {
-		passed = false
+	// Validate the tenant name
+	if sessionData.Tenant == expectedSessionData.Tenant {
+		if len(sessionData.Tenant) == 0 {
+			common.Debugf("Session does not belong to a tenant, which matches expectations")
+		} else {
+			common.Debugf("Session belongs to the expected tenant")
+		}
+		return
 	}
-
+	passed = false
+	if len(sessionData.Tenant) == 0 {
+		common.Errorf("Session does not belong to a tenant, but it should belong to '%s'", expectedSessionData.Tenant)
+	} else {
+		common.Errorf("Session belongs to tenant '%s', but it should not belong to any tenant", sessionData.Tenant)
+	}
 	return
 }
 
-func sessionsTestsCLI() (passed bool) {
-	passed = true
+// Takes as input a mapping from strings to arbitrary objects.
+// Parses it to extract the values of the 'name' and 'tenant' fields (although the
+// latter is allowed to be absent). Validates that 'name' (and 'tenant', if present and non-null)
+// have string values and that 'name' is non-0 length. Returns a v2SessionData object
+// populated from those fields. Returns an error with any problems encountered.
+func parseV2SessionData(sessionDict map[string]interface{}) (sessionData v2SessionData, totalErr error) {
+	var err error
+	var fieldFound, fieldIsString bool
+	var sessionTenantField interface{}
 
-	// v1 sessions
-	if !sessionsV1TestsCLICommand("v1", bosV1SessionsCLI) {
-		passed = false
+	common.Debugf("Getting name of session")
+	sessionData.Name, err = common.GetStringFieldFromMapObject("name", sessionDict)
+	if err != nil {
+		err = fmt.Errorf("%w; Error getting 'name' field of BOS session", err)
+	} else if len(sessionData.Name) == 0 {
+		err = fmt.Errorf("BOS session has a 0-length name")
+	} else {
+		common.Debugf("Name of session is '%s'", sessionData.Name)
+	}
+	totalErr = errors.Join(totalErr, err)
+
+	common.Debugf("Checking for 'tenant' field of session '%s'", sessionData.Name)
+	sessionTenantField, fieldFound = sessionDict["tenant"]
+	if !fieldFound {
+		// This session has no tenant field, which is equivalent to a 0-length string tenant field
+		sessionData.Tenant = ""
+		common.Debugf("Session '%s' has no 'tenant' field", sessionData.Name)
+		return
+	}
+	if sessionTenantField == nil {
+		// This session has null-value tenant field, which is equivalent to a 0-length string tenant field
+		sessionData.Tenant = ""
+		common.Debugf("Session '%s' has null 'tenant' field", sessionData.Name)
+		return
 	}
 
-	// v2 sessions
-	if !sessionsV2TestsCLICommand("v2", bosV2SessionsCLI) {
-		passed = false
+	// If it is present and non-null, it should be a string value
+	sessionData.Tenant, fieldIsString = sessionTenantField.(string)
+	if !fieldIsString {
+		// tenant field has non-string value
+		err = fmt.Errorf("Session '%s' has a non-null 'tenant' field but its value is type %s, not string",
+			sessionData.Name, reflect.TypeOf(sessionTenantField).String())
+		totalErr = errors.Join(totalErr, err)
 	}
-
-	// default (v2) sessions
-	if !sessionsV2TestsCLICommand(bosDefaultSessionsCLI) {
-		passed = false
-	}
-
+	common.Debugf("Session: %s", sessionData.String())
 	return
 }
 
-// v1 sessions API tests
-// See comment earlier in the file for a description of this function
-func sessionsV1TestsURI(uri string, params *common.Params) bool {
-	// test #1, list session
-	common.Infof("GET %s test scenario", uri)
-	resp, err := bosRestfulVerifyStatus("GET", uri, params, http.StatusOK)
+// Performs an API query to get a particular BOS v2 session (possibly belonging to a tenant)
+// Parses the result to convert it to a dictionary with string keys
+// Returns the result and error (if any)
+func getV2SessionApi(params *common.Params, sessionData v2SessionData) (sessionDict map[string]interface{}, err error) {
+	var resp *resty.Response
+	uri := bosV2SessionsUri + "/" + sessionData.Name
+	if len(sessionData.Tenant) == 0 {
+		common.Infof("GET %s test scenario", uri)
+		resp, err = bosRestfulVerifyStatus("GET", uri, params, http.StatusOK)
+	} else {
+		common.Infof("GET %s (tenant: %s) test scenario", uri, sessionData.Tenant)
+		resp, err = bosTenantRestfulVerifyStatus("GET", uri, sessionData.Tenant, params, http.StatusOK)
+	}
 	if err != nil {
-		common.Error(err)
-		return false
+		return
 	}
-
-	// BOS v1: Validate that at least we can decode the JSON into a list of strings
-	stringList, err := common.DecodeJSONIntoStringList(resp.Body())
-	if err != nil {
-		common.Error(err)
-		return false
-	} else if len(stringList) == 0 {
-		common.Infof("skipping test GET %s/{session_id}", uri)
-		common.Infof("results from previous test is []")
-		return true
-	}
-
-	// a session_id is available
-	sessionId := stringList[0]
-	common.Infof("Found BOS v1 session with ID '%s'", sessionId)
-
-	// test #2, describe session with session_id
-	uri += "/" + sessionId
-	if !basicGetUriVerifyStringMapTest(uri, params) {
-		return false
-	}
-
-	return true
+	// Decode JSON into a string map
+	sessionDict, err = common.DecodeJSONIntoStringMap(resp.Body())
+	return
 }
 
-// Given a response object (as an array of bytes), validate that:
+// Performs an API query to list BOS v2 sessions (possibly with a tenant specified)
+// Parses the result to convert it to a list of dictionaries with string keys
+// Returns the result and error (if any)
+func listV2SessionsApi(params *common.Params, tenantName string) (dictList []map[string]interface{}, err error) {
+	var resp *resty.Response
+	if len(tenantName) == 0 {
+		common.Infof("GET %s test scenario", bosV2SessionsUri)
+		resp, err = bosRestfulVerifyStatus("GET", bosV2SessionsUri, params, http.StatusOK)
+	} else {
+		common.Infof("GET %s (tenant: %s) test scenario", bosV2SessionsUri, tenantName)
+		resp, err = bosTenantRestfulVerifyStatus("GET", bosV2SessionsUri, tenantName, params, http.StatusOK)
+	}
+	if err != nil {
+		return
+	}
+	// Decode JSON into a list of string maps
+	dictList, err = common.DecodeJSONIntoStringMapList(resp.Body())
+	return
+}
+
+// Get a particular BOS v2 session (possibly belonging to a tenant) using getV2SessionApi,
+// parses that dictionaries into a v2SessionData struct.
+// Validates that it matches the expected session name and (if any) tenant name.
+// Returns that struct and error (if any)
+func getV2SessionDataApi(params *common.Params, sessionData v2SessionData) (sessionDataFromApi v2SessionData, err error) {
+	var sessionDict map[string]interface{}
+
+	sessionDict, err = getV2SessionApi(params, sessionData)
+	if err != nil {
+		return
+	}
+	sessionDataFromApi, err = parseV2SessionData(sessionDict)
+	if err != nil {
+		return
+	}
+	if !sessionDataFromApi.HasExpectedValues(sessionData) {
+		err = fmt.Errorf("Session returned by API query (%s) does not match session requested (%s)",
+			sessionDataFromApi.String(), sessionData.String())
+	}
+	return
+}
+
+// Parses list of string-key dictionaries into a list of v2SessionData structs.
+// If a tenant was specified, validate that every session belongs to that tenant.
+// Returns that list of structs and error (if any)
+func dictListToSessionDataList(dictList []map[string]interface{}, tenantName string) (sessionDataList []v2SessionData, err error) {
+	var sessionData v2SessionData
+	sessionDataList = make([]v2SessionData, 0, len(dictList))
+	for sessionIndex, sessionDict := range dictList {
+		sessionData, err = parseV2SessionData(sessionDict)
+		if err != nil {
+			err = fmt.Errorf("%w; Error parsing session #%d in list", err, sessionIndex)
+			return
+		}
+		// If a tenant was specified, validate that session belongs to the expected tenant
+		if len(tenantName) > 0 && sessionData.Tenant != tenantName {
+			err = fmt.Errorf("Session #%d in the list (%s) does not belong to expected tenant '%s'",
+				sessionIndex, sessionData.String(), tenantName)
+			return
+		}
+		sessionDataList = append(sessionDataList, sessionData)
+	}
+	return
+}
+
+// Gets a list of V2 session dictionary objects using listV2SessionsApi,
+// converts that list using dictListToSessionDataList. Returns resulting list and error (if any)
+func listV2SessionDataApi(params *common.Params, tenantName string) (sessionDataList []v2SessionData, err error) {
+	var dictList []map[string]interface{}
+
+	dictList, err = listV2SessionsApi(params, tenantName)
+	if err != nil {
+		return
+	}
+	sessionDataList, err = dictListToSessionDataList(dictList, tenantName)
+	return
+}
+
+// Gets a list of V2 session dictionary objects using bosListCli,
+// converts that list using dictListToSessionDataList. Returns resulting list and boolean
+// value indicating whether the function passed or failed (an error will have been logged in the case
+// of failure)
+func listV2SessionDataCli(cmdArgs ...string) (sessionDataList []v2SessionData, passed bool) {
+	var dictList []map[string]interface{}
+	var err error
+
+	dictList, passed = bosListCli(cmdArgs...)
+	if !passed {
+		return
+	}
+	// The CLI test currently does not cover tenanted queries, so pass blank tenant name
+	sessionDataList, err = dictListToSessionDataList(dictList, "")
+	if err != nil {
+		common.Error(err)
+		passed = false
+	}
+	return
+}
+
+// Given an array of bytes, validate that:
 // 1. It resolves to a JSON dictonary
-// 2. That dictionary has a "name" field
-// 3. The "name" field of that dictionary has a value which matches our expectedName string
+// 2. The resulting dictionary can be successfully parsed as a V2 session object (using parseV2SessionData function)
+// 3. The resulting V2 session has the expected ID values (using HasExpectedValues method)
 //
 // Return true if all of the above is true. Otherwise, log an appropriate error and return false.
-func ValidateV2Session(mapCmdOut []byte, expectedName string) bool {
-	// For BOSv2, the session object we get back should have a 'name' field matching the name that we requested.
-	// So let's validate that
-	err := common.ValidateStringFieldValue("BOS session", "name", expectedName, mapCmdOut)
-	if err != nil {
-		common.Error(err)
+func ValidateV2Session(mapCmdOut []byte, expectedId v2SessionData) bool {
+	common.Infof("Validating that BOS v2 session has expected values for name and tenant")
+
+	// This function should always receive a non-0-length expected name
+	if len(expectedId.Name) == 0 {
+		common.Errorf("Programming logic error: ValidateV2Session function received 0-length string for expected name")
 		return false
 	}
-	return true
-}
 
-// v2 sessions API tests
-// See comment earlier in the file for a description of this function
-func sessionsV2TestsURI(uri string, params *common.Params) bool {
-	// test #1, list sessions
-	common.Infof("GET %s test scenario", uri)
-	resp, err := bosRestfulVerifyStatus("GET", uri, params, http.StatusOK)
+	// Should be a dictionary object mapping strings to values
+	common.Debugf("Parsing session as a dictionary")
+	sessionDict, err := common.DecodeJSONIntoStringMap(mapCmdOut)
 	if err != nil {
 		common.Error(err)
 		return false
 	}
 
-	// BOS v2: Decode JSON into a list
-	sessionList, err := common.DecodeJSONIntoList(resp.Body())
-	if err != nil {
-		common.Error(err)
-		return false
-	} else if len(sessionList) == 0 {
-		common.Infof("skipping test GET %s/{session_id}", uri)
-		common.Infof("results from previous test is []")
-		return true
-	}
-
-	// Take the first session listed. It should be a dictionary object.
-	sessionObject := sessionList[0]
-	session, ok := sessionObject.(map[string]interface{})
-	if !ok {
-		common.Errorf("First BOS session listed is not a dictionary object: %v", sessionObject)
-		return false
-	}
-
-	common.Debugf("Getting 'name' field BOS session: %v", session)
-	sessionId, err := common.GetStringFieldFromMapObject("name", session)
-	if err != nil {
-		common.Error(err)
-		return false
-	}
-	common.Infof("Found BOS v2 session with name '%s'", sessionId)
-
-	// test #2: describe session
-	uri += "/" + sessionId
-	resp, err = bosRestfulVerifyStatus("GET", uri, params, http.StatusOK)
-	if err != nil {
-		common.Error(err)
-		return false
-	} else if !ValidateV2Session(resp.Body(), sessionId) {
-		return false
-	}
-
-	return true
-}
-
-// v1 sessions CLI tests
-// See comment earlier in the file for a description of this function
-func sessionsV1TestsCLICommand(cmdArgs ...string) bool {
-	// test #1, list sessions
-	cmdOut := runBosCLIList(cmdArgs...)
-	if cmdOut == nil {
-		return false
-	}
-
-	// BOS v1: Validate that at least we can decode the JSON into a list of strings
-	stringList, err := common.DecodeJSONIntoStringList(cmdOut)
+	sessionData, err := parseV2SessionData(sessionDict)
 	if err != nil {
 		common.Error(err)
 		return false
 	}
 
-	// Grab the first session ID
-	if len(stringList) == 0 {
-		common.Infof("skipping test CLI describe {session_id}")
-		common.Infof("results from previous test is []")
-		return true
-	}
-
-	// A session id is available
-	sessionId := stringList[0]
-	common.Infof("Found BOS v1 session with ID '%s'", sessionId)
-
-	// test #2, describe session with session_id
-	if !basicCLIDescribeVerifyStringMapTest(sessionId, cmdArgs...) {
-		return false
-	}
-
-	return true
-}
-
-// v2 sessions CLI tests
-// See comment earlier in the file for a description of this function
-func sessionsV2TestsCLICommand(cmdArgs ...string) bool {
-	// test #1, list sessions
-	cmdOut := runBosCLIList(cmdArgs...)
-	if cmdOut == nil {
-		return false
-	}
-
-	// BOS v2: Decode JSON into a list
-	sessionList, err := common.DecodeJSONIntoList(cmdOut)
-	if err != nil {
-		common.Error(err)
-		return false
-	} else if len(sessionList) == 0 {
-		common.Infof("skipping test CLI describe {session_id}")
-		common.Infof("results from previous test is []")
-		return true
-	}
-
-	// Take the first session listed. It should be a dictionary object.
-	sessionObject := sessionList[0]
-	session, ok := sessionObject.(map[string]interface{})
-	if !ok {
-		common.Errorf("First BOS session listed is not a dictionary object: %v", sessionObject)
-		return false
-	}
-
-	common.Debugf("Getting 'name' field BOS session: %v", session)
-	sessionId, err := common.GetStringFieldFromMapObject("name", session)
-	if err != nil {
-		common.Error(err)
-		return false
-	}
-	common.Infof("Found BOS v2 session with name '%s'", sessionId)
-
-	// test #2, describe session with session_id
-	cmdOut = runBosCLIDescribe(sessionId, cmdArgs...)
-	if cmdOut == nil {
-		return false
-	} else if !ValidateV2Session(cmdOut, sessionId) {
-		return false
-	}
-
-	return true
+	return sessionData.HasExpectedValues(expectedId)
 }

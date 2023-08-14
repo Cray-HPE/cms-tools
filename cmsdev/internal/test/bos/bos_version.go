@@ -43,7 +43,7 @@ const bosV1VersionCLI = "version"
 const bosV2VersionCLI = "version"
 const bosDefaultVersionCLI = bosV2VersionCLI
 
-func versionTestsAPI(params *common.Params) (passed bool) {
+func versionTestsAPI(params *common.Params, tenantList []string) (passed bool) {
 	passed = true
 
 	// / endpoint
@@ -71,8 +71,18 @@ func versionTestsAPI(params *common.Params) (passed bool) {
 		passed = false
 	}
 
+	// v2 endpoint as random tenant (BOS does not verify that tenant exists on GET requests)
+	if !basicTenantGetUriVerifyStringMapTest(bosV2BaseUri, getAnyTenant(tenantList), params) {
+		passed = false
+	}
+
 	// /v2/version endpoint
 	if !basicGetUriVerifyStringMapTest(bosV2VersionUri, params) {
+		passed = false
+	}
+
+	// /v2/version endpoint as random tenant (BOS does not verify that tenant exists on GET requests)
+	if !basicTenantGetUriVerifyStringMapTest(bosV2VersionUri, getAnyTenant(tenantList), params) {
 		passed = false
 	}
 

@@ -479,61 +479,60 @@ func PrintEndpoints(service string, params ...string) {
 	}
 }
 
-// Restful() performs CMS RESTful calls
-// returns true on success, otherwise false
-// returns populated message string if success == false
-func Restful(method, url string, params Params) (*resty.Response, error) {
+// doRest() performs RESTful calls using the provided client and parameters.
+func doRest(method, url string, params Params, client *resty.Client) (*resty.Response, error) {
 	var err error
 	var resp *resty.Response
 
-	client := resty.New()
-
 	switch method {
 	case "GET":
-		client.SetHeaders(map[string]string{
-			"Accept":     "application/json",
-			"User-Agent": "cmsdev",
-		})
-		resp, err = client.R().
-			SetAuthToken(params.Token).
-			Get(url)
+		resp, err = client.R().Get(url)
 	case "POST":
 		if len(params.JsonStr) != 0 {
 			// payload passed as string
 			resp, err = client.R().
-				SetAuthToken(params.Token).
-				SetHeader("Content-Type", "application/json").
 				SetBody(params.JsonStr).
 				Post(url)
 		} else {
 			// payload passed as byte array
 			resp, err = client.R().
-				SetAuthToken(params.Token).
-				SetHeader("Content-Type", "application/json").
 				SetBody(params.JsonStrArray).
 				Post(url)
 		}
 	case "PATCH":
-		client.SetHeaders(map[string]string{
-			"Accept":     "application/json",
-			"User-Agent": "cmsdev",
-		})
 		resp, err = client.R().
-			SetAuthToken(params.Token).
 			SetBody(params.JsonStrArray).
 			Patch(url)
 	case "DELETE":
-		client.SetHeaders(map[string]string{
-			"Content-Type": "application/json",
-			"User-Agent":   "cmsdev",
-		})
-		resp, err = client.R().
-			SetAuthToken(params.Token).
-			Delete(url)
+		resp, err = client.R().Delete(url)
 	}
 
 	return resp, err
+}
 
+// Restful() performs CMS RESTful calls
+func Restful(method, url string, params Params) (*resty.Response, error) {
+	client := resty.New()
+	client.SetHeaders(map[string]string{
+		"Accept":       "application/json",
+		"User-Agent":   "cmsdev",
+		"Content-Type": "application/json",
+	})
+	client.SetAuthToken(params.Token)
+	return doRest(method, url, params, client)
+}
+
+// Restful() performs CMS RESTful calls on behalf of the specified tenant
+func RestfulTenant(method, url, tenant string, params Params) (*resty.Response, error) {
+	client := resty.New()
+	client.SetHeaders(map[string]string{
+		"Accept":           "application/json",
+		"User-Agent":       "cmsdev",
+		"Content-Type":     "application/json",
+		"Cray-Tenant-Name": tenant,
+	})
+	client.SetAuthToken(params.Token)
+	return doRest(method, url, params, client)
 }
 
 func CreateDirectoryIfNeeded(path string) (error, bool) {
