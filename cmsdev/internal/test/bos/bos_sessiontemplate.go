@@ -24,12 +24,16 @@ package bos
 /*
  * bos_sessiontemplate.go
  *
- * bos sessiontemplate tests
+ * BOS sessiontemplate tests utility functions
  *
  */
 
 import (
+	"errors"
+	"fmt"
+	resty "gopkg.in/resty.v1"
 	"net/http"
+	"reflect"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
 
@@ -47,176 +51,326 @@ const bosV1SessionTemplateTemplateCLI = "sessiontemplatetemplate"
 const bosV2SessionTemplateTemplateCLI = "sessiontemplatetemplate"
 const bosDefaultSessionTemplateTemplateCLI = bosV2SessionTemplateTemplateCLI
 
-// The sessionTemplatesTestsURI and sessionTemplatesTestsCLICommand functions define the API and CLI versions of the BOS session template subtests.
-// They both do the same thing:
-// 1. List all session templates
-// 2. Verify that this succeeds and returns something of the right general form
-// 3. If the list returned is empty, then the subtest is over. Otherwise, select the first element of the list and extract the "name" field
-// 4. Do a GET/describe on that particular session template
-// 5. Verify that this succeeds and returns something of the right general form
+// A BOS v2 session template is uniquely identified by its name and tenant. The tenant may null, blank,
+// or, equivalently, not present in the actual record. In all such cases, the
+// following struct uses an empty string value for Tenant.
+type v2TemplateData struct {
+	Name, Tenant string
+}
 
-func sessionTemplatesTestsAPI(params *common.Params) (passed bool) {
+// Returns true if the Name field of the object is "", false otherwise
+func (templateData v2TemplateData) IsNil() bool {
+	return templateData.Name == ""
+}
+
+// Returns a string representation of the object
+func (templateData v2TemplateData) String() string {
+	if len(templateData.Tenant) > 0 {
+		return fmt.Sprintf("name: '%s', tenant: '%s'", templateData.Name, templateData.Tenant)
+	}
+	return fmt.Sprintf("name: '%s', no tenant", templateData.Name)
+}
+
+// Compares two objects. Returns true if both fields match, false otherwise. If false,
+// appropriate errors are also logged noting the discrepancies
+func (templateData v2TemplateData) HasExpectedValues(expectedTemplateData v2TemplateData) (passed bool) {
+	// Let's be optimistic and assume that they will match
 	passed = true
 
-	// session template template API tests
-	// Just do a GET of the sessiontemplatetemplate endpoint and make sure that the response has
-	// 200 status and a dictionary object
-
-	// v1
-	if !basicGetUriVerifyStringMapTest(bosV1SessionTemplateTemplateUri, params) {
+	// Validate that name fields match
+	if templateData.Name != expectedTemplateData.Name {
+		common.Errorf("BOS session template name '%s' does not match expected name '%s'", templateData.Name, expectedTemplateData.Name)
 		passed = false
+	} else {
+		common.Debugf("BOS session template name '%s' matches expected value", templateData.Name)
 	}
 
-	// v2
-	if !basicGetUriVerifyStringMapTest(bosV2SessionTemplateTemplateUri, params) {
-		passed = false
+	// Validate the tenant name
+	if templateData.Tenant == expectedTemplateData.Tenant {
+		if len(templateData.Tenant) == 0 {
+			common.Debugf("Session template does not belong to a tenant, which matches expectations")
+		} else {
+			common.Debugf("Session template belongs to the expected tenant")
+		}
+		return
 	}
-
-	// session template API tests
-
-	// v1
-	if !sessionTemplatesTestsURI(bosV1SessionTemplatesUri, params) {
-		passed = false
+	passed = false
+	if len(templateData.Tenant) == 0 {
+		common.Errorf("Session template does not belong to a tenant, but it should belong to '%s'", expectedTemplateData.Tenant)
+	} else {
+		common.Errorf("Session template belongs to tenant '%s', but it should not belong to any tenant", templateData.Tenant)
 	}
-
-	// v2
-	if !sessionTemplatesTestsURI(bosV2SessionTemplatesUri, params) {
-		passed = false
-	}
-
 	return
 }
 
-func sessionTemplatesTestsCLI() (passed bool) {
-	passed = true
+// Takes as input a mapping from strings to arbitrary objects.
+// Parses it to extract the values of the 'name' and 'tenant' fields (although the
+// latter is allowed to be absent). Validates that 'name' (and 'tenant', if present and non-null)
+// have string values and that 'name' is non-0 length. Returns a v2TemplateData object
+// populated from those fields. Returns an error with any problems encountered.
+func parseV2TemplateData(sessionTemplateDict map[string]interface{}) (templateData v2TemplateData, totalErr error) {
+	var err error
+	var fieldFound, fieldIsString bool
+	var sessionTemplateTenantField interface{}
 
-	// session template template CLI tests
-	// Make sure that "sessiontemplatetemplate list" CLI command succeeds and returns a dictionary object.
+	common.Debugf("Getting name of session template")
+	templateData.Name, err = common.GetStringFieldFromMapObject("name", sessionTemplateDict)
+	if err != nil {
+		err = fmt.Errorf("%w; Error getting 'name' field of BOS session template", err)
+	} else if len(templateData.Name) == 0 {
+		err = fmt.Errorf("BOS session template has a 0-length name")
+	} else {
+		common.Debugf("Name of session template is '%s'", templateData.Name)
+	}
+	totalErr = errors.Join(totalErr, err)
 
-	// v1 sessiontemplatetemplate list
-	if !basicCLIListVerifyStringMapTest("v1", bosV1SessionTemplateTemplateCLI) {
-		passed = false
+	common.Debugf("Checking for 'tenant' field of session template '%s'", templateData.Name)
+	sessionTemplateTenantField, fieldFound = sessionTemplateDict["tenant"]
+	if !fieldFound {
+		// This session template has no tenant field, which is equivalent to a 0-length string tenant field
+		templateData.Tenant = ""
+		common.Debugf("Session template '%s' has no 'tenant' field", templateData.Name)
+		return
+	}
+	if sessionTemplateTenantField == nil {
+		// This session template has null-value tenant field, which is equivalent to a 0-length string tenant field
+		templateData.Tenant = ""
+		common.Debugf("Session template '%s' has null 'tenant' field", templateData.Name)
+		return
 	}
 
-	// v2 sessiontemplatetemplate list
-	if !basicCLIListVerifyStringMapTest("v2", bosV2SessionTemplateTemplateCLI) {
-		passed = false
+	// If it is present and non-null, it should be a string value
+	templateData.Tenant, fieldIsString = sessionTemplateTenantField.(string)
+	if !fieldIsString {
+		// tenant field has non-string value
+		err = fmt.Errorf("Session template '%s' has a non-null 'tenant' field but its value is type %s, not string",
+			templateData.Name, reflect.TypeOf(sessionTemplateTenantField).String())
+		totalErr = errors.Join(totalErr, err)
 	}
-
-	// sessiontemplatetemplate list
-	if !basicCLIListVerifyStringMapTest(bosDefaultSessionTemplateTemplateCLI) {
-		passed = false
-	}
-
-	// session template CLI tests
-
-	// v1 sessiontemplate
-	if !sessionTemplatesTestsCLICommand("v1", bosV1SessionTemplatesCLI) {
-		passed = false
-	}
-
-	// v2 sessiontemplates
-	if !sessionTemplatesTestsCLICommand("v2", bosV2SessionTemplatesCLI) {
-		passed = false
-	}
-
-	// sessiontemplates
-	if !sessionTemplatesTestsCLICommand(bosDefaultSessionTemplatesCLI) {
-		passed = false
-	}
-
+	common.Debugf("Session template: %s", templateData.String())
 	return
 }
 
-// Given a response object (as an array of bytes), do the following:
-// 1. Verify that it is a JSON list object
-// 2. If the list object is empty, return a blank string.
-// 3. If the list is not empty, verify that its first element is a dictionary.
-// 4. Look up the "name" key in that dictionary, and return its value.
-// If any of the above does not work, return an appropriate error.
-func getFirstSessionTemplateId(listCmdOut []byte) (string, error) {
-	return common.GetStringFieldFromFirstItem("name", listCmdOut)
-}
-
-// Given a response object (as an array of bytes), validate that:
-// 1. It resolves to a JSON dictonary
-// 2. That dictionary has a "name" field
-// 3. The "name" field of that dictionary has a value which matches our expectedName string
-//
-// Return true if all of the above is true. Otherwise, log an appropriate error and return false.
-func ValidateSessionTemplateId(mapCmdOut []byte, expectedName string) bool {
-	err := common.ValidateStringFieldValue("BOS sessiontemplate", "name", expectedName, mapCmdOut)
-	if err != nil {
-		common.Error(err)
-		return false
-	}
-	return true
-}
-
-// session templates API tests
-// See comment earlier in the file for a description of this function
-func sessionTemplatesTestsURI(uri string, params *common.Params) bool {
-	// test #1, list session templates
-	common.Infof("GET %s test scenario", uri)
-	resp, err := bosRestfulVerifyStatus("GET", uri, params, http.StatusOK)
-	if err != nil {
-		common.Error(err)
-		return false
-	}
-
-	// use results from previous test, grab the first session template
-	sessionTemplateId, err := getFirstSessionTemplateId(resp.Body())
-	if err != nil {
-		common.Error(err)
-		return false
-	} else if len(sessionTemplateId) == 0 {
-		common.Infof("skipping test GET %s/{session_template_id}", uri)
-		common.Infof("results from previous test is []")
-		return true
-	}
-
-	// a session_template_id is available
-	uri += "/" + sessionTemplateId
+// Performs an API query to get a particular BOS v1 session template (with no tenant specified)
+// Parses the result to convert it to a dictionary with string keys
+// Returns the result and error (if any)
+func getV1TemplateApi(params *common.Params, templateName string) (sessionTemplateDict map[string]interface{}, err error) {
+	var resp *resty.Response
+	uri := bosV1SessionTemplatesUri + "/" + templateName
 	common.Infof("GET %s test scenario", uri)
 	resp, err = bosRestfulVerifyStatus("GET", uri, params, http.StatusOK)
 	if err != nil {
-		common.Error(err)
-		return false
-	} else if !ValidateSessionTemplateId(resp.Body(), sessionTemplateId) {
-		return false
+		return
 	}
-
-	return true
+	// Decode JSON into a string map
+	sessionTemplateDict, err = common.DecodeJSONIntoStringMap(resp.Body())
+	return
 }
 
-// session templates CLI tests
-// See comment earlier in the file for a description of this function
-func sessionTemplatesTestsCLICommand(cmdArgs ...string) bool {
-	// test #1, list session templates
-	cmdOut := runBosCLIList(cmdArgs...)
-	if cmdOut == nil {
+// Performs an API query to get a particular BOS v2 session template (possibly belonging to a tenant)
+// Parses the result to convert it to a dictionary with string keys
+// Returns the result and error (if any)
+func getV2TemplateApi(params *common.Params, templateData v2TemplateData) (sessionTemplateDict map[string]interface{}, err error) {
+	var resp *resty.Response
+	uri := bosV2SessionTemplatesUri + "/" + templateData.Name
+	if len(templateData.Tenant) == 0 {
+		common.Infof("GET %s test scenario", uri)
+		resp, err = bosRestfulVerifyStatus("GET", uri, params, http.StatusOK)
+	} else {
+		common.Infof("GET %s (tenant: %s) test scenario", uri, templateData.Tenant)
+		resp, err = bosTenantRestfulVerifyStatus("GET", uri, templateData.Tenant, params, http.StatusOK)
+	}
+	if err != nil {
+		return
+	}
+	// Decode JSON into a string map
+	sessionTemplateDict, err = common.DecodeJSONIntoStringMap(resp.Body())
+	return
+}
+
+// Performs an API query to list BOS v1 templates (with no tenant specified)
+// Parses the result to convert it to a list of dictionaries with string keys
+// Returns the result and error (if any)
+func listV1TemplatesApi(params *common.Params) (dictList []map[string]interface{}, err error) {
+	var resp *resty.Response
+	common.Infof("GET %s test scenario", bosV1SessionTemplatesUri)
+	resp, err = bosRestfulVerifyStatus("GET", bosV1SessionTemplatesUri, params, http.StatusOK)
+	if err != nil {
+		return
+	}
+	// Decode JSON into a list of string maps
+	dictList, err = common.DecodeJSONIntoStringMapList(resp.Body())
+	return
+}
+
+// Performs an API query to list BOS v2 templates (possibly with a tenant specified)
+// Parses the result to convert it to a list of dictionaries with string keys
+// Returns the result and error (if any)
+func listV2TemplatesApi(params *common.Params, tenantName string) (dictList []map[string]interface{}, err error) {
+	var resp *resty.Response
+	if len(tenantName) == 0 {
+		common.Infof("GET %s test scenario", bosV2SessionTemplatesUri)
+		resp, err = bosRestfulVerifyStatus("GET", bosV2SessionTemplatesUri, params, http.StatusOK)
+	} else {
+		common.Infof("GET %s (tenant: %s) test scenario", bosV2SessionTemplatesUri, tenantName)
+		resp, err = bosTenantRestfulVerifyStatus("GET", bosV2SessionTemplatesUri, tenantName, params, http.StatusOK)
+	}
+	if err != nil {
+		return
+	}
+	// Decode JSON into a list of string maps
+	dictList, err = common.DecodeJSONIntoStringMapList(resp.Body())
+	return
+}
+
+// Get a particular BOS session template (with no tenant) using getV1TemplateApi,
+// parses that dictionaries into a v2TemplateData struct.
+// Validates that it matches the expected session template name and that it does not belong to a tenant
+// Returns that struct and error (if any)
+func getV1TemplateDataApi(params *common.Params, templateName string) (templateDataFromApi v2TemplateData, err error) {
+	var expectedTemplateData v2TemplateData
+	var sessionTemplateDict map[string]interface{}
+
+	sessionTemplateDict, err = getV1TemplateApi(params, templateName)
+	if err != nil {
+		return
+	}
+	templateDataFromApi, err = parseV2TemplateData(sessionTemplateDict)
+	if err != nil {
+		return
+	}
+	expectedTemplateData.Name = templateName
+	if !templateDataFromApi.HasExpectedValues(expectedTemplateData) {
+		err = fmt.Errorf("SessionTemplate returned by API query (%s) does not match session template requested (%s)",
+			templateDataFromApi.String(), expectedTemplateData.String())
+	}
+	return
+}
+
+// Get a particular BOS v2 session template (possibly belonging to a tenant) using getV2TemplateApi,
+// parses that dictionaries into a v2TemplateData struct.
+// Validates that it matches the expected session template name and (if any) tenant name.
+// Returns that struct and error (if any)
+func getV2TemplateDataApi(params *common.Params, templateData v2TemplateData) (templateDataFromApi v2TemplateData, err error) {
+	var sessionTemplateDict map[string]interface{}
+
+	sessionTemplateDict, err = getV2TemplateApi(params, templateData)
+	if err != nil {
+		return
+	}
+	templateDataFromApi, err = parseV2TemplateData(sessionTemplateDict)
+	if err != nil {
+		return
+	}
+	if !templateDataFromApi.HasExpectedValues(templateData) {
+		err = fmt.Errorf("SessionTemplate returned by API query (%s) does not match session template requested (%s)",
+			templateDataFromApi.String(), templateData.String())
+	}
+	return
+}
+
+// Parses list of string-key dictionaries into a list of v2TemplateData structs.
+// If a tenant was specified, validate that every template belongs to that tenant.
+// Returns that list of structs and error (if any)
+func dictListToTemplateDataList(dictList []map[string]interface{}, tenantName string) (templateDataList []v2TemplateData, err error) {
+	var templateData v2TemplateData
+	templateDataList = make([]v2TemplateData, 0, len(dictList))
+	for templateIndex, templateDict := range dictList {
+		templateData, err = parseV2TemplateData(templateDict)
+		if err != nil {
+			err = fmt.Errorf("%w; Error parsing template #%d in list", err, templateIndex)
+			return
+		}
+		// If a tenant was specified, validate that template belongs to the expected tenant
+		if len(tenantName) > 0 && templateData.Tenant != tenantName {
+			err = fmt.Errorf("Template #%d in the list (%s) does not belong to expected tenant '%s'",
+				templateIndex, templateData.String(), tenantName)
+			return
+		}
+		templateDataList = append(templateDataList, templateData)
+	}
+	return
+}
+
+// Gets a list of session template dictionary objects using listV1TemplatesApi,
+// converts that list using dictListToTemplateDataList. Returns that list of structs and error (if any)
+func listV1TemplateDataApi(params *common.Params) (templateDataList []v2TemplateData, err error) {
+	var dictList []map[string]interface{}
+
+	dictList, err = listV1TemplatesApi(params)
+	if err != nil {
+		return
+	}
+	// Empty string for tenant name, because v1 queries are never tenanted queries
+	templateDataList, err = dictListToTemplateDataList(dictList, "")
+	return
+}
+
+// Gets a list of session template dictionary objects using listV2TemplatesApi,
+// converts that list using dictListToTemplateDataList. Returns that list of structs and error (if any)
+func listV2TemplateDataApi(params *common.Params, tenantName string) (templateDataList []v2TemplateData, err error) {
+	var dictList []map[string]interface{}
+
+	dictList, err = listV2TemplatesApi(params, tenantName)
+	if err != nil {
+		return
+	}
+	templateDataList, err = dictListToTemplateDataList(dictList, tenantName)
+	return
+}
+
+// Gets a list of session template dictionary objects using bosListCli,
+// converts that list using dictListToTemplateDataList. Returns resulting list and boolean
+// value indicating whether the function passed or failed (an error will have been logged in the case
+// of failure)
+func listTemplateDataCli(cmdArgs ...string) (templateDataList []v2TemplateData, passed bool) {
+	var dictList []map[string]interface{}
+	var err error
+
+	dictList, passed = bosListCli(cmdArgs...)
+	if !passed {
+		return
+	}
+	// The CLI test currently does not cover tenanted queries, so pass blank tenant name
+	templateDataList, err = dictListToTemplateDataList(dictList, "")
+	if err != nil {
+		common.Error(err)
+		passed = false
+	}
+	return
+}
+
+// Given an array of bytes, validate that:
+// 1. It resolves to a JSON dictonary
+// 2. The resulting dictionary can be successfully parsed as a V2 template object (using parseV2TemplateData function)
+// 3. The resulting V2 template object has the expected ID values (using HasExpectedValues method)
+//
+// Return true if all of the above is true. Otherwise, log an appropriate error and return false.
+//
+// Note that this will be used to validate both V1 and V2 templates, because a dirty secret of BOS is that
+// they're the same thing behind the scenes.
+func ValidateTemplateData(mapCmdOut []byte, expectedId v2TemplateData) bool {
+	common.Infof("Validating that BOS session template has expected values for name and tenant")
+
+	// This function should always receive a non-0-length expected name
+	if len(expectedId.Name) == 0 {
+		common.Errorf("Programming logic error: ValidateTemplateData function received 0-length string for expected name")
 		return false
 	}
 
-	// use results from previous test, grab the first session template
-	sessionTemplateId, err := getFirstSessionTemplateId(cmdOut)
+	// Should be a dictionary object mapping strings to values
+	common.Debugf("Parsing session template as a dictionary")
+	templateDict, err := common.DecodeJSONIntoStringMap(mapCmdOut)
 	if err != nil {
 		common.Error(err)
 		return false
-	} else if len(sessionTemplateId) == 0 {
-		common.Infof("skipping test CLI describe session template {session_template_id}")
-		common.Infof("results from previous test is []")
-		return true
 	}
 
-	// a session template id is available
-	// test #2 describe session templates
-	cmdOut = runBosCLIDescribe(sessionTemplateId, cmdArgs...)
-	if cmdOut == nil {
-		return false
-	} else if !ValidateSessionTemplateId(cmdOut, sessionTemplateId) {
+	templateData, err := parseV2TemplateData(templateDict)
+	if err != nil {
+		common.Error(err)
 		return false
 	}
 
-	return true
+	return templateData.HasExpectedValues(expectedId)
 }

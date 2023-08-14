@@ -105,6 +105,31 @@ func GetKubectlPath() (string, error) {
 	return KubectlPath, nil
 }
 
+func GetTenants() (tenantList []string, err error) {
+	var path string
+	var cmdList = []string{"get", "tenants", "-n", "tenants", "-o", "custom-columns=:.metadata.name ", "--no-headers"}
+	path, err = GetKubectlPath()
+	if err != nil {
+		return
+	}
+	cmd := exec.Command(path, cmdList...)
+	common.Debugf("Running command: %s", cmd)
+	cmdOut, err := cmd.CombinedOutput()
+	if err != nil {
+		return
+	}
+	// Trim whitespace
+	tenantListString := strings.TrimSpace(string(cmdOut))
+	if len(tenantListString) == 0 {
+		common.Infof("No tenants defined on the system")
+		return
+	}
+	// Split by newline
+	tenantList = strings.Split(tenantListString, "\n")
+	common.Infof("The following %d tenants are defined on the system: %s", len(tenantList), strings.Join(tenantList, ", "))
+	return
+}
+
 func RunCommandInContainer(podName, namespace, containerName string, cmdStrings ...string) (string, error) {
 	k8sCmdList := [...]string{"exec", podName, "-n", namespace, "-c", containerName, "--stdin=false", "--"}
 	cmdList := append(k8sCmdList[:], cmdStrings...)
