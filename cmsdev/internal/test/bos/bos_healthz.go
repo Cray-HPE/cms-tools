@@ -39,7 +39,7 @@ const bosV1HealthzCLI = "healthz"
 const bosV2HealthzCLI = "healthz"
 const bosDefaultHealthzCLI = bosV2HealthzCLI
 
-func healthzTestsAPI(params *common.Params) (passed bool) {
+func healthzTestsAPI(params *common.Params, tenantList []string) (passed bool) {
 	passed = true
 
 	// Just do a GET of the options endpoint and make sure that the response has
@@ -56,7 +56,7 @@ func healthzTestsAPI(params *common.Params) (passed bool) {
 	}
 
 	// v2 endpoint as random tenant (BOS does not verify if tenant exists for GET operations)
-	if !basicTenantGetUriVerifyStringMapTest(bosV2HealthzUri, "cmsdev-tenant", params) {
+	if !basicTenantGetUriVerifyStringMapTest(bosV2HealthzUri, getAnyTenant(tenantList), params) {
 		passed = false
 	}
 

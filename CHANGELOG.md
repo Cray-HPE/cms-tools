@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - cmsdev
   - Simplified `lib.common.Restful()` function
-  - Added good path BOS API tests with tenant specified for `/v2`, `/v2/healthz`, and `/v2/version` endpoints.
+  - Added good path BOS API GET tests with tenant specified for supported v2 endpoints
 
 ## [1.13.0] - 2023-08-10
 

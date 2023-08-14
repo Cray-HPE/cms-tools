@@ -118,8 +118,15 @@ func GetTenants() (tenantList []string, err error) {
 	if err != nil {
 		return
 	}
-	// Trim final newline and split by newline
-	tenantList = strings.Split(strings.TrimSpace(string(cmdOut)), "\n")
+	// Trim whitespace
+	tenantListString := strings.TrimSpace(string(cmdOut))
+	if len(tenantListString) == 0 {
+		common.Infof("No tenants defined on the system")
+		return
+	}
+	// Split by newline
+	tenantList = strings.Split(tenantListString, "\n")
+	common.Infof("The following %d tenants are defined on the system: %s", len(tenantList), strings.Join(tenantList, ", "))
 	return
 }
 

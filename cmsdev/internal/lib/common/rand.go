@@ -22,6 +22,7 @@
 package common
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 )
@@ -59,6 +60,18 @@ func Float32() float32 {
 
 func Float64() float64 {
 	return myRand.Float64()
+}
+
+// Return a random string from a list of strings
+// Only returns error in the case that the list is empty
+func GetRandomStringFromList(stringList []string) (randString string, err error) {
+	if len(stringList) > 0 {
+		listIndex := IntInRange(0, len(stringList)-1)
+		randString = stringList[listIndex]
+	} else {
+		err = fmt.Errorf("GetRandomStringFromList: Cannot choose a string from an empty list")
+	}
+	return
 }
 
 // Generate a random string of the specified length from the specified characters

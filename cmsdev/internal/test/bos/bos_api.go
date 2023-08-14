@@ -87,7 +87,7 @@ func basicTenantGetUriVerifyStringMapTest(uri, tenant string, params *common.Par
 }
 
 // Run all of the BOS API subtests. Return true if they all pass, false otherwise.
-func apiTests() (passed bool) {
+func apiTests(tenantList []string) (passed bool) {
 	passed = true
 
 	params := test.GetAccessTokenParams()
@@ -96,17 +96,17 @@ func apiTests() (passed bool) {
 	}
 
 	// Defined in bos_version.go
-	if !versionTestsAPI(params) {
+	if !versionTestsAPI(params, tenantList) {
 		passed = false
 	}
 
 	// Defined in bos_healthz.go
-	if !healthzTestsAPI(params) {
+	if !healthzTestsAPI(params, tenantList) {
 		passed = false
 	}
 
 	// Defined in bos_components.go
-	if !componentsTestsAPI(params) {
+	if !componentsTestsAPI(params, tenantList) {
 		passed = false
 	}
 
@@ -116,12 +116,12 @@ func apiTests() (passed bool) {
 	}
 
 	// Defined in bos_sessiontemplate.go
-	if !sessionTemplatesTestsAPI(params) {
+	if !sessionTemplatesTestsAPI(params, tenantList) {
 		passed = false
 	}
 
 	// Defined in bos_session.go
-	if !sessionsTestsAPI(params) {
+	if !sessionsTestsAPI(params, tenantList) {
 		passed = false
 	}
 
