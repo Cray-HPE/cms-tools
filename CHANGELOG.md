@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cmsdev
   - Simplified `lib.common.Restful()` function
   - Added good path BOS API GET tests with tenant specified for supported v2 endpoints
+  - Updated v2 sessions CLI, session templates CLI (v1 and v2), and v1 session templates API tests to
+    handle multi-tenancy in their responses from BOS (while not including it in their queries to BOS).
 
 ## [1.13.0] - 2023-08-10
 
