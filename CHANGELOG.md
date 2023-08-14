@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.0] - 2023-08-14
+
 ### Changed
 
 - cmsdev
@@ -216,7 +218,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.13.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.14.0...HEAD
+
+[1.14.0]: https://github.com/Cray-HPE/cms-tools/compare/1.13.0...1.14.0
 
 [1.13.0]: https://github.com/Cray-HPE/cms-tools/compare/1.12.0...1.13.0
 
