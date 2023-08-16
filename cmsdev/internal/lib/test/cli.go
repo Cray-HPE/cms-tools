@@ -108,9 +108,11 @@ func MakeConfigFile(tenant string) (filePath string, err error) {
 	cmdResult, err = common.RunName("bash", "-c", baseCmdStr)
 	if err != nil {
 		err = fmt.Errorf("Error running CLI command (%s): %v", baseCmdStr, err)
-		return
+	} else if cmdResult.Rc != 0 {
+		err = fmt.Errorf("CLI command (%s) failed with exit code %d: %v", baseCmdStr, cmdResult.Rc, err)
+	} else {
+		cliConfigFilesByTenant[tenant] = filePath
 	}
-	cliConfigFilesByTenant[tenant] = filePath
 	return
 }
 
