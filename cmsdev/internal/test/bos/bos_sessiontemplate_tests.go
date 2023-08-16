@@ -97,17 +97,17 @@ func sessionTemplatesTestsCLI(tenantList []string) (passed bool) {
 	// session template CLI tests
 
 	// v1 sessiontemplate
-	if !sessionTemplatesTestsCLICommand("v1", bosV1SessionTemplatesCLI) {
+	if !v1SessionTemplatesTestsCLICommand("v1", bosV1SessionTemplatesCLI) {
 		passed = false
 	}
 
 	// v2 sessiontemplates
-	if !sessionTemplatesTestsCLICommand("v2", bosV2SessionTemplatesCLI) {
+	if !v2SessionTemplatesTestsCLICommand(tenantList, "v2", bosV2SessionTemplatesCLI) {
 		passed = false
 	}
 
 	// sessiontemplates
-	if !sessionTemplatesTestsCLICommand(bosDefaultSessionTemplatesCLI) {
+	if !v2SessionTemplatesTestsCLICommand(tenantList, bosDefaultSessionTemplatesCLI) {
 		passed = false
 	}
 
@@ -196,9 +196,9 @@ func v2SessionTemplatesTestsURI(params *common.Params, tenantList []string) bool
 	if err != nil {
 		common.Error(err)
 		return false
-	} else if len(templateDataList) == 0 {
-		common.Infof("skipping test GET %s/{session_template_id}", bosV2SessionTemplatesUri)
-		common.Infof("results from previous test is []")
+	}
+	if len(templateDataList) == 0 {
+		common.Infof("skipping test GET %s/{session_template_id} because result from previous test is []", bosV2SessionTemplatesUri)
 
 		// However, we can still try to list all of the session templates with a tenant name specified.
 		// Since no session templates were found from the un-tenanted query, we expect none to be found once a tenant
@@ -310,19 +310,18 @@ func v2SessionTemplatesTestsURI(params *common.Params, tenantList []string) bool
 	return passed
 }
 
-// session templates CLI tests
+// v1 session templates CLI tests
 // See comment earlier in the file for a description of this function
-func sessionTemplatesTestsCLICommand(cmdArgs ...string) bool {
+func v1SessionTemplatesTestsCLICommand(cmdArgs ...string) bool {
 	var untenantedTemplateData v2TemplateData
 
 	// test #1, list session templates
-	templateDataList, passed := listTemplateDataCli(cmdArgs...)
+	templateDataList, passed := listTemplateDataCli("", cmdArgs...)
 	if !passed {
 		return false
 	}
 	if len(templateDataList) == 0 {
-		common.Infof("skipping test CLI %s describe {template_id}", strings.Join(cmdArgs, " "))
-		common.Infof("results from previous test is []")
+		common.Infof("skipping test CLI %s describe {template_id} because result from previous test is []", strings.Join(cmdArgs, " "))
 		return true
 	}
 
@@ -351,4 +350,122 @@ func sessionTemplatesTestsCLICommand(cmdArgs ...string) bool {
 		return false
 	}
 	return ValidateTemplateData(cmdOut, untenantedTemplateData)
+}
+
+// v2 session templates CLI tests
+// See comment earlier in the file for a description of this function
+func v2SessionTemplatesTestsCLICommand(cmdArgs ...string) bool {
+	var tenantedTemplateData, untenantedTemplateData v2TemplateData
+	var tenantedTemplateCount int
+	var ok, passed bool
+	var err error
+	var templateDataList []v2TemplateData
+
+	// test #1, list templates with no tenant specified
+	templateDataList, ok = listTemplateDataCli("", cmdArgs...)
+	if !ok {
+		return false
+	}
+	if len(templateDataList) == 0 {
+		common.Infof("skipping test CLI %s describe {template_id} because result from previous test is []", strings.Join(cmdArgs, " "))
+
+		// However, we can still try to list all of the session templates with a tenant name specified.
+		// Since no session templates were found from the un-tenanted query, we expect none to be found once a tenant
+		// is specified
+		tenant := getAnyTenant(tenantList)
+		templateDataList, ok = listTemplateDataCli(tenant, cmdArgs...)
+		if !ok {
+			return false
+		}
+
+		// Validate that this list is empty
+		if len(templateDataList) > 0 {
+			common.Errorf("Listing of all session templates empty, but found %d when listing session templates for tenant '%s'",
+				len(templateDataList), tenant)
+			return false
+		}
+		common.Infof("Session template list is still empty, as expected")
+		return true
+	}
+
+	// From the session template ID list, we want to identify:
+	// * One session template that has no tenant (untenantedTemplateData)
+	// * One session template that belongs to a tenant (tenantedTemplateData), and a count (tenantedTemplateCount)
+	//   of how many session templates in total have that same tenant
+	for sessionTemplateIndex, TemplateData := range templateDataList {
+		common.Debugf("Parsing session #%d in the session list (%s)", sessionTemplateIndex, TemplateData.String())
+		if len(TemplateData.Tenant) == 0 {
+			// This session template has no tenant
+			if untenantedTemplateData.IsNil() {
+				// This is the first session template we have encountered that has no tenant field,
+				// so take note of it
+				untenantedTemplateData = TemplateData
+				common.Infof("Found BOS v2 session template #%d (%s)", sessionTemplateIndex, untenantedTemplateData.String())
+			}
+			continue
+		}
+		// This session template is owned by a tenant.
+		if tenantedTemplateData.IsNil() {
+			// This is the first session template we've found that is owned by a tenant, so remember it,
+			// and note that we have found 1 session template belonging to this tenant so far
+			tenantedTemplateData = TemplateData
+			tenantedTemplateCount = 1
+			common.Infof("Found BOS v2 session template #%d (%s)", sessionTemplateIndex, tenantedTemplateData.String())
+			continue
+		}
+		// We have already found a session template belonging to a tenant. If it is the tenant we found first,
+		// increment our session count
+		if TemplateData.Tenant == tenantedTemplateData.Tenant {
+			tenantedTemplateCount += 1
+		}
+	}
+
+	passed = true
+
+	if untenantedTemplateData.IsNil() {
+		common.Infof("skipping test CLI %s describe {template_id} with no tenant specified, because all BOS v2 session templates are owned by tenants",
+			strings.Join(cmdArgs, " "))
+	} else {
+		// test: describe session template using the untenanted session template name we found earlier
+		_, ok = describeV2TemplateDataCli(untenantedTemplateData, cmdArgs...)
+		passed = passed && ok
+	}
+
+	if tenantedTemplateData.IsNil() {
+		common.Infof("No BOS v2 session templates found belonging to any tenants")
+
+		tenant := getAnyTenant(tenantList)
+		templateDataList, ok = listTemplateDataCli(tenant, cmdArgs...)
+		if !ok {
+			passed = false
+		} else {
+			// Validate that this list is empty
+			if len(templateDataList) > 0 {
+				common.Errorf("Listing all session templates found none owned by tenants, but found %d when listing session templates for tenant '%s'",
+					len(templateDataList), tenant)
+				passed = false
+			}
+			common.Infof("List of session templates belonging to tenant '%s' is empty, as expected", tenant)
+		}
+		return passed
+	}
+	common.Infof("Counted %d BOS v2 session templates belonging to tenant '%s'", tenantedTemplateCount, tenantedTemplateData.Tenant)
+	templateDataList, ok = listTemplateDataCli(tenantedTemplateData.Tenant, cmdArgs...)
+	if !ok {
+		passed = false
+	} else {
+		// Validate that this list is expected length
+		if len(templateDataList) != tenantedTemplateCount {
+			common.Errorf("Listing all session templates found %d owned by tenant '%s', but found %d when listing session templates for that tenant",
+				tenantedTemplateCount, tenantedTemplateData.Tenant, len(templateDataList))
+			passed = false
+		}
+		common.Infof("List of session templates belonging to tenant '%s' is the expected length", tenantedTemplateData.Tenant)
+	}
+
+	// test: describe session template using the session template name we found owned by a tenant in the earlier loop
+	_, ok = describeV2TemplateDataCli(tenantedTemplateData, cmdArgs...)
+	passed = passed && ok
+
+	return passed
 }

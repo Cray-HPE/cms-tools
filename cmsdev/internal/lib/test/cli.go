@@ -79,8 +79,7 @@ func GetAccessFile() string {
 	if jobj == nil {
 		return ""
 	}
-	pid := os.Getpid()
-	CliAuthFile = fmt.Sprintf("/tmp/cmsdev-cray-credentials-file.%d.json", pid)
+	CliAuthFile = common.TmpDir + "/cmsdev-cray-credentials-file.json"
 	common.Debugf("Writing credentials for CLI authentication to file: %s", CliAuthFile)
 	err := ioutil.WriteFile(CliAuthFile, jobj, 0644)
 	if err != nil {

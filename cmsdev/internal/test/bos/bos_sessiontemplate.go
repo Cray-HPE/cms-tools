@@ -248,7 +248,7 @@ func getV1TemplateDataApi(params *common.Params, templateName string) (templateD
 }
 
 // Get a particular BOS v2 session template (possibly belonging to a tenant) using getV2TemplateApi,
-// parses that dictionaries into a v2TemplateData struct.
+// parse that dictionary into a v2TemplateData struct.
 // Validates that it matches the expected session template name and (if any) tenant name.
 // Returns that struct and error (if any)
 func getV2TemplateDataApi(params *common.Params, templateData v2TemplateData) (templateDataFromApi v2TemplateData, err error) {
@@ -265,6 +265,32 @@ func getV2TemplateDataApi(params *common.Params, templateData v2TemplateData) (t
 	if !templateDataFromApi.HasExpectedValues(templateData) {
 		err = fmt.Errorf("SessionTemplate returned by API query (%s) does not match session template requested (%s)",
 			templateDataFromApi.String(), templateData.String())
+	}
+	return
+}
+
+// Get a particular BOS v2 session template (possibly belonging to a tenant) using bosTenantDescribeCli,
+// parse that dictionary into a v2TemplateData struct.
+// Validates that it matches the expected session template name and (if any) tenant name.
+// Returns that struct and error (if any)
+func describeV2TemplateDataCli(templateData v2TemplateData, cmdArgs ...string) (templateDataFromCli v2TemplateData, passed bool) {
+	var sessionTemplateDict map[string]interface{}
+	var ok bool
+
+	passed = false
+	sessionTemplateDict, ok = bosTenantDescribeCli(templateData.Tenant, templateData.Name, cmdArgs...)
+	if !ok {
+		return
+	}
+	templateDataFromCli, err = parseV2TemplateData(sessionTemplateDict)
+	if err != nil {
+		return
+	}
+	if !templateDataFromCli.HasExpectedValues(templateData) {
+		err = fmt.Errorf("SessionTemplate returned by CLI command (%s) does not match session template requested (%s)",
+			templateDataFromCli.String(), templateData.String())
+	} else {
+		passed = true
 	}
 	return
 }
@@ -319,20 +345,19 @@ func listV2TemplateDataApi(params *common.Params, tenantName string) (templateDa
 	return
 }
 
-// Gets a list of session template dictionary objects using bosListCli,
+// Gets a list of session template dictionary objects using bosTenantListCli,
 // converts that list using dictListToTemplateDataList. Returns resulting list and boolean
 // value indicating whether the function passed or failed (an error will have been logged in the case
 // of failure)
-func listTemplateDataCli(cmdArgs ...string) (templateDataList []v2TemplateData, passed bool) {
+func listTemplateDataCli(tenantName string, cmdArgs ...string) (templateDataList []v2TemplateData, passed bool) {
 	var dictList []map[string]interface{}
 	var err error
 
-	dictList, passed = bosListCli(cmdArgs...)
+	dictList, passed = bosTenantListCli(tenantName, cmdArgs...)
 	if !passed {
 		return
 	}
-	// The CLI test currently does not cover tenanted queries, so pass blank tenant name
-	templateDataList, err = dictListToTemplateDataList(dictList, "")
+	templateDataList, err = dictListToTemplateDataList(dictList, tenantName)
 	if err != nil {
 		common.Error(err)
 		passed = false
