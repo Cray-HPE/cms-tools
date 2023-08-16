@@ -40,16 +40,37 @@ func runBosCLI(cmdArgs ...string) []byte {
 	return test.RunCLICommandJSON("bos", cmdArgs...)
 }
 
+// Same but for TenantRunCLICommandJSON
+// If tenant is empty string it means no tenant
+func runTenantBosCLI(tenant string, cmdArgs ...string) []byte {
+	common.Infof("Testing BOS CLI (%s) on behalf of tenant '%s'", strings.Join(cmdArgs, " "), tenant)
+	return test.TenantRunCLICommandJSON(tenant, "bos", cmdArgs...)
+}
+
 // Wrapper function for runBosCLI. Append "list" to a CLI command list and then runs it.
 func runBosCLIList(cmdArgs ...string) []byte {
 	newCmdArgs := append(cmdArgs, "list")
 	return runBosCLI(newCmdArgs...)
 }
 
+// Same but for runTenantBosCLI
+// If tenant is empty string it means no tenant
+func runTenantBosCLIList(tenant string, cmdArgs ...string) []byte {
+	newCmdArgs := append(cmdArgs, "list")
+	return runTenantBosCLI(tenant, newCmdArgs...)
+}
+
 // Wrapper function for runBosCLI. Append "describe <target>" to a CLI command list and then runs it.
 func runBosCLIDescribe(target string, cmdArgs ...string) []byte {
 	newCmdArgs := append(cmdArgs, "describe", target)
 	return runBosCLI(newCmdArgs...)
+}
+
+// Same but for runTenantBosCLI
+// If tenant is empty string it means no tenant
+func runTenantBosCLIDescribe(tenant, target string, cmdArgs ...string) []byte {
+	newCmdArgs := append(cmdArgs, "describe", target)
+	return runTenantBosCLI(tenant, newCmdArgs...)
 }
 
 // Runs a BOS CLI list with the specified arguments (with no tenant specified)
@@ -77,8 +98,9 @@ func bosListCli(cmdArgs ...string) (dictList []map[string]interface{}, passed bo
 // Given a BOS CLI command prefix, run that CLI command with "list" appended to the end.
 // Verify that the command succeeded and returns a dictionary (aka string map) object.
 // Return true if all of that worked fine. Otherwise, log an appropriate error and return false.
-func basicCLIListVerifyStringMapTest(cmdArgs ...string) bool {
-	cmdOut := runBosCLIList(cmdArgs...)
+// If tenant is empty string it means no tenant
+func basicTenantCLIListVerifyStringMapTest(tenant string, cmdArgs ...string) bool {
+	cmdOut := runTenantBosCLIList(tenant, cmdArgs...)
 	if cmdOut == nil {
 		return false
 	}
@@ -90,6 +112,10 @@ func basicCLIListVerifyStringMapTest(cmdArgs ...string) bool {
 		return false
 	}
 	return true
+}
+
+func basicCLIListVerifyStringMapTest(cmdArgs ...string) bool {
+	return basicTenantCLIListVerifyStringMapTest("", cmdArgs...)
 }
 
 // Given a BOS CLI command prefix and a target name, run that CLI command with "describe <target>" appended to the end.
@@ -111,21 +137,21 @@ func basicCLIDescribeVerifyStringMapTest(target string, cmdArgs ...string) bool 
 }
 
 // Run all of the BOS CLI subtests. Return true if they all pass, false otherwise.
-func cliTests() (passed bool) {
+func cliTests(tenantList []string) (passed bool) {
 	passed = true
 
 	// Defined in bos_version.go
-	if !versionTestsCLI() {
+	if !versionTestsCLI(tenantList) {
 		passed = false
 	}
 
 	// Defined in bos_healthz.go
-	if !healthzTestsCLI() {
+	if !healthzTestsCLI(tenantList) {
 		passed = false
 	}
 
 	// Defined in bos_components.go
-	if !componentsTestsCLI() {
+	if !componentsTestsCLI(tenantList) {
 		passed = false
 	}
 
@@ -135,12 +161,12 @@ func cliTests() (passed bool) {
 	}
 
 	// Defined in bos_sessiontemplate.go
-	if !sessionTemplatesTestsCLI() {
+	if !sessionTemplatesTestsCLI(tenantList) {
 		passed = false
 	}
 
 	// Defined in bos_session.go
-	if !sessionsTestsCLI() {
+	if !sessionsTestsCLI(tenantList) {
 		passed = false
 	}
 

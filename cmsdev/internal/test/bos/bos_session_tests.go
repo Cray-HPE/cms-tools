@@ -61,7 +61,7 @@ func sessionsTestsAPI(params *common.Params, tenantList []string) (passed bool) 
 	return
 }
 
-func sessionsTestsCLI() (passed bool) {
+func sessionsTestsCLI(tenantList []string) (passed bool) {
 	passed = true
 
 	// v1 sessions

@@ -63,7 +63,7 @@ func healthzTestsAPI(params *common.Params, tenantList []string) (passed bool) {
 	return
 }
 
-func healthzTestsCLI() (passed bool) {
+func healthzTestsCLI() (passed bool, tenantList []string) {
 	passed = true
 
 	// Make sure that "healthz list" CLI command succeeds and returns a dictionary object.
@@ -78,8 +78,18 @@ func healthzTestsCLI() (passed bool) {
 		passed = false
 	}
 
+	// "v2 healthz list" as random tenant (BOS does not verify if tenant exists for GET operations)
+	if !basicTenantCLIListVerifyStringMapTest(getAnyTenant(tenantList), "v2", bosV2HealthzCLI) {
+		passed = false
+	}
+
 	// "healthz list"
 	if !basicCLIListVerifyStringMapTest(bosDefaultHealthzCLI) {
+		passed = false
+	}
+
+	// "healthz list" as random tenant (BOS does not verify if tenant exists for GET operations)
+	if !basicTenantCLIListVerifyStringMapTest(getAnyTenant(tenantList), bosDefaultHealthzCLI) {
 		passed = false
 	}
 

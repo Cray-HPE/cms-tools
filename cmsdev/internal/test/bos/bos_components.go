@@ -64,7 +64,7 @@ func componentsTestsAPI(params *common.Params, tenantList []string) (passed bool
 	return
 }
 
-func componentsTestsCLI() (passed bool) {
+func componentsTestsCLI(tenantList []string) (passed bool) {
 	passed = true
 
 	// v2

@@ -73,7 +73,7 @@ func sessionTemplatesTestsAPI(params *common.Params, tenantList []string) (passe
 	return
 }
 
-func sessionTemplatesTestsCLI() (passed bool) {
+func sessionTemplatesTestsCLI(tenantList []string) (passed bool) {
 	passed = true
 
 	// session template template CLI tests
