@@ -276,6 +276,7 @@ func getV2TemplateDataApi(params *common.Params, templateData v2TemplateData) (t
 func describeV2TemplateDataCli(templateData v2TemplateData, cmdArgs ...string) (templateDataFromCli v2TemplateData, passed bool) {
 	var sessionTemplateDict map[string]interface{}
 	var ok bool
+	var err error
 
 	passed = false
 	sessionTemplateDict, ok = bosTenantDescribeCli(templateData.Tenant, templateData.Name, cmdArgs...)

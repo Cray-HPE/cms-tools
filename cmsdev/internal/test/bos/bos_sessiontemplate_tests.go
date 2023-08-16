@@ -354,11 +354,10 @@ func v1SessionTemplatesTestsCLICommand(cmdArgs ...string) bool {
 
 // v2 session templates CLI tests
 // See comment earlier in the file for a description of this function
-func v2SessionTemplatesTestsCLICommand(cmdArgs ...string) bool {
+func v2SessionTemplatesTestsCLICommand(tenantList []string, cmdArgs ...string) bool {
 	var tenantedTemplateData, untenantedTemplateData v2TemplateData
 	var tenantedTemplateCount int
 	var ok, passed bool
-	var err error
 	var templateDataList []v2TemplateData
 
 	// test #1, list templates with no tenant specified
