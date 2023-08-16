@@ -115,38 +115,17 @@ func MakeConfigFile(tenant string) (filePath string, err error) {
 }
 
 func RunCLICommandJSON(baseCmdString string, cmdArgs ...string) []byte {
+	return TenantRunCLICommandJSON("", baseCmdString, cmdArgs...)
+}
+
+func TenantRunCLICommandJSON(tenant, baseCmdString string, cmdArgs ...string) []byte {
 	cmdList := append([]string{baseCmdString}, cmdArgs...)
 	cmdList = append(cmdList, "--format", "json")
-	return RunCLICommand(cmdList...)
+	return TenantRunCLICommand(tenant, cmdList...)
 }
 
 func RunCLICommand(cmdList ...string) []byte {
-	var cmdResult *common.CommandResult
-	var cmdStr string
-	var err error
-
-	accessFile := GetAccessFile()
-	CliConfigFile, err = MakeConfigFile("")
-	if err != nil {
-		common.Error(err)
-		return nil
-	}
-	baseCmdStr := fmt.Sprintf("CRAY_CREDENTIALS=%s '%s'", accessFile, cray_cli)
-	for _, cliArg := range cmdList {
-		baseCmdStr = fmt.Sprintf("%s '%s'", baseCmdStr, cliArg)
-	}
-	cmdStr = "CRAY_CONFIG=" + CliConfigFile + " " + baseCmdStr
-	common.Debugf("Running command: %s", cmdStr)
-	cmdResult, err = common.RunName("bash", "-c", cmdStr)
-	if err != nil {
-		common.Error(err)
-		common.Errorf("Error running CLI command (%s)", strings.Join(cmdList, " "))
-		return nil
-	} else if cmdResult.Rc != 0 {
-		common.Errorf("CLI command failed (%s)", strings.Join(cmdList, " "))
-		return nil
-	}
-	return cmdResult.OutBytes
+	return TenantRunCLICommand("", cmdList...)
 }
 
 func TenantRunCLICommand(tenant string, cmdList ...string) []byte {
