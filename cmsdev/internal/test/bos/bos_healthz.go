@@ -63,7 +63,7 @@ func healthzTestsAPI(params *common.Params, tenantList []string) (passed bool) {
 	return
 }
 
-func healthzTestsCLI() (passed bool, tenantList []string) {
+func healthzTestsCLI(tenantList []string) (passed bool) {
 	passed = true
 
 	// Make sure that "healthz list" CLI command succeeds and returns a dictionary object.
