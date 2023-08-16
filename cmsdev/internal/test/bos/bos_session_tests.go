@@ -61,7 +61,7 @@ func sessionsTestsAPI(params *common.Params, tenantList []string) (passed bool) 
 	return
 }
 
-func sessionsTestsCLI() (passed bool) {
+func sessionsTestsCLI(tenantList []string) (passed bool) {
 	passed = true
 
 	// v1 sessions
@@ -70,12 +70,12 @@ func sessionsTestsCLI() (passed bool) {
 	}
 
 	// v2 sessions
-	if !sessionsV2TestsCLICommand("v2", bosV2SessionsCLI) {
+	if !sessionsV2TestsCLICommand(tenantList, "v2", bosV2SessionsCLI) {
 		passed = false
 	}
 
 	// default (v2) sessions
-	if !sessionsV2TestsCLICommand(bosDefaultSessionsCLI) {
+	if !sessionsV2TestsCLICommand(tenantList, bosDefaultSessionsCLI) {
 		passed = false
 	}
 
@@ -199,9 +199,9 @@ func sessionsV2TestsURI(params *common.Params, tenantList []string) bool {
 	if err != nil {
 		common.Error(err)
 		return false
-	} else if len(sessionDataList) == 0 {
-		common.Infof("skipping test GET %s/{session_id}", bosV2SessionsUri)
-		common.Infof("results from previous test is []")
+	}
+	if len(sessionDataList) == 0 {
+		common.Infof("skipping test GET %s/{session_id} because result from previous test is []", bosV2SessionsUri)
 
 		// However, we can still try to list all of the sessions with a tenant name specified.
 		// Since no sessions were found from the un-tenanted query, we expect none to be found once a tenant
@@ -315,42 +315,116 @@ func sessionsV2TestsURI(params *common.Params, tenantList []string) bool {
 
 // v2 sessions CLI tests
 // See comment at the top of the file for a description of this function
-func sessionsV2TestsCLICommand(cmdArgs ...string) bool {
-	var untenantedSessionData v2SessionData
+func sessionsV2TestsCLICommand(tenantList []string, cmdArgs ...string) bool {
+	var tenantedSessionData, untenantedSessionData v2SessionData
+	var tenantedSessionCount int
+	var ok, passed bool
+	var sessionDataList []v2SessionData
 
-	// test #1, list sessions
-	sessionDataList, passed := listV2SessionDataCli(cmdArgs...)
-	if !passed {
+	// test #1, list sessions with no tenant specified
+	sessionDataList, ok = listV2SessionDataCli("", cmdArgs...)
+	if !ok {
 		return false
 	}
 	if len(sessionDataList) == 0 {
-		common.Infof("skipping test CLI %s describe {session_id}", strings.Join(cmdArgs, " "))
-		common.Infof("results from previous test is []")
+		common.Infof("skipping test CLI %s describe {session_id} because result from previous test is []", strings.Join(cmdArgs, " "))
+
+		// However, we can still try to list all of the sessions with a tenant name specified.
+		// Since no sessions were found from the un-tenanted query, we expect none to be found once a tenant
+		// is specified
+		tenant := getAnyTenant(tenantList)
+		sessionDataList, ok = listV2SessionDataCli("", cmdArgs...)
+		if !ok {
+			return false
+		}
+
+		// Validate that this list is empty
+		if len(sessionDataList) > 0 {
+			common.Errorf("Listing of all sessions empty, but found %d when listing sessions for tenant '%s'",
+				len(sessionDataList), tenant)
+			return false
+		}
+		common.Infof("Session list is still empty, as expected")
 		return true
 	}
 
 	// From the session ID list, we want to identify:
 	// * One session that has no tenant (untenantedSessionData)
+	// * One session that belongs to a tenant (tenantedSessionData), and a count (tenantedSessionCount)
+	//   of how many sessions in total have that same tenant
 	for sessionIndex, sessionData := range sessionDataList {
 		common.Debugf("Parsing session #%d in the session list (%s)", sessionIndex, sessionData.String())
 		if len(sessionData.Tenant) == 0 {
 			// This session has no tenant
-			untenantedSessionData = sessionData
-			common.Infof("Found BOS v2 session #%d (%s)", sessionIndex, untenantedSessionData.String())
-			break
+			if untenantedSessionData.IsNil() {
+				// This is the first session we have encountered that has no tenant field,
+				// so take note of it
+				untenantedSessionData = sessionData
+				common.Infof("Found BOS v2 session #%d (%s)", sessionIndex, untenantedSessionData.String())
+			}
+			continue
+		}
+		// This session is owned by a tenant.
+		if tenantedSessionData.IsNil() {
+			// This is the first session we've found that is owned by a tenant, so remember it,
+			// and note that we have found 1 session belonging to this tenant so far
+			tenantedSessionData = sessionData
+			tenantedSessionCount = 1
+			common.Infof("Found BOS v2 session #%d (%s)", sessionIndex, tenantedSessionData.String())
+			continue
+		}
+		// We have already found a session belonging to a tenant. If it is the tenant we found first,
+		// increment our session count
+		if sessionData.Tenant == tenantedSessionData.Tenant {
+			tenantedSessionCount += 1
 		}
 	}
 
+	passed = true
+
 	if untenantedSessionData.IsNil() {
-		common.Infof("skipping test CLI %s describe {session_id} with no tenant specified, because all BOS v2 sessions are owned by tenants",
-			strings.Join(cmdArgs, " "))
-		return true
+		common.Infof("skipping test CLI %s describe {session_id} with no tenant specified, because all BOS v2 sessions are owned by tenants", strings.Join(cmdArgs, " "))
+	} else {
+		// test: describe session using the untenanted session name we found earlier
+		_, ok = describeV2SessionDataCli(untenantedSessionData, cmdArgs...)
+		passed = passed && ok
 	}
 
-	// test #2, describe session with session_id
-	cmdOut := runBosCLIDescribe(untenantedSessionData.Name, cmdArgs...)
-	if cmdOut == nil {
-		return false
+	if tenantedSessionData.IsNil() {
+		common.Infof("No BOS v2 sessions found belonging to any tenants")
+
+		tenant := getAnyTenant(tenantList)
+		sessionDataList, ok = listV2SessionDataCli(tenant, cmdArgs...)
+		if !ok {
+			passed = false
+		} else {
+			// Validate that this list is empty
+			if len(sessionDataList) > 0 {
+				common.Errorf("Listing all sessions found none owned by tenants, but found %d when listing sessions for tenant '%s'",
+					len(sessionDataList), tenant)
+				passed = false
+			}
+			common.Infof("List of sessions belonging to tenant '%s' is empty, as expected", tenant)
+		}
+		return passed
 	}
-	return ValidateV2Session(cmdOut, untenantedSessionData)
+	common.Infof("Counted %d BOS v2 sessions belonging to tenant '%s'", tenantedSessionCount, tenantedSessionData.Tenant)
+	sessionDataList, ok = listV2SessionDataCli(tenantedSessionData.Tenant, cmdArgs...)
+	if !ok {
+		passed = false
+	} else {
+		// Validate that this list is expected length
+		if len(sessionDataList) != tenantedSessionCount {
+			common.Errorf("Listing all sessions found %d owned by tenant '%s', but found %d when listing sessions for that tenant",
+				tenantedSessionCount, tenantedSessionData.Tenant, len(sessionDataList))
+			passed = false
+		}
+		common.Infof("List of sessions belonging to tenant '%s' is the expected length", tenantedSessionData.Tenant)
+	}
+
+	// test: describe session using the session name we found owned by a tenant in the earlier loop
+	_, ok = describeV2SessionDataCli(tenantedSessionData, cmdArgs...)
+	passed = passed && ok
+
+	return passed
 }

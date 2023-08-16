@@ -89,7 +89,7 @@ func versionTestsAPI(params *common.Params, tenantList []string) (passed bool) {
 	return
 }
 
-func versionTestsCLI() (passed bool) {
+func versionTestsCLI(tenantList []string) (passed bool) {
 	passed = true
 
 	// Make sure that "version list" CLI command succeeds and returns a dictionary object.
@@ -109,8 +109,18 @@ func versionTestsCLI() (passed bool) {
 		passed = false
 	}
 
+	// /v2 endpoint - "cray bos v2 list" as random tenant (BOS does not verify that tenant exists on GET requests)
+	if !basicTenantCLIListVerifyStringMapTest(getAnyTenant(tenantList), "v2") {
+		passed = false
+	}
+
 	// v2 version list - "cray bos v2 version list"
 	if !basicCLIListVerifyStringMapTest("v2", bosV2VersionCLI) {
+		passed = false
+	}
+
+	// v2 version list - "cray bos v2 version list" as random tenant (BOS does not verify that tenant exists on GET requests)
+	if !basicTenantCLIListVerifyStringMapTest(getAnyTenant(tenantList), "v2", bosV2VersionCLI) {
 		passed = false
 	}
 
@@ -119,8 +129,18 @@ func versionTestsCLI() (passed bool) {
 		passed = false
 	}
 
+	// version list - "cray bos version list" as random tenant (BOS does not verify that tenant exists on GET requests)
+	if !basicTenantCLIListVerifyStringMapTest(getAnyTenant(tenantList), bosDefaultVersionCLI) {
+		passed = false
+	}
+
 	// default endpoint - "cray bos list"
 	if !basicCLIListVerifyStringMapTest() {
+		passed = false
+	}
+
+	// default endpoint - "cray bos list" as random tenant (BOS does not verify that tenant exists on GET requests)
+	if !basicTenantCLIListVerifyStringMapTest(getAnyTenant(tenantList)) {
 		passed = false
 	}
 

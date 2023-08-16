@@ -186,7 +186,7 @@ func listV2SessionsApi(params *common.Params, tenantName string) (dictList []map
 }
 
 // Get a particular BOS v2 session (possibly belonging to a tenant) using getV2SessionApi,
-// parses that dictionaries into a v2SessionData struct.
+// parses that dictionary into a v2SessionData struct.
 // Validates that it matches the expected session name and (if any) tenant name.
 // Returns that struct and error (if any)
 func getV2SessionDataApi(params *common.Params, sessionData v2SessionData) (sessionDataFromApi v2SessionData, err error) {
@@ -203,6 +203,33 @@ func getV2SessionDataApi(params *common.Params, sessionData v2SessionData) (sess
 	if !sessionDataFromApi.HasExpectedValues(sessionData) {
 		err = fmt.Errorf("Session returned by API query (%s) does not match session requested (%s)",
 			sessionDataFromApi.String(), sessionData.String())
+	}
+	return
+}
+
+// Describe a particular BOS v2 session (possibly belonging to a tenant) using bosTenantDescribeCli,
+// parse that dictionary into a v2SessionData struct.
+// Validates that it matches the expected session name and (if any) tenant name.
+// Returns that struct and a boolean indicating pass/fail
+func describeV2SessionDataCli(sessionData v2SessionData, cmdArgs ...string) (sessionDataFromCli v2SessionData, passed bool) {
+	var sessionDict map[string]interface{}
+	var err error
+	var ok bool
+
+	passed = false
+	sessionDict, ok = bosTenantDescribeCli(sessionData.Tenant, sessionData.Name, cmdArgs...)
+	if !ok {
+		return
+	}
+	sessionDataFromCli, err = parseV2SessionData(sessionDict)
+	if err != nil {
+		return
+	}
+	if !sessionDataFromCli.HasExpectedValues(sessionData) {
+		common.Errorf("Session returned by CLI command (%s) does not match session requested (%s)",
+			sessionDataFromCli.String(), sessionData.String())
+	} else {
+		passed = true
 	}
 	return
 }
@@ -247,51 +274,18 @@ func listV2SessionDataApi(params *common.Params, tenantName string) (sessionData
 // converts that list using dictListToSessionDataList. Returns resulting list and boolean
 // value indicating whether the function passed or failed (an error will have been logged in the case
 // of failure)
-func listV2SessionDataCli(cmdArgs ...string) (sessionDataList []v2SessionData, passed bool) {
+func listV2SessionDataCli(tenantName string, cmdArgs ...string) (sessionDataList []v2SessionData, passed bool) {
 	var dictList []map[string]interface{}
 	var err error
 
-	dictList, passed = bosListCli(cmdArgs...)
+	dictList, passed = bosTenantListCli(tenantName, cmdArgs...)
 	if !passed {
 		return
 	}
-	// The CLI test currently does not cover tenanted queries, so pass blank tenant name
-	sessionDataList, err = dictListToSessionDataList(dictList, "")
+	sessionDataList, err = dictListToSessionDataList(dictList, tenantName)
 	if err != nil {
 		common.Error(err)
 		passed = false
 	}
 	return
-}
-
-// Given an array of bytes, validate that:
-// 1. It resolves to a JSON dictonary
-// 2. The resulting dictionary can be successfully parsed as a V2 session object (using parseV2SessionData function)
-// 3. The resulting V2 session has the expected ID values (using HasExpectedValues method)
-//
-// Return true if all of the above is true. Otherwise, log an appropriate error and return false.
-func ValidateV2Session(mapCmdOut []byte, expectedId v2SessionData) bool {
-	common.Infof("Validating that BOS v2 session has expected values for name and tenant")
-
-	// This function should always receive a non-0-length expected name
-	if len(expectedId.Name) == 0 {
-		common.Errorf("Programming logic error: ValidateV2Session function received 0-length string for expected name")
-		return false
-	}
-
-	// Should be a dictionary object mapping strings to values
-	common.Debugf("Parsing session as a dictionary")
-	sessionDict, err := common.DecodeJSONIntoStringMap(mapCmdOut)
-	if err != nil {
-		common.Error(err)
-		return false
-	}
-
-	sessionData, err := parseV2SessionData(sessionDict)
-	if err != nil {
-		common.Error(err)
-		return false
-	}
-
-	return sessionData.HasExpectedValues(expectedId)
 }
