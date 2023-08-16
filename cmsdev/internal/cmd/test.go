@@ -255,6 +255,13 @@ var testCmd = &cobra.Command{
 		// Initialize variables related to saving CT test artifacts
 		common.InitArtifacts()
 
+		// Create temporary directory
+		if err = CreateTmpDir(); err != nil {
+			common.Failuref("Failed creating temporary directory: %v", err)
+		}
+		// Remove temporary directory on function exit
+		defer common.DeleteTmpDir()
+
 		if len(services) == 1 {
 			common.SetTestService(services[0])
 			ok := DoTest(services[0], retry)
