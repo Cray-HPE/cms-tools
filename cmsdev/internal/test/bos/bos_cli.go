@@ -76,20 +76,48 @@ func runTenantBosCLIDescribe(tenant, target string, cmdArgs ...string) []byte {
 	return runTenantBosCLI(tenant, newCmdArgs...)
 }
 
-// Runs a BOS CLI list with the specified arguments (with no tenant specified)
+// Runs a BOS CLI list with the specified arguments
+// If tenant is empty string it means no tenant
 // Parses the result to convert it to a list of dictionaries with string keys
 // Returns the result and a boolean indicating whether or not this was successful (true == no errors)
-func bosListCli(cmdArgs ...string) (dictList []map[string]interface{}, passed bool) {
+func bosTenantListCli(tenant string, cmdArgs ...string) (dictList []map[string]interface{}, passed bool) {
 	var err error
 
 	passed = false
-	cmdOut := runBosCLIList(cmdArgs...)
+	cmdOut := runTenantBosCLIList(tenant, cmdArgs...)
 	if cmdOut == nil {
 		return
 	}
 
 	// Decode JSON into a list of string maps
 	dictList, err = common.DecodeJSONIntoStringMapList(cmdOut)
+	if err != nil {
+		common.Error(err)
+		return
+	}
+	passed = true
+	return
+}
+
+func bosListCli(cmdArgs ...string) (dictList []map[string]interface{}, passed bool) {
+	return bosTenantListCli("", cmdArgs...)
+}
+
+// Runs a BOS CLI describe on the specified target with the specified arguments
+// If tenant is empty string it means no tenant
+// Parses the result to convert it to a dictionary with string keys
+// Returns the result and a boolean indicating whether or not this was successful (true == no errors)
+func bosTenantDescribeCli(tenant, target string, cmdArgs ...string) (dict map[string]interface{}, passed bool) {
+	var err error
+
+	passed = false
+	cmdOut := runTenantBosCLIDescribe(tenant, target, cmdArgs...)
+	if cmdOut == nil {
+		return
+	}
+
+	// Decode JSON into a list of string maps
+	dict, err = common.DecodeJSONIntoStringMap(cmdOut)
 	if err != nil {
 		common.Error(err)
 		return
