@@ -33,6 +33,7 @@ package common
 import (
 	"fmt"
 	resty "gopkg.in/resty.v1"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -129,6 +130,8 @@ var kubernetesThingsToCollect = []string{
 	"sealedsecrets",
 	"etcdbackups",
 }
+
+var TmpDir string
 
 var runTags []string
 var runTag, testService string
@@ -659,6 +662,28 @@ func CompressArtifacts() {
 	Warnf("Error compressing artifacts (tar return code = %d)", cmdResult.Rc)
 }
 
+// The caller of this function is responsible for removing the directory
+func CreateTmpDir() (err error) {
+	// Pass empty string for directory name to use the default tmp directory
+	Debugf("Creating temporary directory")
+	TmpDir, err = ioutil.TempDir("", "cmsdev-tmpdir")
+	return
+}
+
+func DeleteTmpDir() {
+	if len(TmpDir) == 0 {
+		return
+	}
+	Debugf("Removing temporary directory: '%s'", TmpDir)
+	if err := os.RemoveAll(TmpDir); err != nil {
+		Warnf("Error removing temporary directory '%s': %v", TmpDir, err)
+		return
+	}
+	Debugf("Successfully removed temporary directory: '%s'", TmpDir)
+	TmpDir = ""
+	return
+}
+
 func init() {
 	// Set default values
 	runStartTimes = append(runStartTimes, time.Now())
@@ -666,7 +691,7 @@ func init() {
 	logFile, testLog = nil, nil
 	printInfo, printWarn, printError, printResults = true, true, true, true
 	artifactDirectoryCreated, artifactsLogged, printVerbose = false, false, false
-	runTag, artifactDirectory, artifactFilePrefix, testService, logFileDir = "", "", "", "", ""
+	runTag, artifactDirectory, artifactFilePrefix, testService, logFileDir, TmpDir = "", "", "", "", "", ""
 	// Call the init function for the printlog source file
 	printlogInit()
 }
