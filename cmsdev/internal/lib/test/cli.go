@@ -148,3 +148,36 @@ func RunCLICommand(cmdList ...string) []byte {
 	}
 	return cmdResult.OutBytes
 }
+
+func TenantRunCLICommand(tenant string, cmdList ...string) []byte {
+	var cmdResult *common.CommandResult
+	var cmdStr, tenantText string
+	var err error
+
+	if len(tenant) > 0 {
+		tenantText = fmt.Sprintf(" on behalf of tenant '%s'", tenant)
+	}
+
+	accessFile := GetAccessFile()
+	CliConfigFile, err = MakeConfigFile(tenant)
+	if err != nil {
+		common.Error(err)
+		return nil
+	}
+	baseCmdStr := fmt.Sprintf("CRAY_CREDENTIALS=%s '%s'", accessFile, cray_cli)
+	for _, cliArg := range cmdList {
+		baseCmdStr = fmt.Sprintf("%s '%s'", baseCmdStr, cliArg)
+	}
+	cmdStr = "CRAY_CONFIG=" + CliConfigFile + " " + baseCmdStr
+	common.Debugf("Running command%s: %s", tenantText, cmdStr)
+	cmdResult, err = common.RunName("bash", "-c", cmdStr)
+	if err != nil {
+		common.Error(err)
+		common.Errorf("Error running CLI command%s (%s)", strings.Join(cmdList, " "), tenantText)
+		return nil
+	} else if cmdResult.Rc != 0 {
+		common.Errorf("CLI command%s (%s) failed with exit code %d", tenantText, strings.Join(cmdList, " "), cmdResult.Rc)
+		return nil
+	}
+	return cmdResult.OutBytes
+}
