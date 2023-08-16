@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.1] - 2023-08-16
+
+### Added
+
+- cmsdev: Added good path BOS CLI list/describe tests with tenant specified for supported v2 endpoints.
+
 ## [1.14.0] - 2023-08-14
 
 ### Changed
@@ -218,7 +224,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.14.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.14.1...HEAD
+
+[1.14.1]: https://github.com/Cray-HPE/cms-tools/compare/1.14.0...1.14.1
 
 [1.14.0]: https://github.com/Cray-HPE/cms-tools/compare/1.13.0...1.14.0
 

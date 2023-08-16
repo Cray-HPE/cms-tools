@@ -173,6 +173,31 @@ func GetTestNamesString(excludeAliases bool) string {
 	return strings.Join(GetTestNamesList(excludeAliases), " ")
 }
 
+func RunTests(services []string, retry bool) (passed, failed []string) {
+	var s string
+
+	// Create temporary directory
+	if err := common.CreateTmpDir(); err != nil {
+		common.Failuref("Failed creating temporary directory: %v", err)
+	}
+	// Remove temporary directory on function exit
+	defer common.DeleteTmpDir()
+
+	for _, s = range services {
+		common.SetTestService(s)
+		if DoTest(s, retry) {
+			passed = append(passed, s)
+		} else {
+			failed = append(failed, s)
+		}
+		common.UnsetTestService()
+	}
+
+	// Compress test artifacts, if any
+	common.CompressArtifacts()
+	return
+}
+
 var longHelpText = fmt.Sprintf(`test command runs service tests.
 
 Valid service tests: %s
@@ -255,38 +280,15 @@ var testCmd = &cobra.Command{
 		// Initialize variables related to saving CT test artifacts
 		common.InitArtifacts()
 
-		if len(services) == 1 {
-			common.SetTestService(services[0])
-			ok := DoTest(services[0], retry)
-			common.UnsetTestService()
-			// Compress test artifacts, if any
-			common.CompressArtifacts()
-			if ok {
-				common.Success()
-			} else {
-				common.Failure()
-			}
-		}
+		passed, failed := RunTests(services, retry)
 
-		// Testing multiple services
-		var passed, failed []string
-		for _, s = range services {
-			common.SetTestService(s)
-			if DoTest(s, retry) {
-				passed = append(passed, s)
-			} else {
-				failed = append(failed, s)
-			}
-			common.UnsetTestService()
-		}
-		// Compress test artifacts, if any
-		common.CompressArtifacts()
-		if len(failed) > 0 {
-			common.Failuref("%d service tests FAILED (%s), %d passed (%s)", len(failed), strings.Join(failed, ", "),
-				len(passed), strings.Join(passed, ", "))
-		} else {
+		if len(failed) == 0 {
 			common.Successf("All %d service tests passed: %s", len(passed), strings.Join(passed, ", "))
+		} else if len(passed) == 0 {
+			common.Failuref("%d service tests FAILED (%s), 0 passed", len(failed), strings.Join(failed, ", "))
 		}
+		common.Failuref("%d service tests FAILED (%s), %d passed (%s)", len(failed), strings.Join(failed, ", "),
+			len(passed), strings.Join(passed, ", "))
 
 		common.Errorf("PROGRAMMING LOGIC ERROR: test.go: This line should never be reached")
 		return

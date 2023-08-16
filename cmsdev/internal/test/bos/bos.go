@@ -154,7 +154,7 @@ func IsBOSRunning() (passed bool) {
 	}
 
 	// Defined in bos_cli.go
-	if !cliTests() {
+	if !cliTests(tenantList) {
 		passed = false
 	}
 
