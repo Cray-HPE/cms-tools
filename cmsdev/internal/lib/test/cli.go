@@ -55,6 +55,11 @@ var cli_config_file_text = []byte(`
 hostname = "https://api-gw-service-nmn.local"
 `)
 
+// Paths to different CLI config files, based on which tenant
+// we are acting on behalf of. The empty string will map to the CLI config
+// file with no tenant specified
+var cliConfigFilesByTenant = map[string]string{}
+
 func GetAccessJSON() []byte {
 	common.Debugf("Getting access JSON object")
 	jobj, err := k8s.GetAccessJSON()
@@ -84,16 +89,29 @@ func GetAccessFile() string {
 	return CliAuthFile
 }
 
-func MakeConfigFile() string {
-	pid := os.Getpid()
-	tmpFile := fmt.Sprintf("/tmp/cmsdev-cray-cli-config-file.%d.tmp", pid)
-	common.Debugf("Writing credentials for CLI config to file: %s", tmpFile)
-	err := ioutil.WriteFile(tmpFile, cli_config_file_text, 0644)
-	if err != nil {
-		common.Error(err)
-		return ""
+func MakeConfigFile(tenant string) (filePath string, err error) {
+	var cmdResult *common.CommandResult
+	var ok bool
+
+	filePath, ok = cliConfigFilesByTenant[tenant]
+	if ok {
+		return
 	}
-	return tmpFile
+	filePath = common.TmpDir + "/" + tenant + ".craycli.config"
+	baseCmdStr := fmt.Sprintf("'%s' init --hostname api-gw-service-nmn.local --no-auth --configuration '%s'", cray_cli, filePath)
+	if len(tenant) == 0 {
+		common.Debugf("Creating untenanted config file for Cray CLI: '%s'", filePath)
+	} else {
+		common.Debugf("Creating config file for tenant '%s' for Cray CLI: '%s'", tenant, filePath)
+		baseCmdStr = fmt.Sprintf("%s --tenant '%s'", baseCmdStr, tenant)
+	}
+	cmdResult, err = common.RunName("bash", "-c", baseCmdStr)
+	if err != nil {
+		err = fmt.Errorf("Error running CLI command (%s): %v", baseCmdStr, err)
+		return
+	}
+	cliConfigFilesByTenant[tenant] = filePath
+	return
 }
 
 func RunCLICommandJSON(baseCmdString string, cmdArgs ...string) []byte {
@@ -104,43 +122,20 @@ func RunCLICommandJSON(baseCmdString string, cmdArgs ...string) []byte {
 
 func RunCLICommand(cmdList ...string) []byte {
 	var cmdResult *common.CommandResult
-	var cmdStr, tmpCliConfigFile string
+	var cmdStr string
 	var err error
 
 	accessFile := GetAccessFile()
+	CliConfigFile, err = MakeConfigFile("")
+	if err != nil {
+		common.Error(err)
+		return nil
+	}
 	baseCmdStr := fmt.Sprintf("CRAY_CREDENTIALS=%s '%s'", accessFile, cray_cli)
 	for _, cliArg := range cmdList {
 		baseCmdStr = fmt.Sprintf("%s '%s'", baseCmdStr, cliArg)
 	}
-	if len(CliConfigFile) == 0 {
-		cmdResult, err = common.RunName("bash", "-c", baseCmdStr)
-		if err != nil {
-			common.Error(err)
-			common.Errorf("Error running CLI command (%s)", strings.Join(cmdList, " "))
-			return nil
-		} else if cmdResult.Rc == 0 {
-			return cmdResult.OutBytes
-		}
-		configError := false
-		errStr := cmdResult.ErrString()
-		for _, cstr := range ConfigErrorStrings {
-			if strings.Contains(errStr, cstr) {
-				configError = true
-				break
-			}
-		}
-		if !configError {
-			common.Errorf("CLI command failed (and does not look like a CLI config issue) (%s)", strings.Join(cmdList, " "))
-			return nil
-		}
-		common.Debugf("CLI command failure looks like it may be a CLI config issue")
-		common.Debugf("Will generate a config file and retry")
-
-		tmpCliConfigFile = MakeConfigFile()
-		cmdStr = "CRAY_CONFIG=" + tmpCliConfigFile + " " + baseCmdStr
-	} else {
-		cmdStr = "CRAY_CONFIG=" + CliConfigFile + " " + baseCmdStr
-	}
+	cmdStr = "CRAY_CONFIG=" + CliConfigFile + " " + baseCmdStr
 	common.Debugf("Running command: %s", cmdStr)
 	cmdResult, err = common.RunName("bash", "-c", cmdStr)
 	if err != nil {
@@ -150,10 +145,6 @@ func RunCLICommand(cmdList ...string) []byte {
 	} else if cmdResult.Rc != 0 {
 		common.Errorf("CLI command failed (%s)", strings.Join(cmdList, " "))
 		return nil
-	}
-	if len(tmpCliConfigFile) > 0 {
-		// Remember the CLI config file for future CLI calls
-		CliConfigFile = tmpCliConfigFile
 	}
 	return cmdResult.OutBytes
 }
