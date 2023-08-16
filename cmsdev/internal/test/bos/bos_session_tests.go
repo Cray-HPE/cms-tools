@@ -315,10 +315,9 @@ func sessionsV2TestsURI(params *common.Params, tenantList []string) bool {
 
 // v2 sessions CLI tests
 // See comment at the top of the file for a description of this function
-func sessionsV2TestsCLICommand(cmdArgs ...string) bool {
+func sessionsV2TestsCLICommand(tenantList []string, cmdArgs ...string) bool {
 	var tenantedSessionData, untenantedSessionData v2SessionData
 	var tenantedSessionCount int
-	var err error
 	var ok, passed bool
 	var sessionDataList []v2SessionData
 

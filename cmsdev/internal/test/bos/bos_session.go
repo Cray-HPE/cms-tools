@@ -211,12 +211,14 @@ func getV2SessionDataApi(params *common.Params, sessionData v2SessionData) (sess
 // parse that dictionary into a v2SessionData struct.
 // Validates that it matches the expected session name and (if any) tenant name.
 // Returns that struct and a boolean indicating pass/fail
-func describeV2SessionDataCli(sessionData v2SessionData, cmdArgs ...string) (sessionDataFromCli v2SessionData, ok bool) {
+func describeV2SessionDataCli(sessionData v2SessionData, cmdArgs ...string) (sessionDataFromCli v2SessionData, passed bool) {
 	var sessionDict map[string]interface{}
+	var err error
+	var ok bool
 
-	ok = false
+	passed = false
 	sessionDict, ok = bosTenantDescribeCli(sessionData.Tenant, sessionData.Name, cmdArgs...)
-	if err != nil {
+	if !ok {
 		return
 	}
 	sessionDataFromCli, err = parseV2SessionData(sessionDict)
@@ -226,6 +228,8 @@ func describeV2SessionDataCli(sessionData v2SessionData, cmdArgs ...string) (ses
 	if !sessionDataFromCli.HasExpectedValues(sessionData) {
 		common.Errorf("Session returned by CLI command (%s) does not match session requested (%s)",
 			sessionDataFromCli.String(), sessionData.String())
+	} else {
+		passed = true
 	}
 	return
 }
