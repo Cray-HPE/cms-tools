@@ -43,6 +43,9 @@ func runBosCLI(cmdArgs ...string) []byte {
 // Same but for TenantRunCLICommandJSON
 // If tenant is empty string it means no tenant
 func runTenantBosCLI(tenant string, cmdArgs ...string) []byte {
+	if len(tenant) == 0 {
+		return runBosCLI(cmdArgs...)
+	}
 	common.Infof("Testing BOS CLI (%s) on behalf of tenant '%s'", strings.Join(cmdArgs, " "), tenant)
 	return test.TenantRunCLICommandJSON(tenant, "bos", cmdArgs...)
 }

@@ -67,13 +67,28 @@ func componentsTestsAPI(params *common.Params, tenantList []string) (passed bool
 func componentsTestsCLI(tenantList []string) (passed bool) {
 	passed = true
 
+	// v2 (untenanted)
+	if !componentsTestsCLICommand("", "v2", bosV2ComponentsCLI) {
+		passed = false
+	}
+
+	// default (v2) (untenated)
+	if !componentsTestsCLICommand("", bosDefaultComponentsCLI) {
+		passed = false
+	}
+
+	if len(tenantList) == 0 {
+		common.Infof("Skipping tenanted components tests, because no tenants are defined on the system")
+		return
+	}
+
 	// v2
-	if !componentsTestsCLICommand("v2", bosV2ComponentsCLI) {
+	if !componentsTestsCLICommand(getAnyTenant(tenantList), "v2", bosV2ComponentsCLI) {
 		passed = false
 	}
 
 	// default (v2)
-	if !componentsTestsCLICommand(bosDefaultComponentsCLI) {
+	if !componentsTestsCLICommand(getAnyTenant(tenantList), bosDefaultComponentsCLI) {
 		passed = false
 	}
 
@@ -143,9 +158,15 @@ func componentsTestsURI(uri string, params *common.Params, tenantName string) (p
 }
 
 // See comment earler in file for a description of this function
-func componentsTestsCLICommand(cmdArgs ...string) bool {
+func componentsTestsCLICommand(tenantName string, cmdArgs ...string) bool {
+	var tenantText string
+
+	if len(tenantName) > 0 {
+		tenantText = fmt.Sprintf(" on behalf of tenant '%s'", tenantName)
+	}
+
 	// test #1, list components
-	cmdOut := runBosCLIList(cmdArgs...)
+	cmdOut := runTenantBosCLIList(tenantName, cmdArgs...)
 	if cmdOut == nil {
 		return false
 	}
@@ -156,14 +177,13 @@ func componentsTestsCLICommand(cmdArgs ...string) bool {
 		common.Error(err)
 		return false
 	} else if len(componentId) == 0 {
-		common.Infof("skipping test CLI describe component {component_id}")
-		common.Infof("results from previous test is []")
+		common.Infof("skipping test CLI describe component {component_id}%s because result from previous test is []", tenantText)
 		return true
 	}
 
 	// a component_id is available
 	// test #2 describe component
-	cmdOut = runBosCLIDescribe(componentId, cmdArgs...)
+	cmdOut = runTenantBosCLIDescribe(tenantName, componentId, cmdArgs...)
 	if cmdOut == nil {
 		return false
 	} else if !ValidateComponentId(cmdOut, componentId) {
