@@ -105,7 +105,7 @@ func MakeConfigFile(tenant string) (filePath string, err error) {
 		common.Debugf("Creating config file for tenant '%s' for Cray CLI: '%s'", tenant, filePath)
 	}
 	file_contents = fmt.Sprintf(cli_config_file_text, tenant)
-	err = os.WriteFile(filePath, file_contents, 0600)
+	err = os.WriteFile(filePath, []byte(file_contents), 0600)
 	if err != nil {
 		err = fmt.Errorf("Error writing CLI configuration file '%s': %v", filePath, err)
 	} else {
