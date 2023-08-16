@@ -256,7 +256,7 @@ var testCmd = &cobra.Command{
 		common.InitArtifacts()
 
 		// Create temporary directory
-		if err = CreateTmpDir(); err != nil {
+		if err := common.CreateTmpDir(); err != nil {
 			common.Failuref("Failed creating temporary directory: %v", err)
 		}
 		// Remove temporary directory on function exit
