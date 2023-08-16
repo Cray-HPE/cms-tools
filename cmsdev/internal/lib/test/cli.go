@@ -50,9 +50,10 @@ var ConfigErrorStrings = []string{
 	"cray init",
 }
 
-var cli_config_file_text = []byte(`
+var cli_config_file_text = string(`
 [core]
 hostname = "https://api-gw-service-nmn.local"
+tenant = "%s"
 `)
 
 // Paths to different CLI config files, based on which tenant
@@ -90,7 +91,7 @@ func GetAccessFile() string {
 }
 
 func MakeConfigFile(tenant string) (filePath string, err error) {
-	var cmdResult *common.CommandResult
+	var file_contents string
 	var ok bool
 
 	filePath, ok = cliConfigFilesByTenant[tenant]
@@ -98,18 +99,15 @@ func MakeConfigFile(tenant string) (filePath string, err error) {
 		return
 	}
 	filePath = common.TmpDir + "/" + tenant + ".craycli.config"
-	baseCmdStr := fmt.Sprintf("'%s' init --hostname api-gw-service-nmn.local --no-auth --configuration '%s'", cray_cli, filePath)
 	if len(tenant) == 0 {
 		common.Debugf("Creating untenanted config file for Cray CLI: '%s'", filePath)
 	} else {
 		common.Debugf("Creating config file for tenant '%s' for Cray CLI: '%s'", tenant, filePath)
-		baseCmdStr = fmt.Sprintf("%s --tenant '%s'", baseCmdStr, tenant)
 	}
-	cmdResult, err = common.RunName("bash", "-c", baseCmdStr)
+	file_contents = fmt.Sprintf(cli_config_file_text, tenant)
+	err = os.WriteFile(filePath, file_contents, 0600)
 	if err != nil {
-		err = fmt.Errorf("Error running CLI command (%s): %v", baseCmdStr, err)
-	} else if cmdResult.Rc != 0 {
-		err = fmt.Errorf("CLI command (%s) failed with exit code %d: %v", baseCmdStr, cmdResult.Rc, err)
+		err = fmt.Errorf("Error writing CLI configuration file '%s': %v", filePath, err)
 	} else {
 		cliConfigFilesByTenant[tenant] = filePath
 	}
