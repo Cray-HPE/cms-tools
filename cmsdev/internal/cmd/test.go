@@ -174,6 +174,8 @@ func GetTestNamesString(excludeAliases bool) string {
 }
 
 func RunTests(services []string, retry bool) (passed, failed []string) {
+	var s string
+
 	// Create temporary directory
 	if err := common.CreateTmpDir(); err != nil {
 		common.Failuref("Failed creating temporary directory: %v", err)
@@ -193,6 +195,7 @@ func RunTests(services []string, retry bool) (passed, failed []string) {
 
 	// Compress test artifacts, if any
 	common.CompressArtifacts()
+	return
 }
 
 var longHelpText = fmt.Sprintf(`test command runs service tests.
