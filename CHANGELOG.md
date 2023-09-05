@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dependencies
+- Bump `actions/checkout` from 3 to 4 ([#145](https://github.com/Cray-HPE/cms-tools/pull/145))
+
 ## [1.14.1] - 2023-08-16
 
 ### Added
