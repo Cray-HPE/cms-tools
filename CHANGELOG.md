@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.0] - 2023-09-28
+
+### Changed
+- cray-upload-recovery-images: Added chmod to make sure files are world readable after upload.
+
+### Dependencies
+- Bump `actions/checkout` from 3 to 4 ([#145](https://github.com/Cray-HPE/cms-tools/pull/145))
+
 ## [1.14.1] - 2023-08-16
 
 ### Added
@@ -224,7 +232,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.14.1...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.15.0...HEAD
+
+[1.15.0]: https://github.com/Cray-HPE/cms-tools/compare/1.14.1...1.15.0
 
 [1.14.1]: https://github.com/Cray-HPE/cms-tools/compare/1.14.0...1.14.1
 

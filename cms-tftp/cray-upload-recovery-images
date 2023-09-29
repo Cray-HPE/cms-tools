@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+# Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -60,6 +60,7 @@ then
         # Check tmp file was created
         if [ -f /tmp/cc.itb ]
         then
+            chmod 444 /tmp/cc.itb  # readonly
             #now use cray-tftp-upload to upload the file and clean up after ourselves
             cray-tftp-upload /tmp/cc.itb
             if [ $? -ne 0 ]; then
@@ -116,6 +117,7 @@ then
         # Check tmp file was created
         if [ -f /tmp/nc.itb ]
         then
+            chmod 444 /tmp/nc.itb  # readonly
             #now use cray-tftp-upload to upload the file and clean up after ourselves
             cray-tftp-upload /tmp/nc.itb
             if [ $? -ne 0 ]; then
@@ -171,6 +173,7 @@ then
     then
         if [ -f /tmp/rec.itb ]
         then
+            chmod 444 /tmp/rec.itb  # readonly
             cp /tmp/rec.itb /tmp/sc.itb
             #now use cray-tftp-upload to upload the file and clean up after ourselves
             cray-tftp-upload /tmp/rec.itb
