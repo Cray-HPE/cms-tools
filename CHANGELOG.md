@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dependencies
+- Bump `stefanzweifel/git-auto-commit-action` from 4 to 5 ([#149](https://github.com/Cray-HPE/cms-tools/pull/149))
+
 ## [1.15.0] - 2023-09-28
 
 ### Changed
