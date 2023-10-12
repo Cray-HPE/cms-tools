@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Dependencies
 - Bump `stefanzweifel/git-auto-commit-action` from 4 to 5 ([#149](https://github.com/Cray-HPE/cms-tools/pull/149))
+- Bump `google.golang.org/appengine` from 1.6.7 to 1.6.8 ([#151](https://github.com/Cray-HPE/cms-tools/pull/151))
 
 ## [1.15.0] - 2023-09-28
 
