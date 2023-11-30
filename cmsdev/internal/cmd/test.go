@@ -173,15 +173,19 @@ func GetTestNamesString(excludeAliases bool) string {
 	return strings.Join(GetTestNamesList(excludeAliases), " ")
 }
 
-func RunTests(services []string, retry bool) (passed, failed []string) {
+func RunTests(services []string, retry bool, noclean bool) (passed, failed []string) {
 	var s string
 
 	// Create temporary directory
 	if err := common.CreateTmpDir(); err != nil {
 		common.Failuref("Failed creating temporary directory: %v", err)
 	}
-	// Remove temporary directory on function exit
-	defer common.DeleteTmpDir()
+	if noclean {
+		common.Infof("no-cleanup specified; temporary directory will not be removed at end of execution: '%s'", common.TmpDir)
+	} else {
+		// Remove temporary directory on function exit
+		defer common.DeleteTmpDir()
+	}
 
 	for _, s = range services {
 		common.SetTestService(s)
@@ -221,6 +225,7 @@ var testCmd = &cobra.Command{
 	Short: "cms test services command",
 	Long:  longHelpText,
 	Run: func(cmd *cobra.Command, args []string) {
+		noCleanup, _ := cmd.Flags().GetBool("no-cleanup")
 		noLogs, _ := cmd.Flags().GetBool("no-log")
 		logsDir, _ := cmd.Flags().GetString("log-dir")
 		retry, _ := cmd.Flags().GetBool("retry")
@@ -235,8 +240,8 @@ var testCmd = &cobra.Command{
 
 		if listTests {
 			// --list was passed
-			if noLogs || logsDir != "" || retry || quiet || verbose {
-				common.Usagef("--no-log, --log-dir, --retry, --quiet, and --verbose are not valid with --list")
+			if noCleanup || noLogs || logsDir != "" || retry || quiet || verbose {
+				common.Usagef("--no-cleanup, --no-log, --log-dir, --retry, --quiet, and --verbose are not valid with --list")
 			} else if len(args) > 0 {
 				common.Usagef("Invalid arguments specified with --list: %s", strings.Join(args, " "))
 			}
@@ -280,7 +285,7 @@ var testCmd = &cobra.Command{
 		// Initialize variables related to saving CT test artifacts
 		common.InitArtifacts()
 
-		passed, failed := RunTests(services, retry)
+		passed, failed := RunTests(services, retry, noCleanup)
 
 		if len(failed) == 0 {
 			common.Successf("All %d service tests passed: %s", len(passed), strings.Join(passed, ", "))
@@ -298,6 +303,7 @@ var testCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(testCmd)
 	testCmd.Flags().StringP("log-dir", "", "", "specify log directory")
+	testCmd.Flags().BoolP("no-cleanup", "", false, "do not remove temporary test files")
 	testCmd.Flags().BoolP("no-log", "", false, "do not log to a file")
 	testCmd.Flags().BoolP("retry", "r", false, "retry on failure")
 	testCmd.Flags().BoolP("quiet", "q", false, "quiet mode")
