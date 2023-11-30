@@ -7,7 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.16.0] - 2023-11-30
+
+### Added
+
+- cmsdev: Added `--no-cleanup` option to prevent deleting of temporary test files, to help in debug.
+
 ### Dependencies
+
 - Bump `stefanzweifel/git-auto-commit-action` from 4 to 5 ([#149](https://github.com/Cray-HPE/cms-tools/pull/149))
 - Bump `google.golang.org/appengine` from 1.6.7 to 1.6.8 ([#151](https://github.com/Cray-HPE/cms-tools/pull/151))
 - Bump `github.com/mattn/go-isatty` from 0.0.19 to 0.0.20 ([#152](https://github.com/Cray-HPE/cms-tools/pull/152))
@@ -15,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.15.0] - 2023-09-28
 
 ### Changed
+
 - cray-upload-recovery-images: Added chmod to make sure files are world readable after upload.
 
 ### Dependencies
@@ -237,7 +245,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.15.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.16.0...HEAD
+
+[1.16.0]: https://github.com/Cray-HPE/cms-tools/compare/1.15.0...1.16.0
 
 [1.15.0]: https://github.com/Cray-HPE/cms-tools/compare/1.14.1...1.15.0
 
