@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dependencies
+- Bump `github/codeql-action` from 2 to 3 ([#156](https://github.com/Cray-HPE/cms-tools/pull/156))
+
 ## [1.16.0] - 2023-11-30
 
 ### Added
