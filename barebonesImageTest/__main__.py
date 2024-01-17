@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -40,6 +40,9 @@ import time
 
 from kubernetes import client, config
 from kubernetes.stream import stream
+
+# Location of CA certificate file
+CA_CERT_PATH = "/etc/pki/trust/anchors/platform-ca-certs.crt"
 
 # url for additional troubleshooting help
 HELP_URL = "https://github.com/Cray-HPE/docs-csm/blob/main/troubleshooting/cms_barebones_image_boot.md"
@@ -295,7 +298,7 @@ def get_boot_image_name():
         logger.debug(f"User specified IMS image ID: {INPUT_IMS_IMAGE_ID}")
         url += "/" + INPUT_IMS_IMAGE_ID
     
-    r = requests.get(url, headers = headers)
+    r = requests.get(url, headers = headers, verify = CA_CERT_PATH)
     if r.status_code != 200:
         logger.error(f"IMS image query (URL: {url}) incorrect return code: {r.status_code}: {r.text}")
         raise BBException()
@@ -345,7 +348,7 @@ def create_session_template(imsEtag, imsPath):
     # make the call to bos to create the session template
     url = API_GW_SECURE + "bos/v1/sessiontemplate"
     headers = {"Authorization": f"Bearer {API_GW_TOKEN}"}
-    r = requests.post(url, headers = headers, json = bos_params)
+    r = requests.post(url, headers = headers, json = bos_params, verify = CA_CERT_PATH)
     if r.status_code != 201:
         logger.error(f"BOS session template creation incorrect return code: {r.status_code}: {r.text}")
         raise BBException()
@@ -369,7 +372,7 @@ def find_compute_node():
     url = API_GW_SECURE + "smd/hsm/v2/State/Components"
     headers = {"Authorization": f"Bearer {API_GW_TOKEN}"}
     params = {"Role":"Compute", "Enabled":"True"}
-    r = requests.get(url, headers = headers, params = params)
+    r = requests.get(url, headers = headers, params = params, verify = CA_CERT_PATH)
     if r.status_code != 200:
         logger.error(f"HSM state components query incorrect return code: {r.status_code}: {r.text}")
         raise BBException()
@@ -385,7 +388,7 @@ def find_compute_node():
     matchNode = ""
     for node in r.json()['Components']:
         # grab first one as default
-        if firstNode is "":
+        if firstNode == "":
             firstNode = node['ID']
         
         # If nothing specified by user, we are done or keep looking until we find it
@@ -428,7 +431,7 @@ def start_bos_session(template_name, compute_node):
     # make the call to bos to create the session template
     url = API_GW_SECURE + "bos/v1/session"
     headers = {"Authorization": f"Bearer {API_GW_TOKEN}"}
-    r = requests.post(url, headers = headers, json = bos_params)
+    r = requests.post(url, headers = headers, json = bos_params, verify = CA_CERT_PATH)
     if r.status_code != 201:
         logger.error(f"BOS session creation incorrect return code: {r.status_code}: {r.text}")
         raise BBException()
@@ -491,7 +494,7 @@ def get_access_token(k8sClientApi):
                "client_id":"admin-client",
                "client_secret":adminSecret}
     url = "https://api-gw-service-nmn.local/keycloak/realms/shasta/protocol/openid-connect/token"
-    r = requests.post(url, data = payload)
+    r = requests.post(url, data = payload, verify = CA_CERT_PATH)
 
     # if the token was not provided, log the problem
     if r.status_code != 200:
@@ -503,7 +506,7 @@ def get_access_token(k8sClientApi):
     global API_GW_TOKEN
     API_GW_TOKEN = r.json()['access_token']
 
-if __name__ == "__main__":
+def main():
     # Format logs for stdout
     logger.info("Barebones image boot test starting")
     logger.info(f"  For complete logs look in the file {logFilePath}")
@@ -533,3 +536,6 @@ if __name__ == "__main__":
     # exit indicating success
     logger.info("Successfully completed barebones image boot test.")
     sys.exit(0)
+
+if __name__ == "__main__":
+    main()

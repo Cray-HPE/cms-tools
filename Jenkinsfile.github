@@ -2,7 +2,7 @@
  *
  *  MIT License
  *
- *  (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+ *  (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a
  *  copy of this software and associated documentation files (the "Software"),
@@ -27,6 +27,7 @@
 @Library('csm-shared-library') __
 
 def goImage = 'artifactory.algol60.net/csm-docker/stable/csm-docker-sle-go'
+def pyImage = 'artifactory.algol60.net/csm-docker/stable/csm-docker-sle-python'
 
 pipeline {
     agent {
@@ -68,7 +69,7 @@ pipeline {
             steps {
                  withCredentials([usernamePassword(credentialsId: 'artifactory-algol60-readonly', passwordVariable: 'ARTIFACTORY_PASSWORD', usernameVariable: 'ARTIFACTORY_USERNAME')]) {
                     sh "make runbuildprep"
-                    }
+                }
             }
         }
 
@@ -78,38 +79,105 @@ pipeline {
             }
         }
 
-        stage("Prepare") {
+        stage("Build cmsdev") {
             agent {
                 docker {
-                    label 'docker'
+                    args '-v /home/jenkins/.ssh:/home/jenkins/.ssh'
                     reuseNode true
                     image "${goImage}:${env.GO_VERSION}"
                 }
             }
+            steps {
+                sh "make build_cmsdev"
+            }
+        }
+
+        // The RPM build metadata can be added outside of the matrix, because it is just based on the
+        // Git commit being built
+        stage("Prepare") {
             steps {
                 runLibraryScript("addRpmMetaData.sh", env.CMSDEV_SPEC_FILE)
-                sh "make prepare"
+                // Just using this as a means to generate the netrc file that we need
+                getDockerBuildArgs()
             }
         }
 
-        stage("Build RPMs") {
-            agent {
-                docker {
-                    label 'docker'
-                    reuseNode true
-                    image "${goImage}:${env.GO_VERSION}"
+        stage('Build & Publish RPMs') {
+
+            matrix {
+                axes {
+                    axis {
+                        name 'RPM_ARCH'
+                        values 'x86_64'
+                    }
+                    axis {
+                        name 'PY_VERSION'
+                        // This list should be a superset of the Python versions listed in setup.py (or identical)
+                        // Currently Jenkins does not support dynamically reading in the values from the file to use
+                        // as matrix values.
+                        // These implicitly correspond to SLES versions, based on which SLES version is used for
+                        // $pyImage:$PY_VERSION
+                        values '3.10', '3.11'
+                    }
+                }
+
+                agent {
+                    docker {
+                        args '-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc'
+                        reuseNode true
+                        image "${pyImage}:${PY_VERSION}"
+                    }
+                }
+
+                environment {
+                    BUILD_DIR = "${env.WORKSPACE}/dist/rpmbuild/${RPM_ARCH}/${PY_VERSION}"
+                    RPM_ARCH = "${RPM_ARCH}"
+                    PY_VERSION = "${PY_VERSION}"
+                }
+
+                stages {
+
+                    stage('Prepare') {
+                        steps {
+                            sh "make prepare"
+                        }
+                    }
+
+                    stage('Build RPMs') {
+                        steps {
+                            sh "make rpm"
+                        }
+                    }
+
+                    stage('Publish Rpms') {
+                        steps {
+                            script {
+                                def sleVersion = sh(returnStdout: true, script: 'awk -F= \'/VERSION_ID/{gsub(/["]/,""); print \$NF}\' /etc/os-release').trim()
+                                def sles_version_parts = "${sleVersion}".tokenize('.')
+                                def sles_major = "${sles_version_parts[0]}"
+                                def sles_minor = "${sles_version_parts[1]}"
+                                publishCsmRpms(
+                                        arch: "${RPM_ARCH}",
+                                        isStable: env.IS_STABLE,
+                                        component: env.NAME,
+                                        os: "sle-${sles_major}sp${sles_minor}",
+                                        pattern: "dist/rpmbuild/${RPM_ARCH}/${PY_VERSION}/RPMS/${RPM_ARCH}/*.rpm",
+                                )
+                                publishCsmRpms(
+                                        arch: "src",
+                                        component: env.NAME,
+                                        isStable: env.IS_STABLE,
+                                        os: "sle-${sles_major}sp${sles_minor}",
+                                        pattern: "dist/rpmbuild/${RPM_ARCH}/${PY_VERSION}/SRPMS/*.rpm",
+                                )
+                            }
+                        }
+                    }
+
                 }
             }
-            steps {
-                sh "make rpm"
-            }
+
         }
 
-        stage('Publish RPMs') {
-            steps {
-                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: "noos", arch: "x86_64", isStable: env.IS_STABLE)
-                publishCsmRpms(component: env.NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: "noos", arch: "src", isStable: env.IS_STABLE)
-            }
-        }
     }
 }

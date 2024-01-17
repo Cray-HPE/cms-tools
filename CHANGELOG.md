@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Package barebones boot test in a Python virtual environment in order to manage its package dependencies
+- The previous change also entailed once again building the RPM as OS-specific rather than `noos`
+
 ### Dependencies
 - Bump `github/codeql-action` from 2 to 3 ([#156](https://github.com/Cray-HPE/cms-tools/pull/156))
 
