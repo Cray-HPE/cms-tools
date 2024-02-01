@@ -36,11 +36,15 @@ CMSDEV_SOURCE_NAME ?= ${NAME}-${RPM_VERSION}
 CMSDEV_SOURCE_BASENAME := ${CMSDEV_SOURCE_NAME}.tar.bz2
 CMSDEV_SOURCE_PATH := ${BUILD_DIR}/SOURCES/${CMSDEV_SOURCE_BASENAME}
 
+CMSDEV_LOGDIR := $(shell ./cmsdev_logdir.sh)
+BBIT_LOGDIR := $(shell ./barebones_image_test_logdir.sh)
+
+
 all : runbuildprep lint build_cmsdev prepare rpm
 rpm: rpm_package_source rpm_build_source rpm_build
 
 runbuildprep:
-		./cms_meta_tools/scripts/runBuildPrep.sh
+		./cms_meta_tools/scripts/runBuildPrep.sh        
 
 lint:
 		./cms_meta_tools/scripts/runLint.sh
@@ -67,7 +71,17 @@ rpm_package_source:
 			-cvjf $(CMSDEV_SOURCE_PATH) .
 
 rpm_build_source:
-		CMSDEV_SOURCE_BASENAME=$(CMSDEV_SOURCE_BASENAME) PYTHON_BIN=$(PYTHON_BIN) BUILD_METADATA=$(BUILD_METADATA) rpmbuild -bs $(CMSDEV_SPEC_FILE) --target $(RPM_ARCH) --define "_topdir $(BUILD_DIR)"
+		BBIT_LOGDIR=$(BBIT_LOGDIR) \
+		CMSDEV_LOGDIR=$(CMSDEV_LOGDIR) \
+		CMSDEV_SOURCE_BASENAME=$(CMSDEV_SOURCE_BASENAME) \
+		PYTHON_BIN=$(PYTHON_BIN) \
+		BUILD_METADATA=$(BUILD_METADATA) \
+		rpmbuild -bs $(CMSDEV_SPEC_FILE) --target $(RPM_ARCH) --define "_topdir $(BUILD_DIR)"
 
 rpm_build:
-		CMSDEV_SOURCE_BASENAME=$(CMSDEV_SOURCE_BASENAME) PYTHON_BIN=$(PYTHON_BIN) BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ba $(CMSDEV_SPEC_FILE) --target $(RPM_ARCH) --define "_topdir $(BUILD_DIR)"
+		BBIT_LOGDIR=$(BBIT_LOGDIR) \
+		CMSDEV_LOGDIR=$(CMSDEV_LOGDIR) \
+		CMSDEV_SOURCE_BASENAME=$(CMSDEV_SOURCE_BASENAME) \
+		PYTHON_BIN=$(PYTHON_BIN) \
+		BUILD_METADATA=$(BUILD_METADATA) \
+		rpmbuild -ba $(CMSDEV_SPEC_FILE) --target $(RPM_ARCH) --define "_topdir $(BUILD_DIR)"

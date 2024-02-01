@@ -1,0 +1,138 @@
+#
+# MIT License
+#
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+#
+
+"""
+API module for barebones boot test
+"""
+
+import base64
+import json
+
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from urllib3.exceptions import MaxRetryError
+
+from barebones_image_test.defs import BBException, JsonDict, JsonObject
+from barebones_image_test.k8s import get_k8s_secret_data
+from barebones_image_test.log import logger
+
+
+# set up gateway address
+API_GW_DNSNAME = "api-gw-service-nmn.local"
+API_GW_SECURE = f"https://{API_GW_DNSNAME}"
+API_BASE_URL = f"{API_GW_SECURE}/apis"
+
+PROTOCOL = "https"
+
+SYSTEM_CA_CERTS = "/etc/ssl/ca-bundle.pem"
+
+def requests_retry_session(retries: int = 10,
+                           backoff_factor: float = 0.5,
+                           status_forcelist: set = (500, 502, 503, 504),
+                           session: requests.Session = None) -> requests.Session:
+    """
+    Return a requests session with retries enabled.
+    Shamelessly cribbed from the cfs-debugger source.
+    """
+    session = session or requests.Session()
+    retry = Retry(total=retries,
+                  read=retries,
+                  connect=retries,
+                  backoff_factor=backoff_factor,
+                  status_forcelist=status_forcelist)
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount(PROTOCOL, adapter)
+    return session
+
+def add_api_auth(headers: JsonDict) -> None:
+    """
+    Get the admin secret from k8s for the api gateway - command line equivalent is:
+    #`kubectl get secrets admin-client-auth -o jsonpath='{.data.client-secret}' | base64 -d`
+    """
+    secret_data = get_k8s_secret_data("admin-client-auth")
+    try:
+        encoded_admin_secret = secret_data['client-secret']
+        admin_secret = base64.b64decode(encoded_admin_secret)
+    except Exception as exc:
+        logger.exception("Errpr accessing or decoding admin client secret")
+        raise BBException from exc
+
+    # get an access token from keycloak
+    payload = {"grant_type":"client_credentials",
+               "client_id":"admin-client",
+               "client_secret":admin_secret}
+    url = f"{API_GW_SECURE}/keycloak/realms/shasta/protocol/openid-connect/token"
+    resp_json = request_and_check_status("post", url, data=payload, add_auth_header=False,
+                                         expected_status=200, parse_json=True)
+
+    # pull the access token from the return data
+    headers["Authorization"] = f"Bearer {resp_json['access_token']}"
+
+def request(verb, url, headers=None, add_auth_header=True, verify=SYSTEM_CA_CERTS,
+            **kwargs) -> requests.Response:
+    """
+    Wrapper for making requests with retries.
+    Automatically adds API auth to header, if specified.
+    """
+    if add_auth_header:
+        if not headers:
+            headers = {}
+        add_api_auth(headers)
+    session = requests_retry_session()
+    try:
+        return session.request(verb, url=url, headers=headers, verify=verify, **kwargs)
+    except (requests.exceptions.ConnectionError, MaxRetryError) as exc:
+        logger.exception("Unable to connect to %s", url)
+        raise BBException from exc
+    except requests.exceptions.HTTPError as exc:
+        logger.exception("Unexpected response making %s request to %s", verb, url)
+        raise BBException from exc
+    except Exception as exc:
+        logger.exception("Unhandled exception making %s request to %s", verb, url)
+        raise BBException from exc
+
+def request_and_check_status(verb, url, expected_status: int, parse_json: bool,
+                             **kwargs) -> requests.Response|JsonObject:
+    """
+    A wrapper for request that also checks the status code of the response.
+    Raises an exception if it doesn't match.
+    If parse_json is True, then returns the parsed JSON body.
+    Otherwise returns the raw response object.
+    """
+    resp = request(verb=verb, url=url, **kwargs)
+    if resp.status_code != expected_status:
+        logger.error("API %s request to %s received incorrect return code %d (expected %d): %s",
+                     verb, url, resp.status_code, expected_status, resp.text)
+        raise BBException()
+    if not parse_json:
+        return resp
+    try:
+        return json.loads(resp.text)
+    except json.JSONDecodeError as exc:
+        logger.exception("Non-JSON response to %s request to %s", verb, url)
+        raise BBException from exc
+    except Exception as exc:
+        logger.exception("Unhandled exception making %s request to %s", verb, url)
+        raise BBException from exc

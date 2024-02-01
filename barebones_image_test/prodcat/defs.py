@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,32 +21,21 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# Package info for barebones image boot test
 
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+"""
+CsmProductCatalogData definitions
+"""
 
-[tool.setuptools.packages]
-find = {}
+from barebones_image_test.api import API_GW_SECURE
+from barebones_image_test.defs import ARM_ARCH, X86_ARCH
 
-[project]
-name = "barebones_image_test"
-version = "@RPM_VERSION@"
-authors = [
-  { name="HPE Development LP", email="sps@cray.com" },
-]
-description = "Barebones image boot test"
-requires-python = ">=3.10"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "License :: OSI Approved :: MIT License",
-    "Topic :: System :: Systems Administration",
-]
+# VCS URLs:
+VCS_URL = f"{API_GW_SECURE}/vcs"
 
-[project.scripts]
-barebones_image_test = "barebones_image_test.__main__:main"
+PRODUCT_CATALOG_CONFIG_MAP_NAME = "cray-product-catalog"
+PRODUCT_CATALOG_CONFIG_MAP_NS = "services"
 
-[project.urls]
-Homepage = "https://github.com/Cray-HPE/cms-tools"
+# The strings used in the product catalog to identify node arch
+PRODCAT_ARM_ARCH = "aarch64"
+PRODCAT_X86_ARCH = "x86_64"
+PRODCAT_ARCH_STRINGS = { ARM_ARCH: PRODCAT_ARM_ARCH, X86_ARCH: PRODCAT_X86_ARCH }

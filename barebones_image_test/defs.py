@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,3 +21,31 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+"""
+Definitions and constants
+"""
+
+import datetime
+
+# names
+BB_TEST_PREFIX = "csm-barebones-boot-test"
+BB_TEST_TIMESTAMP = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+BB_TEST_RESOURCE_NAME = f"{BB_TEST_PREFIX}-{BB_TEST_TIMESTAMP}"
+
+# Constants
+ARM_ARCH = "arm"
+X86_ARCH = "x86"
+
+# First in the list is the default for the test
+ARCH_LIST = [ X86_ARCH, ARM_ARCH ]
+
+# To help for type hinting
+JsonObject = str|int|float|list|dict|bool|None
+JsonDict = dict[str, JsonObject]
+
+class BBException(Exception):
+    """
+    This is the base exception for all custom exceptions that can be raised from
+    this application.
+    """

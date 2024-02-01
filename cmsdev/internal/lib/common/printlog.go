@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
+//  (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -43,6 +43,8 @@ import (
 	"time"
 )
 
+// The following line is also used by the Makefile and RPM spec file in this repo. Any changes to it
+// should ensure that they do not break this.
 const DEFAULT_LOG_FILE_DIR string = "/opt/cray/tests/install/logs/cmsdev"
 
 // Relative path to this source file within its repo
