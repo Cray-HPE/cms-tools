@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2022-2023 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2022-2024 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -37,7 +37,6 @@ import (
 
 // BOS base URLs and URIs
 const bosBaseUrl = common.BASEURL + "/apis/bos"
-const bosV1BaseUri = "/v1"
 const bosV2BaseUri = "/v2"
 
 // A wrapper for the common test.RestfulVerifyStatus function that converts a BOS URI into the full URL before

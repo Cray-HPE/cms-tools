@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -37,17 +37,13 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
 
-const bosV1SessionTemplatesUri = bosV1BaseUri + "/sessiontemplate"
 const bosV2SessionTemplatesUri = bosV2BaseUri + "/sessiontemplates"
 
-const bosV1SessionTemplateTemplateUri = bosV1BaseUri + "/sessiontemplatetemplate"
 const bosV2SessionTemplateTemplateUri = bosV2BaseUri + "/sessiontemplatetemplate"
 
-const bosV1SessionTemplatesCLI = "sessiontemplate"
 const bosV2SessionTemplatesCLI = "sessiontemplates"
 const bosDefaultSessionTemplatesCLI = bosV2SessionTemplatesCLI
 
-const bosV1SessionTemplateTemplateCLI = "sessiontemplatetemplate"
 const bosV2SessionTemplateTemplateCLI = "sessiontemplatetemplate"
 const bosDefaultSessionTemplateTemplateCLI = bosV2SessionTemplateTemplateCLI
 
@@ -151,22 +147,6 @@ func parseV2TemplateData(sessionTemplateDict map[string]interface{}) (templateDa
 	return
 }
 
-// Performs an API query to get a particular BOS v1 session template (with no tenant specified)
-// Parses the result to convert it to a dictionary with string keys
-// Returns the result and error (if any)
-func getV1TemplateApi(params *common.Params, templateName string) (sessionTemplateDict map[string]interface{}, err error) {
-	var resp *resty.Response
-	uri := bosV1SessionTemplatesUri + "/" + templateName
-	common.Infof("GET %s test scenario", uri)
-	resp, err = bosRestfulVerifyStatus("GET", uri, params, http.StatusOK)
-	if err != nil {
-		return
-	}
-	// Decode JSON into a string map
-	sessionTemplateDict, err = common.DecodeJSONIntoStringMap(resp.Body())
-	return
-}
-
 // Performs an API query to get a particular BOS v2 session template (possibly belonging to a tenant)
 // Parses the result to convert it to a dictionary with string keys
 // Returns the result and error (if any)
@@ -188,21 +168,6 @@ func getV2TemplateApi(params *common.Params, templateData v2TemplateData) (sessi
 	return
 }
 
-// Performs an API query to list BOS v1 templates (with no tenant specified)
-// Parses the result to convert it to a list of dictionaries with string keys
-// Returns the result and error (if any)
-func listV1TemplatesApi(params *common.Params) (dictList []map[string]interface{}, err error) {
-	var resp *resty.Response
-	common.Infof("GET %s test scenario", bosV1SessionTemplatesUri)
-	resp, err = bosRestfulVerifyStatus("GET", bosV1SessionTemplatesUri, params, http.StatusOK)
-	if err != nil {
-		return
-	}
-	// Decode JSON into a list of string maps
-	dictList, err = common.DecodeJSONIntoStringMapList(resp.Body())
-	return
-}
-
 // Performs an API query to list BOS v2 templates (possibly with a tenant specified)
 // Parses the result to convert it to a list of dictionaries with string keys
 // Returns the result and error (if any)
@@ -220,30 +185,6 @@ func listV2TemplatesApi(params *common.Params, tenantName string) (dictList []ma
 	}
 	// Decode JSON into a list of string maps
 	dictList, err = common.DecodeJSONIntoStringMapList(resp.Body())
-	return
-}
-
-// Get a particular BOS session template (with no tenant) using getV1TemplateApi,
-// parses that dictionaries into a v2TemplateData struct.
-// Validates that it matches the expected session template name and that it does not belong to a tenant
-// Returns that struct and error (if any)
-func getV1TemplateDataApi(params *common.Params, templateName string) (templateDataFromApi v2TemplateData, err error) {
-	var expectedTemplateData v2TemplateData
-	var sessionTemplateDict map[string]interface{}
-
-	sessionTemplateDict, err = getV1TemplateApi(params, templateName)
-	if err != nil {
-		return
-	}
-	templateDataFromApi, err = parseV2TemplateData(sessionTemplateDict)
-	if err != nil {
-		return
-	}
-	expectedTemplateData.Name = templateName
-	if !templateDataFromApi.HasExpectedValues(expectedTemplateData) {
-		err = fmt.Errorf("SessionTemplate returned by API query (%s) does not match session template requested (%s)",
-			templateDataFromApi.String(), expectedTemplateData.String())
-	}
 	return
 }
 
@@ -319,20 +260,6 @@ func dictListToTemplateDataList(dictList []map[string]interface{}, tenantName st
 	return
 }
 
-// Gets a list of session template dictionary objects using listV1TemplatesApi,
-// converts that list using dictListToTemplateDataList. Returns that list of structs and error (if any)
-func listV1TemplateDataApi(params *common.Params) (templateDataList []v2TemplateData, err error) {
-	var dictList []map[string]interface{}
-
-	dictList, err = listV1TemplatesApi(params)
-	if err != nil {
-		return
-	}
-	// Empty string for tenant name, because v1 queries are never tenanted queries
-	templateDataList, err = dictListToTemplateDataList(dictList, "")
-	return
-}
-
 // Gets a list of session template dictionary objects using listV2TemplatesApi,
 // converts that list using dictListToTemplateDataList. Returns that list of structs and error (if any)
 func listV2TemplateDataApi(params *common.Params, tenantName string) (templateDataList []v2TemplateData, err error) {
@@ -372,9 +299,6 @@ func listTemplateDataCli(tenantName string, cmdArgs ...string) (templateDataList
 // 3. The resulting V2 template object has the expected ID values (using HasExpectedValues method)
 //
 // Return true if all of the above is true. Otherwise, log an appropriate error and return false.
-//
-// Note that this will be used to validate both V1 and V2 templates, because a dirty secret of BOS is that
-// they're the same thing behind the scenes.
 func ValidateTemplateData(mapCmdOut []byte, expectedId v2TemplateData) bool {
 	common.Infof("Validating that BOS session template has expected values for name and tenant")
 

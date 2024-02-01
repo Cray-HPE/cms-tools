@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.17.0] - 2024-02-01
+
+### Changed
+- Barebones boot test overhaul
+  - Use BOSv2
+  - Add support for arm nodes and images
+  - By default, select node and image with x86_64 hardware
+  - Default image is the compute image listed in the Cray Product Catalog for the chosen architecture
+  - Default image is customized using CFS to make it fully bootable by BOS v2
+  - Add options to allow user to specify how the image is customized
+  - Add option to allow the user to specify a different base image, or a pre-customized image
+  - If test passes, delete resources that it created at the end.
+  - Add option to not delete the resources even if the test passes.
+  - Package test in a Python virtual environment in order to manage and control its dependencies
+- The previous change also entailed once again building the RPM as OS-specific rather than `noos`
+
+### Removed
+- Remove BOSv1 from cmsdev
+
+### Dependencies
+- Bump `github/codeql-action` from 2 to 3 ([#156](https://github.com/Cray-HPE/cms-tools/pull/156))
+
 ## [1.16.0] - 2023-11-30
 
 ### Added
@@ -245,7 +267,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.16.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.17.0...HEAD
+
+[1.17.0]: https://github.com/Cray-HPE/cms-tools/compare/1.16.0...1.17.0
 
 [1.16.0]: https://github.com/Cray-HPE/cms-tools/compare/1.15.0...1.16.0
 

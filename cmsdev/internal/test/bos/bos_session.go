@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -37,10 +37,8 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
 
-const bosV1SessionsUri = bosV1BaseUri + "/session"
 const bosV2SessionsUri = bosV2BaseUri + "/sessions"
 
-const bosV1SessionsCLI = "session"
 const bosV2SessionsCLI = "sessions"
 const bosDefaultSessionsCLI = bosV2SessionsCLI
 

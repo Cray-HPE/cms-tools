@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
+//  (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -274,69 +274,6 @@ func newMethodEndpoint(parameters, summary string, responses []int) *endpointMet
 func GetEndpoints() map[string]map[string]*Endpoint {
 
 	endpoints := make(map[string]map[string]*Endpoint)
-
-	// BOS service endpoints
-	endpoints["bos"] = make(map[string]*Endpoint)
-	endpoints["bos"]["/"] = &Endpoint{
-		Methods: map[string]*endpointMethod{
-			"GET": newMethodEndpoint("", "Get API versions", []int{200}),
-		},
-		Url:     "/",
-		Version: "v1",
-	}
-	endpoints["bos"]["v1"] = &Endpoint{
-		Methods: map[string]*endpointMethod{
-			"GET": newMethodEndpoint("", "Get API versions", []int{200, 500}),
-		},
-		Url:     "/apis/bos/v1",
-		Version: "v1",
-	}
-	endpoints["bos"]["sessiontemplate"] = &Endpoint{
-		Methods: map[string]*endpointMethod{
-			"GET":  newMethodEndpoint("", "List session template", []int{200}),
-			"POST": newMethodEndpoint("", "Create session template", []int{200, 400}),
-		},
-		Url:     "/apis/bos/v1/sessiontemplate",
-		Version: "v1",
-	}
-	endpoints["bos"]["sessiontemplate/{session_template_id}"] = &Endpoint{
-		Methods: map[string]*endpointMethod{
-			"GET":    newMethodEndpoint("session_template_id", "Get session template by id", []int{200, 404}),
-			"DELETE": newMethodEndpoint("session_template_id", "Delete a session template", []int{204, 404}),
-		},
-		Url:     "/apis/bos/v1/sessiontemplate/{session_template_id}",
-		Version: "v1",
-	}
-	endpoints["bos"]["sessiontemplatetemplate"] = &Endpoint{
-		Methods: map[string]*endpointMethod{
-			"GET": newMethodEndpoint("", "Get example session template", []int{200}),
-		},
-		Url:     "/apis/bos/v1/sessiontemplatetemplate",
-		Version: "v1",
-	}
-	endpoints["bos"]["session"] = &Endpoint{
-		Methods: map[string]*endpointMethod{
-			"GET":  newMethodEndpoint("", "List sessions", []int{200}),
-			"POST": newMethodEndpoint("", "Create a session", []int{200, 400}),
-		},
-		Url:     "/apis/bos/v1/session",
-		Version: "v1",
-	}
-	endpoints["bos"]["session/{session_id}"] = &Endpoint{
-		Methods: map[string]*endpointMethod{
-			"GET":    newMethodEndpoint("session_id", "Get sessions details by Id", []int{200, 404}),
-			"DELETE": newMethodEndpoint("session_id", "Delete a session", []int{204, 404}),
-		},
-		Url:     "/apis/bos/v1/session/{session_id}",
-		Version: "v1",
-	}
-	endpoints["bos"]["version"] = &Endpoint{
-		Methods: map[string]*endpointMethod{
-			"GET": newMethodEndpoint("", "Get API version", []int{200, 500}),
-		},
-		Url:     "/apis/bos/v1/version",
-		Version: "v1",
-	}
 
 	// CFS service endpoints (only the ones we are testing with cmsdsev at the moment)
 	endpoints["cfs"] = make(map[string]*Endpoint)

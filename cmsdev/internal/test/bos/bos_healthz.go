@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2022-2023 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2022-2024 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -32,10 +32,8 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
 
-const bosV1HealthzUri = bosV1BaseUri + "/healthz"
 const bosV2HealthzUri = bosV2BaseUri + "/healthz"
 
-const bosV1HealthzCLI = "healthz"
 const bosV2HealthzCLI = "healthz"
 const bosDefaultHealthzCLI = bosV2HealthzCLI
 
@@ -44,11 +42,6 @@ func healthzTestsAPI(params *common.Params, tenantList []string) (passed bool) {
 
 	// Just do a GET of the options endpoint and make sure that the response has
 	// 200 status and a dictionary object
-
-	// v1 endpoint
-	if !basicGetUriVerifyStringMapTest(bosV1HealthzUri, params) {
-		passed = false
-	}
 
 	// v2 endpoint
 	if !basicGetUriVerifyStringMapTest(bosV2HealthzUri, params) {
@@ -67,11 +60,6 @@ func healthzTestsCLI(tenantList []string) (passed bool) {
 	passed = true
 
 	// Make sure that "healthz list" CLI command succeeds and returns a dictionary object.
-
-	// "v1 healthz list"
-	if !basicCLIListVerifyStringMapTest("v1", bosV1HealthzCLI) {
-		passed = false
-	}
 
 	// "v2 healthz list"
 	if !basicCLIListVerifyStringMapTest("v2", bosV2HealthzCLI) {
