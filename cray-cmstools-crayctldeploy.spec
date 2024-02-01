@@ -21,12 +21,16 @@
 # (MIT License)
 
 %define install_dir /usr/lib/%(echo $NAME)/
-%define install_python_dir %{install_dir}barebonesImageTest-venv
+%define install_python_dir %{install_dir}barebones_image_test-venv
 
 # Define which Python flavors python-rpm-macros will use (this can be a list).
 # https://github.com/openSUSE/python-rpm-macros#terminology
 %define pythons %(echo ${PYTHON_BIN})
 %define py_version %(echo ${PY_VERSION})
+
+# The following environment variables are set in the Makefile
+%define cmsdev_logdir %(echo ${CMSDEV_LOGDIR})
+%define bbit_logdir %(echo ${BBIT_LOGDIR})
 
 Name: cray-cmstools-crayctldeploy
 License: MIT
@@ -59,29 +63,51 @@ echo /usr/local/bin | tee -a INSTALLED_FILES
 install -m 755 cmsdev/bin/cmsdev %{buildroot}/usr/local/bin/cmsdev
 echo /usr/local/bin/cmsdev | tee -a INSTALLED_FILES
 
+# Log directory for cmsdev
+install -m 755 -d %{buildroot}%{cmsdev_logdir}
+echo %{cmsdev_logdir} | tee -a INSTALLED_FILES
+
 install -m 700 cms-tftp/cray-tftp-upload %{buildroot}/usr/local/bin/cray-tftp-upload
 echo /usr/local/bin/cray-tftp-upload | tee -a INSTALLED_FILES
 
 install -m 700 cms-tftp/cray-upload-recovery-images %{buildroot}/usr/local/bin/cray-upload-recovery-images
 echo /usr/local/bin/cray-upload-recovery-images | tee -a INSTALLED_FILES
 
+# Log directory for barebones image test
+install -m 755 -d %{buildroot}%{bbit_logdir}
+echo %{bbit_logdir} | tee -a INSTALLED_FILES
+
 # Create our virtualenv
 %python_exec -m venv %{buildroot}%{install_python_dir}
 
-# Build a source distribution.
-%{buildroot}%{install_python_dir}/bin/python3 -m pip install -r barebonesImageTest-requirements.txt --disable-pip-version-check --no-cache
-%{buildroot}%{install_python_dir}/bin/python3 -m pip install .
+# Build and install barebones test
+# For the purposes of the build log, we list the installed Python packages before and after each pip call
+
+%{buildroot}%{install_python_dir}/bin/python3 -m pip list --format freeze --disable-pip-version-check
+
+# Upgrade install/build tools
+%{buildroot}%{install_python_dir}/bin/python3 -m pip install pip setuptools wheel -c barebones_image_test-constraints.txt --disable-pip-version-check --no-cache
+%{buildroot}%{install_python_dir}/bin/python3 -m pip list --format freeze --disable-pip-version-check
+
+# Install test preqrequisites
+%{buildroot}%{install_python_dir}/bin/python3 -m pip install -r barebones_image_test-requirements.txt --disable-pip-version-check --no-cache
+%{buildroot}%{install_python_dir}/bin/python3 -m pip list --format freeze --disable-pip-version-check
+
+# Install the test itself
+%{buildroot}%{install_python_dir}/bin/python3 -m pip install . -c barebones_image_test-constraints.txt --disable-pip-version-check --no-cache
+%{buildroot}%{install_python_dir}/bin/python3 -m pip list --format freeze --disable-pip-version-check
+
+# Remove build tools to decrease the virtualenv size.
+%{buildroot}%{install_python_dir}/bin/python3 -m pip uninstall -y pip setuptools wheel
+# Cannot list packages a final time, since we uninstalled pip
 
 # Add symlink to the barebones test in /opt/cray/tests/integration/csm
 install -m 755 -d %{buildroot}/opt/cray/tests/integration/csm/
 echo /opt/cray/tests/integration/csm | tee -a INSTALLED_FILES
 pushd %{buildroot}/opt/cray/tests/integration/csm
-ln -s ../../../../..%{install_python_dir}/bin/barebones-image-boot-test barebonesImageTest
+ln -s ../../../../..%{install_python_dir}/bin/barebones_image_test barebones_image_test
 popd
-echo /opt/cray/tests/integration/csm/barebonesImageTest | tee -a INSTALLED_FILES
-
-# Remove build tools to decrease the virtualenv size.
-%{buildroot}%{install_python_dir}/bin/python3 -m pip uninstall -y pip setuptools wheel
+echo /opt/cray/tests/integration/csm/barebones_image_test | tee -a INSTALLED_FILES
 
 # Fix the virtualenv activation script, ensure VIRTUAL_ENV points to the installed location on the system.
 find %{buildroot}%{install_python_dir}/bin -type f | xargs -t -i sed -i 's:%{buildroot}%{install_python_dir}:%{install_python_dir}:g' {}

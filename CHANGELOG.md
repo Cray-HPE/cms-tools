@@ -8,7 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Package barebones boot test in a Python virtual environment in order to manage its package dependencies
+- Barebones boot test overhaul
+  - Use BOSv2
+  - Add support for arm nodes and images
+  - By default, select node and image with x86_64 hardware
+  - Default image is the compute image listed in the Cray Product Catalog for the chosen architecture
+  - Default image is customized using CFS to make it fully bootable by BOS v2
+  - Add options to allow user to specify how the image is customized
+  - Add option to allow the user to specify a different base image, or a pre-customized image
+  - If test passes, delete resources that it created at the end.
+  - Add option to not delete the resources even if the test passes.
+  - Package test in a Python virtual environment in order to manage and control its dependencies
 - The previous change also entailed once again building the RPM as OS-specific rather than `noos`
 
 ### Dependencies

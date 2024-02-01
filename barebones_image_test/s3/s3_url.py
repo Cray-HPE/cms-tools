@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,32 +21,42 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# Package info for barebones image boot test
 
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+"""
+S3Url class
+"""
 
-[tool.setuptools.packages]
-find = {}
+from urllib.parse import urlparse
 
-[project]
-name = "barebones_image_test"
-version = "@RPM_VERSION@"
-authors = [
-  { name="HPE Development LP", email="sps@cray.com" },
-]
-description = "Barebones image boot test"
-requires-python = ">=3.10"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "License :: OSI Approved :: MIT License",
-    "Topic :: System :: Systems Administration",
-]
+class S3Url(str):
+    """
+    A string class whose value is standardized through URLparser, and with extra properties
+    to display S3 bucket, key, etc
 
-[project.scripts]
-barebones_image_test = "barebones_image_test.__main__:main"
+    https://stackoverflow.com/questions/42641315/s3-urls-get-bucket-name-and-path/42641363
+    """
 
-[project.urls]
-Homepage = "https://github.com/Cray-HPE/cms-tools"
+    def __new__(cls, url):
+        return super().__new__(cls, urlparse(url, allow_fragments=False).geturl())
+
+    def __init__(self, url):
+        parsed = urlparse(url, allow_fragments=False)
+        if parsed.query:
+            self.__key = parsed.path.lstrip('/') + '?' + parsed.query
+        else:
+            self.__key = parsed.path.lstrip('/')
+        self.__bucket = parsed.netloc
+
+    @property
+    def key(self) -> str:
+        """
+        Return the S3 key portion of this S3 URL
+        """
+        return self.__key
+
+    @property
+    def bucket(self) -> str:
+        """
+        Return the S3 bucket portion of this S3 URL
+        """
+        return self.__bucket
