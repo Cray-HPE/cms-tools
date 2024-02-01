@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Package test in a Python virtual environment in order to manage and control its dependencies
 - The previous change also entailed once again building the RPM as OS-specific rather than `noos`
 
+### Removed
+- Remove BOSv1 from cmsdev
+
 ### Dependencies
 - Bump `github/codeql-action` from 2 to 3 ([#156](https://github.com/Cray-HPE/cms-tools/pull/156))
 

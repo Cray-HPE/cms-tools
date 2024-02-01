@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -36,10 +36,8 @@ import (
 // This endpoint returns a list of BOS versions
 const bosBaseUri = "/"
 
-const bosV1VersionUri = bosV1BaseUri + "/version"
 const bosV2VersionUri = bosV2BaseUri + "/version"
 
-const bosV1VersionCLI = "version"
 const bosV2VersionCLI = "version"
 const bosDefaultVersionCLI = bosV2VersionCLI
 
@@ -55,16 +53,6 @@ func versionTestsAPI(params *common.Params, tenantList []string) (passed bool) {
 	// For the remaining endpoints:
 	// Do a GET of the version endpoint and make sure that the response has
 	// 200 status and a dictionary object
-
-	// /v1 endpoint
-	if !basicGetUriVerifyStringMapTest(bosV1BaseUri, params) {
-		passed = false
-	}
-
-	// /v1/version endpoint
-	if !basicGetUriVerifyStringMapTest(bosV1VersionUri, params) {
-		passed = false
-	}
 
 	// /v2 endpoint
 	if !basicGetUriVerifyStringMapTest(bosV2BaseUri, params) {
@@ -93,16 +81,6 @@ func versionTestsCLI(tenantList []string) (passed bool) {
 	passed = true
 
 	// Make sure that "version list" CLI command succeeds and returns a dictionary object.
-
-	// /v1 endpoint - "cray bos v1 list"
-	if !basicCLIListVerifyStringMapTest("v1") {
-		passed = false
-	}
-
-	// v1 version list - "cray bos v1 version list"
-	if !basicCLIListVerifyStringMapTest("v1", bosV1VersionCLI) {
-		passed = false
-	}
 
 	// /v2 endpoint - "cray bos v2 list"
 	if !basicCLIListVerifyStringMapTest("v2") {
