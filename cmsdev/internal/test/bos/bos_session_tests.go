@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -29,29 +29,21 @@ package bos
  */
 
 import (
-	"net/http"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"strings"
 )
 
-// The sessionsV1TestsURI, sessionsV2TestsURI, sessionsV1TestsCLICommand, and sessionsV2TestsCLICommand functions
-// define the API and CLI versions of the BOS v1 and v2 session subtests.
-// They all do essentially the same thing, although the v2 API test has some enhancements described later in the file.
+// The sessionsV2TestsURI and sessionsV2TestsCLICommand functions
+// define the API and CLI versions of the BOS v2 session subtests.
+// They all do essentially the same thing
 // 1. List all sessions
-// 2. Verify that this succeeds and returns something of the right general form (for v1, this is expected to be a list of strings,
-//    whereas for v2 this should be a list of dictionary objects)
-// 3. If the list returned is empty, then the subtest is over. Otherwise, select the first element of the list. (If bosV2, extract the "name" field of that element).
+// 2. Verify that this succeeds and returns something of the right general form (this should be a list of dictionary objects)
+// 3. If the list returned is empty, then the subtest is over. Otherwise, select the first element of the list and extract the "name" field of that element
 // 4. Do a GET/describe on that particular session
-// 5. Verify that this succeeds and returns something of the right general form. For BOS v2, also verify that it has the expected name
-//    (in v1, the session ID is not in the returned object)
+// 5. Verify that this succeeds and returns something of the right general form. Also verify that it has the expected name
 
 func sessionsTestsAPI(params *common.Params, tenantList []string) (passed bool) {
 	passed = true
-
-	// v1 sessions
-	if !sessionsV1TestsURI(bosV1SessionsUri, params) {
-		passed = false
-	}
 
 	// v2 sessions
 	if !sessionsV2TestsURI(params, tenantList) {
@@ -64,11 +56,6 @@ func sessionsTestsAPI(params *common.Params, tenantList []string) (passed bool) 
 func sessionsTestsCLI(tenantList []string) (passed bool) {
 	passed = true
 
-	// v1 sessions
-	if !sessionsV1TestsCLICommand("v1", bosV1SessionsCLI) {
-		passed = false
-	}
-
 	// v2 sessions
 	if !sessionsV2TestsCLICommand(tenantList, "v2", bosV2SessionsCLI) {
 		passed = false
@@ -80,80 +67,6 @@ func sessionsTestsCLI(tenantList []string) (passed bool) {
 	}
 
 	return
-}
-
-////////////////////////////////////////////////////////////////////////////
-// v1 tests
-////////////////////////////////////////////////////////////////////////////
-
-// v1 sessions API tests
-// See comment at the top of the file for a description of this function
-func sessionsV1TestsURI(uri string, params *common.Params) bool {
-	// test #1, list session
-	common.Infof("GET %s test scenario", uri)
-	resp, err := bosRestfulVerifyStatus("GET", uri, params, http.StatusOK)
-	if err != nil {
-		common.Error(err)
-		return false
-	}
-
-	// BOS v1: Validate that at least we can decode the JSON into a list of strings
-	stringList, err := common.DecodeJSONIntoStringList(resp.Body())
-	if err != nil {
-		common.Error(err)
-		return false
-	} else if len(stringList) == 0 {
-		common.Infof("skipping test GET %s/{session_id}", uri)
-		common.Infof("results from previous test is []")
-		return true
-	}
-
-	// a session_id is available
-	sessionData := stringList[0]
-	common.Infof("Found BOS v1 session with ID '%s'", sessionData)
-
-	// test #2, describe session with session_id
-	uri += "/" + sessionData
-	if !basicGetUriVerifyStringMapTest(uri, params) {
-		return false
-	}
-
-	return true
-}
-
-// v1 sessions CLI tests
-// See comment at the top of the file for a description of this function
-func sessionsV1TestsCLICommand(cmdArgs ...string) bool {
-	// test #1, list sessions
-	cmdOut := runBosCLIList(cmdArgs...)
-	if cmdOut == nil {
-		return false
-	}
-
-	// BOS v1: Validate that at least we can decode the JSON into a list of strings
-	stringList, err := common.DecodeJSONIntoStringList(cmdOut)
-	if err != nil {
-		common.Error(err)
-		return false
-	}
-
-	// Grab the first session ID
-	if len(stringList) == 0 {
-		common.Infof("skipping test CLI describe {session_id}")
-		common.Infof("results from previous test is []")
-		return true
-	}
-
-	// A session id is available
-	sessionData := stringList[0]
-	common.Infof("Found BOS v1 session with ID '%s'", sessionData)
-
-	// test #2, describe session with session_id
-	if !basicCLIDescribeVerifyStringMapTest(sessionData, cmdArgs...) {
-		return false
-	}
-
-	return true
 }
 
 ////////////////////////////////////////////////////////////////////////////
