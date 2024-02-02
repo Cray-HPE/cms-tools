@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.17.0] - 2024-02-01
+
 ### Changed
 - Barebones boot test overhaul
   - Use BOSv2
@@ -265,7 +267,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.16.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.17.0...HEAD
+
+[1.17.0]: https://github.com/Cray-HPE/cms-tools/compare/1.16.0...1.17.0
 
 [1.16.0]: https://github.com/Cray-HPE/cms-tools/compare/1.15.0...1.16.0
 
