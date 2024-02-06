@@ -26,7 +26,7 @@
 # Define which Python flavors python-rpm-macros will use (this can be a list).
 # https://github.com/openSUSE/python-rpm-macros#terminology
 %define pythons %(echo ${PYTHON_BIN})
-%define py_version %(echo ${PY_VERSION})
+%define next_py_version %(echo ${NEXT_PY_VERSION})
 
 # The following environment variables are set in the Makefile
 %define cmsdev_logdir %(echo ${CMSDEV_LOGDIR})
@@ -44,10 +44,10 @@ Vendor: HPE
 # Using or statements in spec files requires RPM >= 4.13
 BuildRequires: rpm-build >= 4.13
 Requires: rpm >= 4.13
-BuildRequires: (python%{python_version_nodots}-base or python3-base >= %{py_version})
+BuildRequires: (python%{python_version_nodots}-base or (python3-base >= %{python_version} and python3-base < %{next_py_version}))
 BuildRequires: python-rpm-generators
 BuildRequires: python-rpm-macros
-Requires: (python%{python_version_nodots}-base or python3-base >= %{py_version})
+Requires: (python%{python_version_nodots}-base or (python3-base >= %{python_version} and python3-base < %{next_py_version}))
 
 %description
 Cray CMS tests and tools

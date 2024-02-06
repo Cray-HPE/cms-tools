@@ -25,11 +25,15 @@
 # cms-meta-tools repo to ./cms_meta_tools
 
 NAME ?= cray-cmstools-crayctldeploy
+SHELL=/bin/bash
 RPM_VERSION ?= $(shell head -1 .version)
 RPM_RELEASE ?= $(shell head -1 .rpm_release)
 BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
 BUILD_DIR ?= $(PWD)/dist/rpmbuild
 PYTHON_BIN := python$(PY_VERSION)
+PYTHON_MAJOR := $(shell echo ${PY_VERSION} | cut -d. -f1)
+PYTHON_MINOR := $(shell echo ${PY_VERSION} | cut -d. -f2)
+NEXT_PY_VERSION := $(PYTHON_MAJOR).$(shell expr $(PYTHON_MINOR) + 1)
 
 CMSDEV_SPEC_FILE ?= ${NAME}.spec
 CMSDEV_SOURCE_NAME ?= ${NAME}-${RPM_VERSION}
@@ -75,6 +79,7 @@ rpm_build_source:
 		CMSDEV_LOGDIR=$(CMSDEV_LOGDIR) \
 		CMSDEV_SOURCE_BASENAME=$(CMSDEV_SOURCE_BASENAME) \
 		PYTHON_BIN=$(PYTHON_BIN) \
+		NEXT_PY_VERSION=$(NEXT_PY_VERSION) \
 		BUILD_METADATA=$(BUILD_METADATA) \
 		rpmbuild -bs $(CMSDEV_SPEC_FILE) --target $(RPM_ARCH) --define "_topdir $(BUILD_DIR)"
 
@@ -83,5 +88,6 @@ rpm_build:
 		CMSDEV_LOGDIR=$(CMSDEV_LOGDIR) \
 		CMSDEV_SOURCE_BASENAME=$(CMSDEV_SOURCE_BASENAME) \
 		PYTHON_BIN=$(PYTHON_BIN) \
+		NEXT_PY_VERSION=$(NEXT_PY_VERSION) \
 		BUILD_METADATA=$(BUILD_METADATA) \
 		rpmbuild -ba $(CMSDEV_SPEC_FILE) --target $(RPM_ARCH) --define "_topdir $(BUILD_DIR)"
