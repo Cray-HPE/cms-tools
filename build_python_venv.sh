@@ -37,7 +37,7 @@ check_build
 
 source ./vars.sh
 
-TEMPDIR=$(mktemp)
+TEMPDIR=$(mktemp -d)
 
 # Copy the barebones test files over to TEMPDIR
 cp -pvr barebones_image_test \
