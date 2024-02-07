@@ -31,19 +31,7 @@ BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
 PY_VERSION ?= "3.10"
 PYTHON_BIN := python$(PY_VERSION)
 
-LOCAL_VENV_PYTHON_SUBDIR_NAME ?= $(shell source ./vars; echo ${LOCAL_VENV_PYTHON_SUBDIR_NAME})
-LOCAL_VENV_PYTHON_BASE_DIR ?= $(PWD)/$(LOCAL_VENV_PYTHON_SUBDIR_NAME)
-INSTALL_VENV_BASE_DIR ?= $(shell source ./vars; echo ${INSTALL_VENV_BASE_DIR})
-INSTALL_VENV_PYTHON_BASE_DIR ?= $(shell source ./vars; echo ${INSTALL_VENV_PYTHON_BASE_DIR})
-BBIT_VENV_NAME ?= $(shell source ./vars; echo ${BBIT_VENV_NAME})
-BBIT_VENV_PYTHON_BIN ?= $(INSTALL_VENV_PYTHON_BASE_DIR)/$(PY_VERSION)/$(BBIT_VENV_NAME)/bin/python$(PY_VERSION)
-
 RPM_BUILD_DIR ?= $(PWD)/dist/rpmbuild
-
-RPM_SPEC_FILE ?= $(shell source ./vars; echo ${RPM_SPEC_FILE})
-RPM_SOURCE_NAME ?= $(NAME)-$(RPM_VERSION)
-RPM_SOURCE_BASENAME := $(RPM_SOURCE_NAME).tar.bz2
-RPM_SOURCE_PATH := $(BUILD_DIR)/SOURCES/$(RPM_SOURCE_BASENAME)
 
 CMSDEV_LOGDIR := $(shell ./cmsdev_logdir.sh)
 BBIT_LOGDIR := $(shell ./barebones_image_test_logdir.sh)
@@ -73,9 +61,6 @@ prepare:
 
 rpm_package_source:
 		source ./vars && \
-		RPM_SOURCE_NAME=${NAME}-$(RPM_VERSION) && \
-		RPM_SOURCE_BASENAME=${RPM_SOURCE_NAME}.tar.bz2 && \
-		RPM_SOURCE_PATH=$(RPM_BUILD_DIR)/SOURCES/${RPM_SOURCE_BASENAME} && \
 		touch ${RPM_SOURCE_PATH} && \
 		tar --transform "flags=r;s,^,/${RPM_SOURCE_NAME}/," \
 			--exclude .git \
@@ -87,26 +72,18 @@ rpm_package_source:
 
 rpm_build_source:
 		source ./vars && \
-		RPM_SOURCE_NAME=${NAME}-$(RPM_VERSION) && \
 		BBIT_LOGDIR=$(BBIT_LOGDIR) \
 		CMSDEV_LOGDIR=$(CMSDEV_LOGDIR) \
-		RPM_SOURCE_BASENAME=${RPM_SOURCE_NAME}.tar.bz2 \
 		BUILD_METADATA=$(BUILD_METADATA) \
-		INSTALL_VENV_BASE_DIR=${INSTALL_VENV_BASE_DIR} \
-		INSTALL_VENV_PYTHON_BASE_DIR=${INSTALL_VENV_PYTHON_BASE_DIR} \
 		LOCAL_VENV_PYTHON_BASE_DIR=$(PWD)/${LOCAL_VENV_PYTHON_SUBDIR_NAME} \
 		RPM_NAME=${NAME} \
 		rpmbuild -bs ${RPM_SPEC_FILE} --target $(RPM_ARCH) --define "_topdir $(RPM_BUILD_DIR)"
 
 rpm_build:
 		source ./vars && \
-		RPM_SOURCE_NAME=${NAME}-$(RPM_VERSION) && \
 		BBIT_LOGDIR=$(BBIT_LOGDIR) \
 		CMSDEV_LOGDIR=$(CMSDEV_LOGDIR) \
-		RPM_SOURCE_BASENAME=${RPM_SOURCE_NAME}.tar.bz2 \
 		BUILD_METADATA=$(BUILD_METADATA) \
-		INSTALL_VENV_BASE_DIR=${INSTALL_VENV_BASE_DIR} \
-		INSTALL_VENV_PYTHON_BASE_DIR=${INSTALL_VENV_PYTHON_BASE_DIR} \
 		LOCAL_VENV_PYTHON_BASE_DIR=$(PWD)/${LOCAL_VENV_PYTHON_SUBDIR_NAME} \
 		RPM_NAME=${NAME} \
 		rpmbuild -ba ${RPM_SPEC_FILE} --target $(RPM_ARCH) --define "_topdir $(RPM_BUILD_DIR)"

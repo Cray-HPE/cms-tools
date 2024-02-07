@@ -27,13 +27,10 @@ set -euo pipefail
 
 source ./vars
 
-BBIT_INSTALL_VENV_DIR=${INSTALL_VENV_PYTHON_BASE_DIR}/${PY_VERSION}/${BBIT_VENV_NAME}
-BBIT_VENV_PYTHON_BIN=${BBIT_INSTALL_VENV_DIR}/bin/python${PY_VERSION}
-
 mkdir -pv "${BBIT_INSTALL_VENV_DIR}"
 
 # Create our virtualenv
-"$(PYTHON_BIN)" -m venv ${BBIT_INSTALL_VENV_DIR}
+"${PYTHON_BIN}" -m venv ${BBIT_INSTALL_VENV_DIR}
 
 # For the purposes of the build log, we list the installed Python packages before and after each pip call
 "${BBIT_VENV_PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check

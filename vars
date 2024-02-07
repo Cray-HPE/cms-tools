@@ -1,9 +1,20 @@
 # This file is the "source of truth" for the repo
 # The format is just <variable_name>=<variable_value>
 # It needs to work if sourced from a shell script
-NAME=cray-cmstools-crayctldeploy
-RPM_SPEC_FILE=${NAME}.spec
-LOCAL_VENV_PYTHON_SUBDIR_NAME=venv-python
-INSTALL_VENV_BASE_DIR=/usr/lib/cray-cmstools-crayctldeploy
-INSTALL_VENV_PYTHON_BASE_DIR=${INSTALL_VENV_BASE_DIR}/python
-BBIT_VENV_NAME=barebones_image_test-venv
+export NAME=cray-cmstools-crayctldeploy
+export RPM_SPEC_FILE=${NAME}.spec
+export LOCAL_VENV_PYTHON_SUBDIR_NAME=venv-python
+export INSTALL_VENV_BASE_DIR=/usr/lib/cray-cmstools-crayctldeploy
+export INSTALL_VENV_PYTHON_BASE_DIR=${INSTALL_VENV_BASE_DIR}/python
+export BBIT_VENV_NAME=barebones_image_test-venv
+if [[ -n ${PY_VERSION} ]]; then
+    export BBIT_INSTALL_VENV_DIR=${INSTALL_VENV_PYTHON_BASE_DIR}/${PY_VERSION}/${BBIT_VENV_NAME}
+    export BBIT_VENV_PYTHON_BIN=${BBIT_INSTALL_VENV_DIR}/bin/python${PY_VERSION}
+fi
+if [[ -n ${RPM_VERSION} ]]; then
+    export RPM_SOURCE_NAME=${NAME}-${RPM_VERSION}
+	export RPM_SOURCE_BASENAME=${RPM_SOURCE_NAME}.tar.bz2
+    if [[ -n ${RPM_BUILD_DIR} ]]; then
+        export RPM_SOURCE_PATH=${RPM_BUILD_DIR}/SOURCES/${RPM_SOURCE_BASENAME}
+    fi
+fi

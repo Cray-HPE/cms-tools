@@ -51,7 +51,7 @@ pipeline {
         IS_STABLE = getBuildIsStable()
         RPM_SPEC_FILE = sh(returnStdout: true, script: 'source ./vars ; echo $RPM_SPEC_FILE').trim()
         GO_VERSION = sh(returnStdout: true, script: 'grep -Eo "^go .*" cmsdev/go.mod | cut -d " " -f2').trim()
-        INSTALL_VENV_BASE_DIR = "/usr/lib/cray-cmstools-crayctldeploy"
+        INSTALL_VENV_BASE_DIR = sh(returnStdout: true, script: 'source ./vars ; echo $INSTALL_VENV_BASE_DIR').trim()
         INSTALL_VENV_PYTHON_BASE_DIR = sh(returnStdout: true, script: 'source ./vars ; echo $INSTALL_VENV_PYTHON_BASE_DIR').trim()
         LOCAL_VENV_PYTHON_SUBDIR_NAME = sh(returnStdout: true, script: 'source ./vars ; echo $LOCAL_VENV_PYTHON_SUBDIR_NAME').trim()
     }

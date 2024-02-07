@@ -27,5 +27,5 @@ set -euo pipefail
 
 source ./vars
 sed -i "s#@BB_BASE_DIR@#${INSTALL_VENV_PYTHON_BASE_DIR}#" run_barebones_image_test.sh
-mkdir -pv ${LOCAL_VENV_PYTHON_SUBDIR_NAME}
+mkdir -pv "${LOCAL_VENV_PYTHON_SUBDIR_NAME}"
 ./cms_meta_tools/scripts/runBuildPrep.sh
