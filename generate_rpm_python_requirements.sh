@@ -43,7 +43,7 @@ LAST_MAJOR=""
 FIRST_MINOR=""
 LAST_MINOR=""
 
-for PY_VER in $(ls "./${${LOCAL_VENV_PYTHON_SUBDIR_NAME}}" | sort -t. -n -k1,1 -k2,2); do
+for PY_VER in $(ls "./${LOCAL_VENV_PYTHON_SUBDIR_NAME}" | sort -t. -n -k1,1 -k2,2); do
     PY_VER_NODOTS=${PY_VER//.}
     add_requirement "python${PY_VER_NODOTS}-base"
     PY_VER_MAJOR=$(echo ${PY_VER} | cut -d. -f1)
