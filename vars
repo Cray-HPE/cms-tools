@@ -1,0 +1,9 @@
+# This file is the "source of truth" for the repo
+# The format is just <variable_name>=<variable_value>
+# It needs to work if sourced from a shell script
+NAME=cray-cmstools-crayctldeploy
+RPM_SPEC_FILE=${NAME}.spec
+LOCAL_VENV_PYTHON_SUBDIR_NAME=venv-python
+INSTALL_VENV_BASE_DIR=/usr/lib/cray-cmstools-crayctldeploy
+INSTALL_VENV_PYTHON_BASE_DIR=${INSTALL_VENV_BASE_DIR}/python
+BBIT_VENV_NAME=barebones_image_test-venv

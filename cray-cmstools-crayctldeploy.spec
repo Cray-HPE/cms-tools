@@ -23,26 +23,25 @@
 # The following environment variables are set in the Makefile
 %define bbit_logdir %(echo ${BBIT_LOGDIR})
 %define cmsdev_logdir %(echo ${CMSDEV_LOGDIR})
-%define python_rpms %(echo ${PYTHON_RPMS})
+%define install_venv_base_dir %(echo ${INSTALL_VENV_BASE_DIR})
+%define install_venv_python_base_dir %(echo ${INSTALL_VENV_PYTHON_BASE_DIR})
+%define local_venv_python_base_dir %(echo ${LOCAL_VENV_PYTHON_BASE_DIR})
 
-Name: cray-cmstools-crayctldeploy
+Name: %(echo ${RPM_NAME})
 License: MIT
 Summary: Cray CMS tests and tools
 Group: System/Management
 Version: @RPM_VERSION@
 Release: @RPM_RELEASE@
-Source: %(echo ${CMSDEV_SOURCE_BASENAME})
+Source: %(echo ${RPM_SOURCE_BASENAME})
 BuildArch: %(echo ${RPM_ARCH})
 Vendor: HPE
-BuildRequires: cpio
 # Using or statements in spec files requires RPM >= 4.13
 BuildRequires: rpm >= 4.13
 BuildRequires: rpm-build >= 4.13
 Requires: rpm >= 4.13
-
-
-
-Requires: (python%{python_version_nodots}-base or (python3-base >= %{python_version} and python3-base < %{next_py_version}))
+# The following requirements string is filled in by the Makefile
+Requires: @@PYTHON_REQUIREMENTS@@
 
 %description
 Cray CMS tests and tools
@@ -72,8 +71,14 @@ echo /usr/local/bin/cray-tftp-upload | tee -a INSTALLED_FILES
 install -m 700 cms-tftp/cray-upload-recovery-images %{buildroot}/usr/local/bin/cray-upload-recovery-images
 echo /usr/local/bin/cray-upload-recovery-images | tee -a INSTALLED_FILES
 
-# Extract the Python virtual environments
-./expand_python_rpms.sh "%{buildroot}" %{python_rpms}
+# Copy the Python virtual environments
+install -m 755 -d %{buildroot}%{install_venv_python_base_dir}
+echo %{install_venv_base_dir} | tee -a INSTALLED_FILES
+echo %{install_venv_python_base_dir} | tee -a INSTALLED_FILES
+pushd %{local_venv_python_base_dir}
+cp -prv * %{install_venv_python_base_dir}
+find . -print | sed 's#^[.]#%{install_venv_python_base_dir}#' | tee -a INSTALLED_FILES
+popd
 
 # Add script to launch the barebones test in /opt/cray/tests/integration/csm
 install -m 755 -d %{buildroot}/opt/cray/tests/integration/csm/

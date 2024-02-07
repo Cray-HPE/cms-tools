@@ -26,8 +26,12 @@
 @Library('cms-meta-tools') _
 @Library('csm-shared-library') __
 
+def sleImage = 'artifactory.algol60.net/csm-docker/stable/csm-docker-sle'
+def sleVersion = 'latest'
 def goImage = 'artifactory.algol60.net/csm-docker/stable/csm-docker-sle-go'
 def pyImage = 'artifactory.algol60.net/csm-docker/stable/csm-docker-sle-python'
+
+def RPM_ARCH = 'x86_64'
 
 pipeline {
     agent {
@@ -42,14 +46,14 @@ pipeline {
     }
 
     environment {
-        NAME = "cray-cmstools-crayctldeploy"
+        NAME = sh(returnStdout: true, script: 'source ./vars ; echo $NAME')
         DESCRIPTION = "Cray Management System - Tests"
         IS_STABLE = getBuildIsStable()
-        CMSDEV_SPEC_FILE = "cray-cmstools-crayctldeploy.spec"
-        BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
+        RPM_SPEC_FILE = sh(returnStdout: true, script: 'source ./vars ; echo $RPM_SPEC_FILE')
         GO_VERSION = sh(returnStdout: true, script: 'grep -Eo "^go .*" cmsdev/go.mod | cut -d " " -f2').trim()
-        LOCAL_VENV_DIR = "${env.WORKSPACE}/venv"
-        VENV_INSTALL_BASE_DIR = "/usr/lib/cray-cmstools-crayctldeploy"
+        INSTALL_VENV_BASE_DIR = "/usr/lib/cray-cmstools-crayctldeploy"
+        INSTALL_VENV_PYTHON_BASE_DIR = sh(returnStdout: true, script: 'source ./vars ; echo $INSTALL_VENV_PYTHON_BASE_DIR')
+        LOCAL_VENV_PYTHON_SUBDIR_NAME = sh(returnStdout: true, script: 'source ./vars ; echo $LOCAL_VENV_PYTHON_SUBDIR_NAME')
     }
 
     stages {
@@ -80,7 +84,7 @@ pipeline {
                 sh "make lint"
             }
         }
-/*
+
         stage("Build cmsdev") {
             agent {
                 docker {
@@ -93,12 +97,16 @@ pipeline {
                 sh "make build_cmsdev"
             }
         }
-*/
+
         // The RPM build metadata can be added outside of the matrix, because it is just based on the
         // Git commit being built
         stage("Prepare") {
+            environment {
+                BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
+            }
+
             steps {
-                runLibraryScript("addRpmMetaData.sh", env.CMSDEV_SPEC_FILE)
+                runLibraryScript("addRpmMetaData.sh", env.RPM_SPEC_FILE)
                 // Just using this as a means to generate the netrc file that we need
                 getDockerBuildArgs()
             }
@@ -118,14 +126,14 @@ pipeline {
 
                 agent {
                     docker {
-                        args "-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc -v ${env.LOCAL_VENV_DIR}:${env.VENV_INSTALL_BASE_DIR}/python"
+                        args "-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc -v ${env.WORKSPACE}/${env.LOCAL_VENV_PYTHON_SUBDIR_NAME}:${env.INSTALL_VENV_PYTHON_BASE_DIR}"
                         reuseNode true
                         image "${pyImage}:${PY_VERSION}"
                     }
                 }
 
                 environment {
-                    BBIT_VENV_INSTALL_DIR = "${env.VENV_INSTALL_BASE_DIR}/python/${PY_VERSION}/barebones_image_test-venv"
+                    BBIT_INSTALL_VENV_DIR = "${env.INSTALL_VENV_PYTHON_BASE_DIR}/${PY_VERSION}/barebones_image_test-venv"
                     PY_VERSION = "${PY_VERSION}"
                 }
 
@@ -138,83 +146,59 @@ pipeline {
                 }
             }
         }
-    /*
+
         stage('Build & Publish RPMs') {
 
-            matrix {
-                axes {
-                    axis {
-                        name 'RPM_ARCH'
-                        values 'x86_64'
-                    }
-                    axis {
-                        name 'PY_VERSION'
-                        // This list should be a superset of the Python versions listed in setup.py (or identical)
-                        // Currently Jenkins does not support dynamically reading in the values from the file to use
-                        // as matrix values.
-                        // These implicitly correspond to SLES versions, based on which SLES version is used for
-                        // $pyImage:$PY_VERSION
-                        values '3.10', '3.11'
-                    }
-                }
-
-                agent {
-                    docker {
-                        args '-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc'
-                        reuseNode true
-                        image "${pyImage}:${PY_VERSION}"
-                    }
-                }
-
-                environment {
-                    BUILD_DIR = "${env.WORKSPACE}/dist/rpmbuild/${RPM_ARCH}/${PY_VERSION}"
-                    RPM_ARCH = "${RPM_ARCH}"
-                    PY_VERSION = "${PY_VERSION}"
-                }
-
-                stages {
-
-                    stage('Prepare') {
-                        steps {
-                            sh "make prepare"
-                        }
-                    }
-
-                    stage('Build RPMs') {
-                        steps {
-                            sh "make rpm"
-                        }
-                    }
-
-                    stage('Publish Rpms') {
-                        steps {
-                            script {
-                                def sleVersion = sh(returnStdout: true, script: 'awk -F= \'/VERSION_ID/{gsub(/["]/,""); print \$NF}\' /etc/os-release').trim()
-                                def sles_version_parts = "${sleVersion}".tokenize('.')
-                                def sles_major = "${sles_version_parts[0]}"
-                                def sles_minor = "${sles_version_parts[1]}"
-                                publishCsmRpms(
-                                        arch: "${RPM_ARCH}",
-                                        isStable: env.IS_STABLE,
-                                        component: env.NAME,
-                                        os: "sle-${sles_major}sp${sles_minor}",
-                                        pattern: "dist/rpmbuild/${RPM_ARCH}/${PY_VERSION}/RPMS/${RPM_ARCH}/*.rpm",
-                                )
-                                publishCsmRpms(
-                                        arch: "src",
-                                        component: env.NAME,
-                                        isStable: env.IS_STABLE,
-                                        os: "sle-${sles_major}sp${sles_minor}",
-                                        pattern: "dist/rpmbuild/${RPM_ARCH}/${PY_VERSION}/SRPMS/*.rpm",
-                                )
-                            }
-                        }
-                    }
-
+            agent {
+                docker {
+                    args '-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc'
+                    reuseNode true
+                    image "${sleImage}:${sleVersion}"
                 }
             }
 
+            environment {
+                BUILD_DIR = "${env.WORKSPACE}/dist/rpmbuild"
+                BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
+                RPM_ARCH = "${RPM_ARCH}"
+            }
+
+            stages {
+
+                stage('Prepare') {
+                    steps {
+                        sh "make prepare"
+                    }
+                }
+
+                stage('Build RPMs') {
+                    steps {
+                        sh "make rpm"
+                    }
+                }
+
+                stage('Publish Rpms') {
+                    steps {
+                        script {
+                            publishCsmRpms(
+                                arch: "${RPM_ARCH}",
+                                component: env.NAME,
+                                isStable: env.IS_STABLE,
+                                os: "noos",
+                                pattern: "dist/rpmbuild/*.rpm",
+                            )
+                            publishCsmRpms(
+                                arch: "src",
+                                component: env.NAME,
+                                isStable: env.IS_STABLE,
+                                os: "noos",
+                                pattern: "dist/rpmbuild/SRPMS/*.rpm",
+                            )
+                        }
+                    }
+                }
+
+            }
         }
-    */
     }
 }
