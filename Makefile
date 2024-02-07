@@ -56,11 +56,11 @@ build_python_venv:
 prepare:
 		rm -rf $(RPM_BUILD_DIR)
 		mkdir -p $(RPM_BUILD_DIR)/SPECS $(RPM_BUILD_DIR)/SOURCES
-		source ./vars && sed -i 's#@PYTHON_REQUIREMENTS@#$(shell ./generate_rpm_python_requirements.sh)#' ${RPM_SPEC_FILE}
-		source ./vars && cp ${RPM_SPEC_FILE} $(RPM_BUILD_DIR)/SPECS/
+		source ./vars.sh && sed -i 's#@PYTHON_REQUIREMENTS@#$(shell ./generate_rpm_python_requirements.sh)#' ${RPM_SPEC_FILE}
+		source ./vars.sh && cp ${RPM_SPEC_FILE} $(RPM_BUILD_DIR)/SPECS/
 
 rpm_package_source:
-		source ./vars && \
+		source ./vars.sh && \
 		touch ${RPM_SOURCE_PATH} && \
 		tar --transform "flags=r;s,^,/${RPM_SOURCE_NAME}/," \
 			--exclude .git \
@@ -71,7 +71,7 @@ rpm_package_source:
 			-cvjf ${RPM_SOURCE_PATH} .
 
 rpm_build_source:
-		source ./vars && \
+		source ./vars.sh && \
 		BBIT_LOGDIR=$(BBIT_LOGDIR) \
 		CMSDEV_LOGDIR=$(CMSDEV_LOGDIR) \
 		BUILD_METADATA=$(BUILD_METADATA) \
@@ -80,7 +80,7 @@ rpm_build_source:
 		rpmbuild -bs ${RPM_SPEC_FILE} --target $(RPM_ARCH) --define "_topdir $(RPM_BUILD_DIR)"
 
 rpm_build:
-		source ./vars && \
+		source ./vars.sh && \
 		BBIT_LOGDIR=$(BBIT_LOGDIR) \
 		CMSDEV_LOGDIR=$(CMSDEV_LOGDIR) \
 		BUILD_METADATA=$(BUILD_METADATA) \

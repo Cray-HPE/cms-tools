@@ -25,7 +25,7 @@
 
 set -euo pipefail
 
-source ./vars
+source ./vars.sh
 
 mkdir -pv "${BBIT_INSTALL_VENV_DIR}"
 

@@ -7,14 +7,14 @@ export LOCAL_VENV_PYTHON_SUBDIR_NAME=venv-python
 export INSTALL_VENV_BASE_DIR=/usr/lib/cray-cmstools-crayctldeploy
 export INSTALL_VENV_PYTHON_BASE_DIR=${INSTALL_VENV_BASE_DIR}/python
 export BBIT_VENV_NAME=barebones_image_test-venv
-if [[ -n ${PY_VERSION} ]]; then
+if [[ -v PY_VERSION && -n ${PY_VERSION} ]]; then
     export BBIT_INSTALL_VENV_DIR=${INSTALL_VENV_PYTHON_BASE_DIR}/${PY_VERSION}/${BBIT_VENV_NAME}
     export BBIT_VENV_PYTHON_BIN=${BBIT_INSTALL_VENV_DIR}/bin/python${PY_VERSION}
 fi
-if [[ -n ${RPM_VERSION} ]]; then
+if [[ -v RPM_VERSION && -n ${RPM_VERSION} ]]; then
     export RPM_SOURCE_NAME=${NAME}-${RPM_VERSION}
 	export RPM_SOURCE_BASENAME=${RPM_SOURCE_NAME}.tar.bz2
-    if [[ -n ${RPM_BUILD_DIR} ]]; then
+    if [[ -v RPM_BUILD_DIR && -n ${RPM_BUILD_DIR} ]]; then
         export RPM_SOURCE_PATH=${RPM_BUILD_DIR}/SOURCES/${RPM_SOURCE_BASENAME}
     fi
 fi
