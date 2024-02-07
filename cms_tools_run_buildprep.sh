@@ -27,5 +27,13 @@ set -euo pipefail
 
 source ./vars.sh
 sed -i "s#@BB_BASE_DIR@#${INSTALL_VENV_PYTHON_BASE_DIR}#" run_barebones_image_test.sh
+[[ -n ${LOCAL_VENV_PYTHON_SUBDIR_NAME} ]]
+if [[ -d ./${LOCAL_VENV_PYTHON_SUBDIR_NAME} ]]; then
+    rm -rvf "./${LOCAL_VENV_PYTHON_SUBDIR_NAME}"
+fi
+[[ ! -e ${LOCAL_VENV_PYTHON_SUBDIR_NAME} ]]
 mkdir -pv "${LOCAL_VENV_PYTHON_SUBDIR_NAME}"
 ./cms_meta_tools/scripts/runBuildPrep.sh
+
+# If the `build` directory exists, delete it
+[[ -d ./build ]] && rm -rvf ./build
