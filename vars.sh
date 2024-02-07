@@ -39,10 +39,14 @@ if [[ -v PY_VERSION && -n ${PY_VERSION} ]]; then
     export PYTHON_BIN=python${PY_VERSION}
     export BBIT_VENV_PYTHON_BIN=${BBIT_INSTALL_VENV_BIN_DIR}/python${PYTHON_BIN}
 fi
-export RPM_VERSION=$(head -1 .version)
-export RPM_RELEASE=$(head -1 .rpm_release)
-export RPM_SOURCE_NAME=${NAME}-${RPM_VERSION}
-export RPM_SOURCE_BASENAME=${RPM_SOURCE_NAME}.tar.bz2
-if [[ -v RPM_BUILD_DIR && -n ${RPM_BUILD_DIR} ]]; then
-    export RPM_SOURCE_PATH=${RPM_BUILD_DIR}/SOURCES/${RPM_SOURCE_BASENAME}
+if [[ -f .version && -s .version ]]; then
+    export RPM_VERSION=$(head -1 .version)
+    export RPM_SOURCE_NAME=${NAME}-${RPM_VERSION}
+    export RPM_SOURCE_BASENAME=${RPM_SOURCE_NAME}.tar.bz2
+    if [[ -v RPM_BUILD_DIR && -n ${RPM_BUILD_DIR} ]]; then
+        export RPM_SOURCE_PATH=${RPM_BUILD_DIR}/SOURCES/${RPM_SOURCE_BASENAME}
+    fi
+fi
+if [[ -f .rpm_release && -s .rpm_release ]]; then
+    export RPM_RELEASE=$(head -1 .rpm_release)
 fi
