@@ -41,7 +41,7 @@ BuildRequires: rpm >= 4.13
 BuildRequires: rpm-build >= 4.13
 Requires: rpm >= 4.13
 # The following requirements string is filled in by the Makefile
-Requires: @@PYTHON_REQUIREMENTS@@
+Requires: @PYTHON_REQUIREMENTS@
 
 %description
 Cray CMS tests and tools

@@ -24,7 +24,6 @@
 # If you wish to perform a local build, you will need to clone or copy the contents of the
 # cms-meta-tools repo to ./cms_meta_tools
 
-NAME ?= $(shell source ./vars; echo ${NAME})
 SHELL=/bin/bash
 RPM_VERSION ?= $(shell head -1 .version)
 RPM_RELEASE ?= $(shell head -1 .rpm_release)
@@ -36,11 +35,11 @@ LOCAL_VENV_PYTHON_SUBDIR_NAME ?= $(shell source ./vars; echo ${LOCAL_VENV_PYTHON
 LOCAL_VENV_PYTHON_BASE_DIR ?= $(PWD)/$(LOCAL_VENV_PYTHON_SUBDIR_NAME)
 INSTALL_VENV_BASE_DIR ?= $(shell source ./vars; echo ${INSTALL_VENV_BASE_DIR})
 INSTALL_VENV_PYTHON_BASE_DIR ?= $(shell source ./vars; echo ${INSTALL_VENV_PYTHON_BASE_DIR})
-
 BBIT_VENV_NAME ?= $(shell source ./vars; echo ${BBIT_VENV_NAME})
 BBIT_VENV_PYTHON_BIN ?= $(INSTALL_VENV_PYTHON_BASE_DIR)/$(PY_VERSION)/$(BBIT_VENV_NAME)/bin/python$(PY_VERSION)
 
 RPM_BUILD_DIR ?= $(PWD)/dist/rpmbuild
+
 RPM_SPEC_FILE ?= $(shell source ./vars; echo ${RPM_SPEC_FILE})
 RPM_SOURCE_NAME ?= $(NAME)-$(RPM_VERSION)
 RPM_SOURCE_BASENAME := $(RPM_SOURCE_NAME).tar.bz2
@@ -52,9 +51,7 @@ BBIT_LOGDIR := $(shell ./barebones_image_test_logdir.sh)
 rpm: rpm_package_source rpm_build_source rpm_build
 
 runbuildprep:
-		sed -i 's#@BB_BASE_DIR@#$(INSTALL_VENV_PYTHON_BASE_DIR)#' run_barebones_image_test.sh
-		mkdir -pv $(LOCAL_VENV_PYTHON_BASE_DIR)
-		./cms_meta_tools/scripts/runBuildPrep.sh
+		./cms_tools_run_buildprep.sh
 
 lint:
 		./cms_meta_tools/scripts/runLint.sh
@@ -66,58 +63,50 @@ build_cmsdev:
 		cd cmsdev && CGO_ENABLED=0 GO111MODULE=on GOARCH=amd64 GOOS=linux go build -o ./bin/cmsdev -mod vendor .
 
 build_python_venv:
-		mkdir -pv $(BBIT_INSTALL_VENV_DIR)
-		# Create our virtualenv
-		$(PYTHON_BIN) -m venv $(BBIT_INSTALL_VENV_DIR)
-		# For the purposes of the build log, we list the installed Python packages before and after each pip call
-		$(BBIT_VENV_PYTHON_BIN) -m pip list --format freeze --disable-pip-version-check
-		# Upgrade install/build tools
-		$(BBIT_VENV_PYTHON_BIN) -m pip install pip setuptools wheel -c barebones_image_test-constraints.txt --disable-pip-version-check --no-cache
-		$(BBIT_VENV_PYTHON_BIN) -m pip list --format freeze --disable-pip-version-check
-		# Install test preqrequisites
-		$(BBIT_VENV_PYTHON_BIN) -m pip install -r barebones_image_test-requirements.txt --disable-pip-version-check --no-cache
-		$(BBIT_VENV_PYTHON_BIN) -m pip list --format freeze --disable-pip-version-check
-		# Install the test itself
-		$(BBIT_VENV_PYTHON_BIN) -m pip install . -c barebones_image_test-constraints.txt --disable-pip-version-check --no-cache
-		$(BBIT_VENV_PYTHON_BIN) -m pip list --format freeze --disable-pip-version-check
-		# Remove build tools to decrease the virtualenv size.
-		$(BBIT_VENV_PYTHON_BIN) -m pip uninstall -y pip setuptools wheel
-		# Cannot list packages a final time, since we uninstalled pip
+		./build_python_venv.sh
 
 prepare:
 		rm -rf $(RPM_BUILD_DIR)
 		mkdir -p $(RPM_BUILD_DIR)/SPECS $(RPM_BUILD_DIR)/SOURCES
-		sed -i 's#@@PYTHON_REQUIREMENTS@@#$(shell ./generate_rpm_python_requirements.sh)#' $(RPM_SPEC_FILE)
-		cp $(RPM_SPEC_FILE) $(RPM_BUILD_DIR)/SPECS/
+		source ./vars && sed -i 's#@PYTHON_REQUIREMENTS@#$(shell ./generate_rpm_python_requirements.sh)#' ${RPM_SPEC_FILE}
+		source ./vars && cp ${RPM_SPEC_FILE} $(RPM_BUILD_DIR)/SPECS/
 
 rpm_package_source:
-		touch $(RPM_SOURCE_PATH)
-		tar --transform 'flags=r;s,^,/$(RPM_SOURCE_NAME)/,' \
+		source ./vars && \
+		RPM_SOURCE_NAME=${NAME}-$(RPM_VERSION) && \
+		RPM_SOURCE_BASENAME=${RPM_SOURCE_NAME}.tar.bz2 && \
+		RPM_SOURCE_PATH=$(RPM_BUILD_DIR)/SOURCES/${RPM_SOURCE_BASENAME} && \
+		touch ${RPM_SOURCE_PATH} && \
+		tar --transform "flags=r;s,^,/${RPM_SOURCE_NAME}/," \
 			--exclude .git \
 			--exclude ./cms_meta_tools \
 			--exclude ./cmsdev/vendor \
 			--exclude ./dist \
-			--exclude $(RPM_SOURCE_BASENAME) \
-			-cvjf $(RPM_SOURCE_PATH) .
+			--exclude ${RPM_SOURCE_BASENAME} \
+			-cvjf ${RPM_SOURCE_PATH} .
 
 rpm_build_source:
+		source ./vars && \
+		RPM_SOURCE_NAME=${NAME}-$(RPM_VERSION) && \
 		BBIT_LOGDIR=$(BBIT_LOGDIR) \
 		CMSDEV_LOGDIR=$(CMSDEV_LOGDIR) \
-		RPM_SOURCE_BASENAME=$(RPM_SOURCE_BASENAME) \
+		RPM_SOURCE_BASENAME=${RPM_SOURCE_NAME}.tar.bz2 \
 		BUILD_METADATA=$(BUILD_METADATA) \
-		INSTALL_VENV_BASE_DIR=$(INSTALL_VENV_BASE_DIR) \
-		INSTALL_VENV_PYTHON_BASE_DIR=$(INSTALL_VENV_PYTHON_BASE_DIR) \
-		LOCAL_VENV_PYTHON_BASE_DIR=$(LOCAL_VENV_PYTHON_BASE_DIR) \
-		RPM_NAME=$(NAME) \
-		rpmbuild -bs $(RPM_SPEC_FILE) --target $(RPM_ARCH) --define "_topdir $(RPM_BUILD_DIR)"
+		INSTALL_VENV_BASE_DIR=${INSTALL_VENV_BASE_DIR} \
+		INSTALL_VENV_PYTHON_BASE_DIR=${INSTALL_VENV_PYTHON_BASE_DIR} \
+		LOCAL_VENV_PYTHON_BASE_DIR=$(PWD)/${LOCAL_VENV_PYTHON_SUBDIR_NAME} \
+		RPM_NAME=${NAME} \
+		rpmbuild -bs ${RPM_SPEC_FILE} --target $(RPM_ARCH) --define "_topdir $(RPM_BUILD_DIR)"
 
 rpm_build:
+		source ./vars && \
+		RPM_SOURCE_NAME=${NAME}-$(RPM_VERSION) && \
 		BBIT_LOGDIR=$(BBIT_LOGDIR) \
 		CMSDEV_LOGDIR=$(CMSDEV_LOGDIR) \
-		RPM_SOURCE_BASENAME=$(RPM_SOURCE_BASENAME) \
+		RPM_SOURCE_BASENAME=${RPM_SOURCE_NAME}.tar.bz2 \
 		BUILD_METADATA=$(BUILD_METADATA) \
-		INSTALL_VENV_BASE_DIR=$(INSTALL_VENV_BASE_DIR) \
-		INSTALL_VENV_PYTHON_BASE_DIR=$(INSTALL_VENV_PYTHON_BASE_DIR) \
-		LOCAL_VENV_PYTHON_BASE_DIR=$(LOCAL_VENV_PYTHON_BASE_DIR) \
-		RPM_NAME=$(NAME) \
-		rpmbuild -ba $(RPM_SPEC_FILE) --target $(RPM_ARCH) --define "_topdir $(RPM_BUILD_DIR)"
+		INSTALL_VENV_BASE_DIR=${INSTALL_VENV_BASE_DIR} \
+		INSTALL_VENV_PYTHON_BASE_DIR=${INSTALL_VENV_PYTHON_BASE_DIR} \
+		LOCAL_VENV_PYTHON_BASE_DIR=$(PWD)/${LOCAL_VENV_PYTHON_SUBDIR_NAME} \
+		RPM_NAME=${NAME} \
+		rpmbuild -ba ${RPM_SPEC_FILE} --target $(RPM_ARCH) --define "_topdir $(RPM_BUILD_DIR)"
