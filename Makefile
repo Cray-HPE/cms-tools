@@ -39,7 +39,6 @@ INSTALL_VENV_PYTHON_BASE_DIR ?= $(shell source ./vars; echo ${INSTALL_VENV_PYTHO
 
 BBIT_VENV_NAME ?= $(shell source ./vars; echo ${BBIT_VENV_NAME})
 BBIT_VENV_PYTHON_BIN ?= $(INSTALL_VENV_PYTHON_BASE_DIR)/$(PY_VERSION)/$(BBIT_VENV_NAME)/bin/python$(PY_VERSION)
-BBIT_PYTHON_RPM_REQUIREMENTS := $(shell ./generate_rpm_python_requirements.sh)
 
 RPM_BUILD_DIR ?= $(PWD)/dist/rpmbuild
 RPM_SPEC_FILE ?= $(shell source ./vars; echo ${RPM_SPEC_FILE})
@@ -88,7 +87,7 @@ build_python_venv:
 prepare:
 		rm -rf $(RPM_BUILD_DIR)
 		mkdir -p $(RPM_BUILD_DIR)/SPECS $(RPM_BUILD_DIR)/SOURCES
-		sed -i 's#@@PYTHON_REQUIREMENTS@@#$(BBIT_PYTHON_RPM_REQUIREMENTS)#' $(RPM_SPEC_FILE)
+		sed -i 's#@@PYTHON_REQUIREMENTS@@#$(shell ./generate_rpm_python_requirements.sh)#' $(RPM_SPEC_FILE)
 		cp $(RPM_SPEC_FILE) $(RPM_BUILD_DIR)/SPECS/
 
 rpm_package_source:
