@@ -23,7 +23,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-set -euo pipefail
+set -exuo pipefail
 
 source ./vars.sh
 sed -i "s#@BB_BASE_DIR@#${INSTALL_VENV_PYTHON_BASE_DIR}#" run_barebones_image_test.sh
@@ -36,4 +36,7 @@ mkdir -pv "${LOCAL_VENV_PYTHON_SUBDIR_NAME}"
 ./cms_meta_tools/scripts/runBuildPrep.sh
 
 # If the `build` directory exists, delete it
-[[ -d ./build ]] && rm -rvf ./build
+if [[ -e ./build ]]; then
+    [[ -d ./build ]]
+    rm -rvf ./build
+fi
