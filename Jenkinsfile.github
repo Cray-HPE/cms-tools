@@ -51,9 +51,6 @@ pipeline {
         IS_STABLE = getBuildIsStable()
         RPM_SPEC_FILE = sh(returnStdout: true, script: 'source ./vars.sh ; echo $RPM_SPEC_FILE').trim()
         GO_VERSION = sh(returnStdout: true, script: 'grep -Eo "^go .*" cmsdev/go.mod | cut -d " " -f2').trim()
-        INSTALL_VENV_BASE_DIR = sh(returnStdout: true, script: 'source ./vars.sh ; echo $INSTALL_VENV_BASE_DIR').trim()
-        INSTALL_VENV_PYTHON_BASE_DIR = sh(returnStdout: true, script: 'source ./vars.sh ; echo $INSTALL_VENV_PYTHON_BASE_DIR').trim()
-        LOCAL_VENV_PYTHON_SUBDIR_NAME = sh(returnStdout: true, script: 'source ./vars.sh ; echo $LOCAL_VENV_PYTHON_SUBDIR_NAME').trim()
     }
 
     stages {
@@ -115,10 +112,6 @@ pipeline {
                 }
 
                 stage('Build Python 3.10 venv') {
-                    environment {
-                        PY_VERSION = "3.10"
-                    }
-
                     agent {
                         docker {
                             args "-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc -v ${env.WORKSPACE}/${env.LOCAL_VENV_PYTHON_SUBDIR_NAME}:${env.INSTALL_VENV_PYTHON_BASE_DIR}"
@@ -126,22 +119,24 @@ pipeline {
                             image "${pyImage}:3.10"
                         }
                     }
+                    environment {
+                        PY_VERSION = "3.10"
+                    }
                     steps {
                         sh "make build_python_venv"
                     }
                 }
 
                 stage('Build Python 3.11 venv') {
-                    environment {
-                        PY_VERSION = "3.11"
-                    }
-
                     agent {
                         docker {
                             args "-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc -v ${env.WORKSPACE}/${env.LOCAL_VENV_PYTHON_SUBDIR_NAME}:${env.INSTALL_VENV_PYTHON_BASE_DIR}"
                             reuseNode true
                             image "${pyImage}:3.11"
                         }
+                    }
+                    environment {
+                        PY_VERSION = "3.11"
                     }
                     steps {
                         sh "make build_python_venv"
