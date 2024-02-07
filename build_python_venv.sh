@@ -70,12 +70,16 @@ check_build
 "${PYTHON_BIN}" -m pip install -r barebones_image_test-requirements.txt --disable-pip-version-check --no-cache
 "${PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
 
+check_build
+
 # Install the test itself
 "${PYTHON_BIN}" -m pip install . -c barebones_image_test-constraints.txt --disable-pip-version-check --no-cache
 "${PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
 
+check_build
+
 # Remove build tools to decrease the virtualenv size.
-"${PYTHON_BIN}" -m pip uninstall -y pip setuptools wheel
+"${PYTHON_BIN}" -m pip uninstall -y pip setuptools wheel --no-cache
 # Cannot list packages a final time, since we uninstalled pip
 
 check_build
