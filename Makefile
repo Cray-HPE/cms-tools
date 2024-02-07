@@ -29,16 +29,28 @@ SHELL=/bin/bash
 RPM_VERSION ?= $(shell head -1 .version)
 RPM_RELEASE ?= $(shell head -1 .rpm_release)
 BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
-BUILD_DIR ?= $(PWD)/dist/rpmbuild
+PY_VERSION ?= "3.10"
 PYTHON_BIN := python$(PY_VERSION)
+
+LOCAL_VENV_DIR ?= $(PWD)/venv
+
+BBIT_BASE_INSTALL_DIR ?= /usr/lib/$(NAME)
+BBIT_VENV_INSTALL_DIR ?= /usr/lib/$(NAME)/python/$(PY_VERSION)/barebones_image_test-venv
+BBIT_VENV_PYTHON_BIN ?= $(BBIT_VENV_INSTALL_DIR)/bin/python$(PY_VERSION)
+
+BUILD_DIR ?= $(PWD)/dist/rpmbuild
+
+PYVER_NODOTS := $(shell echo ${PY_VERSION//.})
 PYTHON_MAJOR := $(shell echo ${PY_VERSION} | cut -d. -f1)
 PYTHON_MINOR := $(shell echo ${PY_VERSION} | cut -d. -f2)
 NEXT_PY_VERSION := $(PYTHON_MAJOR).$(shell expr $(PYTHON_MINOR) + 1)
 
-CMSDEV_SPEC_FILE ?= ${NAME}.spec
-CMSDEV_SOURCE_NAME ?= ${NAME}-${RPM_VERSION}
-CMSDEV_SOURCE_BASENAME := ${CMSDEV_SOURCE_NAME}.tar.bz2
-CMSDEV_SOURCE_PATH := ${BUILD_DIR}/SOURCES/${CMSDEV_SOURCE_BASENAME}
+
+BBIT_NAME := $(NAME)-python$(PYVER_NODOTS)
+BBIT_SPEC_FILE ?= $(BBIT_NAME).spec
+BBIT_SOURCE_NAME ?= $(BBIT_NAME)-$(RPM_VERSION)
+BBIT_SOURCE_BASENAME := $(BBIT_SOURCE_NAME).tar.bz2
+BBIT_SOURCE_PATH := $(BUILD_DIR)/SOURCES/$(BBIT_SOURCE_BASENAME)
 
 CMSDEV_LOGDIR := $(shell ./cmsdev_logdir.sh)
 BBIT_LOGDIR := $(shell ./barebones_image_test_logdir.sh)
@@ -48,7 +60,9 @@ all : runbuildprep lint build_cmsdev prepare rpm
 rpm: rpm_package_source rpm_build_source rpm_build
 
 runbuildprep:
-		./cms_meta_tools/scripts/runBuildPrep.sh        
+		sed -i 's#@BB_BASE_DIR@#$(BASE_INSTALL_DIR)#' run_basebones_image_test.sh
+		mkdir -pv $(LOCAL_VENV_DIR)
+		./cms_meta_tools/scripts/runBuildPrep.sh
 
 lint:
 		./cms_meta_tools/scripts/runLint.sh
@@ -58,6 +72,25 @@ build_cmsdev:
 		go version
 		mkdir -p cmsdev/bin
 		cd cmsdev && CGO_ENABLED=0 GO111MODULE=on GOARCH=amd64 GOOS=linux go build -o ./bin/cmsdev -mod vendor .
+
+build_python_venv:
+		mkdir -pv $(BBIT_VENV_INSTALL_DIR)
+		# Create our virtualenv
+		$(PYTHON_BIN) -m venv $(BBIT_VENV_INSTALL_DIR)
+		# For the purposes of the build log, we list the installed Python packages before and after each pip call
+		$(BBIT_VENV_PYTHON_BIN) -m pip list --format freeze --disable-pip-version-check
+		# Upgrade install/build tools
+		$(BBIT_VENV_PYTHON_BIN) -m pip install pip setuptools wheel -c barebones_image_test-constraints.txt --disable-pip-version-check --no-cache
+		$(BBIT_VENV_PYTHON_BIN) -m pip list --format freeze --disable-pip-version-check
+		# Install test preqrequisites
+		$(BBIT_VENV_PYTHON_BIN) -m pip install -r barebones_image_test-requirements.txt --disable-pip-version-check --no-cache
+		$(BBIT_VENV_PYTHON_BIN) -m pip list --format freeze --disable-pip-version-check
+		# Install the test itself
+		$(BBIT_VENV_PYTHON_BIN) -m pip install . -c barebones_image_test-constraints.txt --disable-pip-version-check --no-cache
+		$(BBIT_VENV_PYTHON_BIN) -m pip list --format freeze --disable-pip-version-check
+		# Remove build tools to decrease the virtualenv size.
+		$(BBIT_VENV_PYTHON_BIN) -m pip uninstall -y pip setuptools wheel
+		# Cannot list packages a final time, since we uninstalled pip
 
 prepare:
 		rm -rf $(BUILD_DIR)
@@ -81,6 +114,7 @@ rpm_build_source:
 		PYTHON_BIN=$(PYTHON_BIN) \
 		NEXT_PY_VERSION=$(NEXT_PY_VERSION) \
 		BUILD_METADATA=$(BUILD_METADATA) \
+		BASE_INSTALL_DIR=$(BBIT_BASE_INSTALL_DIR) \
 		rpmbuild -bs $(CMSDEV_SPEC_FILE) --target $(RPM_ARCH) --define "_topdir $(BUILD_DIR)"
 
 rpm_build:
@@ -90,4 +124,5 @@ rpm_build:
 		PYTHON_BIN=$(PYTHON_BIN) \
 		NEXT_PY_VERSION=$(NEXT_PY_VERSION) \
 		BUILD_METADATA=$(BUILD_METADATA) \
+		BASE_INSTALL_DIR=$(BBIT_BASE_INSTALL_DIR) \
 		rpmbuild -ba $(CMSDEV_SPEC_FILE) --target $(RPM_ARCH) --define "_topdir $(BUILD_DIR)"

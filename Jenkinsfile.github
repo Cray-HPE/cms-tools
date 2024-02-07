@@ -48,6 +48,8 @@ pipeline {
         CMSDEV_SPEC_FILE = "cray-cmstools-crayctldeploy.spec"
         BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
         GO_VERSION = sh(returnStdout: true, script: 'grep -Eo "^go .*" cmsdev/go.mod | cut -d " " -f2').trim()
+        LOCAL_VENV_DIR = "${env.WORKSPACE}/venv"
+        VENV_INSTALL_BASE_DIR = "/usr/lib/cray-cmstools-crayctldeploy"
     }
 
     stages {
@@ -78,7 +80,7 @@ pipeline {
                 sh "make lint"
             }
         }
-
+/*
         stage("Build cmsdev") {
             agent {
                 docker {
@@ -91,7 +93,7 @@ pipeline {
                 sh "make build_cmsdev"
             }
         }
-
+*/
         // The RPM build metadata can be added outside of the matrix, because it is just based on the
         // Git commit being built
         stage("Prepare") {
@@ -102,6 +104,39 @@ pipeline {
             }
         }
 
+        stage('Build Python Venvs') {
+            matrix {
+                axes {
+                    axis {
+                        name 'PY_VERSION'
+                        // This list should be a superset of the Python versions listed in setup.py (or identical)
+                        // Currently Jenkins does not support dynamically reading in the values from the file to use
+                        // as matrix values.
+                        values '3.10', '3.11'
+                    }
+                }
+
+                agent {
+                    docker {
+                        args '-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc -v ${env.LOCAL_VENV_DIR}:${env.VENV_INSTALL_BASE_DIR}/python'
+                        reuseNode true
+                        image "${pyImage}:${PY_VERSION}"
+                    }
+                }
+
+                environment {
+                    BBIT_VENV_INSTALL_DIR = "${env.VENV_INSTALL_BASE_DIR}/python/${PY_VERSION}/barebones_image_test-venv"
+                    PY_VERSION = "${PY_VERSION}"
+                }
+
+                stage('Build Python Venv') {
+                    steps {
+                        sh "make build_python_venv"
+                    }
+                }
+            }
+        }
+    /*
         stage('Build & Publish RPMs') {
 
             matrix {
@@ -178,6 +213,6 @@ pipeline {
             }
 
         }
-
+    */
     }
 }
