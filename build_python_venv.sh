@@ -24,8 +24,8 @@
 #
 
 function check_build {
-    if [[ -d build ]]; then
-        find build -type d -print
+    if [[ -d ./build ]]; then
+        find ./build -type d -print
     else
         echo "no build"
     fi
@@ -77,3 +77,5 @@ check_build
 # Remove build tools to decrease the virtualenv size.
 "${PYTHON_BIN}" -m pip uninstall -y pip setuptools wheel
 # Cannot list packages a final time, since we uninstalled pip
+
+check_build

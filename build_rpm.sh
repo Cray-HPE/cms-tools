@@ -25,10 +25,24 @@
 
 set -exuo pipefail
 
+function check_build {
+    if [[ -d ./build ]]; then
+        find ./build -type d -print
+    else
+        echo "no build"
+    fi
+}
+
 source ./vars.sh
 
+check_build
+
 # Prepare to build RPMs
-rm -rvf "${RPM_BUILD_DIR}"
+[[ -n ${RPM_BUILD_DIR} ]]
+if [[ -d ${RPM_BUILD_DIR} ]]; then
+    rm -rvf "${RPM_BUILD_DIR}"
+fi
+[[ ! -e ${RPM_BUILD_DIR} ]]
 mkdir -pv "${RPM_BUILD_DIR}/SPECS" "${RPM_BUILD_DIR}/SOURCES"
 
 PYTHON_RPM_REQS=$(./generate_rpm_python_requirements.sh)
@@ -36,6 +50,8 @@ echo "${PYTHON_RPM_REQS}"
 
 sed -i "s#@PYTHON_REQUIREMENTS@#${PYTHON_RPM_REQS}#" "${RPM_SPEC_FILE}"
 cp -v "${RPM_SPEC_FILE}" "${RPM_BUILD_DIR}/SPECS/"
+
+check_build
 
 # Package source
 touch "${RPM_SOURCE_PATH}"
