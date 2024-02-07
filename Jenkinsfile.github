@@ -167,12 +167,6 @@ pipeline {
 
             stages {
 
-                stage('Prepare') {
-                    steps {
-                        sh "make prepare"
-                    }
-                }
-
                 stage('Build RPMs') {
                     steps {
                         sh "make rpm"

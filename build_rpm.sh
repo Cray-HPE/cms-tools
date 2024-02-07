@@ -1,7 +1,8 @@
+#!/usr/bin/bash
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,37 +22,33 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# If you wish to perform a local build, you will need to clone or copy the contents of the
-# cms-meta-tools repo to ./cms_meta_tools
 
-SHELL=/bin/bash
-BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
-PY_VERSION ?= "3.10"
+set -exuo pipefail
 
-RPM_BUILD_DIR ?= $(PWD)/dist/rpmbuild
+source ./vars.sh
 
-CMSDEV_LOGDIR := $(shell ./cmsdev_logdir.sh)
-BBIT_LOGDIR := $(shell ./barebones_image_test_logdir.sh)
+# Prepare to build RPMs
+rm -rvf "${RPM_BUILD_DIR}"
+mkdir -pv "${RPM_BUILD_DIR}/SPECS" "${RPM_BUILD_DIR}/SOURCES"
 
-runbuildprep:
-		PY_VERSION=$(PY_VERSION) ./cms_tools_run_buildprep.sh
+PYTHON_RPM_REQS=$(./generate_rpm_python_requirements.sh)
+echo "${PYTHON_RPM_REQS}"
 
-lint:
-		./cms_meta_tools/scripts/runLint.sh
+sed -i "s#@PYTHON_REQUIREMENTS@#${PYTHON_RPM_REQS}#" "${RPM_SPEC_FILE}"
+cp -v "${RPM_SPEC_FILE}" "${RPM_BUILD_DIR}/SPECS/"
 
-build_cmsdev:
-		# Record the go version in the build output, just in case it is helpful
-		go version
-		mkdir -pv cmsdev/bin
-		cd cmsdev && CGO_ENABLED=0 GO111MODULE=on GOARCH=amd64 GOOS=linux go build -o ./bin/cmsdev -mod vendor .
+# Package source
+touch "${RPM_SOURCE_PATH}"
+tar --transform "flags=r;s,^,/${RPM_SOURCE_NAME}/," \
+    --exclude .git \
+    --exclude ./cms_meta_tools \
+    --exclude ./cmsdev/vendor \
+    --exclude ./dist \
+    --exclude "${RPM_SOURCE_BASENAME}" \
+    -cvjf "${RPM_SOURCE_PATH}" .
 
-build_python_venv:
-		PY_VERSION=$(PY_VERSION) ./build_python_venv.sh
+# build source rpm
+rpmbuild -bs "${RPM_SPEC_FILE}" --target "${RPM_ARCH}" --define "_topdir ${RPM_BUILD_DIR}"
 
-rpm:
-		RPM_BUILD_DIR=$(RPM_BUILD_DIR) \
-		PY_VERSION=$(PY_VERSION) \
-		BBIT_LOGDIR=$(BBIT_LOGDIR) \
-		CMSDEV_LOGDIR=$(CMSDEV_LOGDIR) \
-		BUILD_METADATA=$(BUILD_METADATA) \
-		./build_rpm.sh
+# build main rpm
+rpmbuild -ba "${RPM_SPEC_FILE}" --target "${RPM_ARCH}" --define "_topdir ${RPM_BUILD_DIR}"
