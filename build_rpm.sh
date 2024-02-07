@@ -57,6 +57,7 @@ check_build
 touch "${RPM_SOURCE_PATH}"
 tar --transform "flags=r;s,^,/${RPM_SOURCE_NAME}/," \
     --exclude .git \
+    --exclude ./build \
     --exclude ./cms_meta_tools \
     --exclude ./cmsdev/vendor \
     --exclude ./dist \

@@ -37,9 +37,20 @@ check_build
 
 source ./vars.sh
 
-mkdir -pv "${BBIT_INSTALL_VENV_DIR}"
+TEMPDIR=$(mktemp)
+
+# Copy the barebones test files over to TEMPDIR
+cp -pvr barebones_image_test \
+        barebones_image_test-constraints.txt \
+        barebones_image_test-requirements.txt \
+        pyproject.toml \
+        "${TEMPDIR}"
+
+cd "${TEMPDIR}"
 
 check_build
+
+mkdir -pv "${BBIT_INSTALL_VENV_DIR}"
 
 # Create our virtualenv
 "${PYTHON_BIN}" -m venv ${BBIT_INSTALL_VENV_DIR}
@@ -83,3 +94,7 @@ check_build
 # Cannot list packages a final time, since we uninstalled pip
 
 check_build
+
+cd -
+
+rm -rvf "${TEMPDIR}"

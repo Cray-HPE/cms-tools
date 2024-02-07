@@ -98,6 +98,12 @@ pipeline {
             }
         }
 
+        stage("Remove cms-meta-tools") {
+            steps {
+                sh "rm -rf ${env.WORKSPACE}/cms_meta_tools"
+            }
+        }
+
         stage("Build cmsdev and Python venvs") {
             parallel {
                 stage("Build cmsdev") {
