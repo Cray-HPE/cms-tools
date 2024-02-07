@@ -23,7 +23,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-set -euo pipefail
+set -exuo pipefail
 
 source ./vars.sh
 
@@ -32,21 +32,28 @@ mkdir -pv "${BBIT_INSTALL_VENV_DIR}"
 # Create our virtualenv
 "${PYTHON_BIN}" -m venv ${BBIT_INSTALL_VENV_DIR}
 
+which "${PYTHON_BIN}"
+
+# Activate virtual env
+source ${BBIT_INSTALL_VENV_BIN_DIR}/activate
+
+which "${PYTHON_BIN}"
+
 # For the purposes of the build log, we list the installed Python packages before and after each pip call
-"${BBIT_VENV_PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
+"${PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
 
 # Upgrade install/build tools
-"${BBIT_VENV_PYTHON_BIN}" -m pip install pip setuptools wheel -c barebones_image_test-constraints.txt --disable-pip-version-check --no-cache
-"${BBIT_VENV_PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
+"${PYTHON_BIN}" -m pip install pip setuptools wheel -c barebones_image_test-constraints.txt --disable-pip-version-check --no-cache
+"${PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
 
 # Install test preqrequisites
-"${BBIT_VENV_PYTHON_BIN}" -m pip install -r barebones_image_test-requirements.txt --disable-pip-version-check --no-cache
-"${BBIT_VENV_PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
+"${PYTHON_BIN}" -m pip install -r barebones_image_test-requirements.txt --disable-pip-version-check --no-cache
+"${PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
 
 # Install the test itself
-"${BBIT_VENV_PYTHON_BIN}" -m pip install . -c barebones_image_test-constraints.txt --disable-pip-version-check --no-cache
-"${BBIT_VENV_PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
+"${PYTHON_BIN}" -m pip install . -c barebones_image_test-constraints.txt --disable-pip-version-check --no-cache
+"${PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
 
 # Remove build tools to decrease the virtualenv size.
-"${BBIT_VENV_PYTHON_BIN}" -m pip uninstall -y pip setuptools wheel
+"${PYTHON_BIN}" -m pip uninstall -y pip setuptools wheel
 # Cannot list packages a final time, since we uninstalled pip

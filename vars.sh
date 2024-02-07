@@ -34,8 +34,9 @@ export INSTALL_VENV_PYTHON_BASE_DIR=${INSTALL_VENV_BASE_DIR}/python
 export BBIT_VENV_NAME=barebones_image_test-venv
 if [[ -v PY_VERSION && -n ${PY_VERSION} ]]; then
     export BBIT_INSTALL_VENV_DIR=${INSTALL_VENV_PYTHON_BASE_DIR}/${PY_VERSION}/${BBIT_VENV_NAME}
-    export BBIT_VENV_PYTHON_BIN=${BBIT_INSTALL_VENV_DIR}/bin/python${PY_VERSION}
+    export BBIT_INSTALL_VENV_BIN_DIR=${BBIT_INSTALL_VENV_DIR}/bin
     export PYTHON_BIN=python${PY_VERSION}
+    export BBIT_VENV_PYTHON_BIN=${BBIT_INSTALL_VENV_BIN_DIR}/python${PYTHON_BIN}
 fi
 export RPM_VERSION=$(head -1 .version)
 export RPM_RELEASE=$(head -1 .rpm_release)

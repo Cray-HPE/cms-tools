@@ -44,18 +44,18 @@ lint:
 build_cmsdev:
 		# Record the go version in the build output, just in case it is helpful
 		go version
-		mkdir -p cmsdev/bin
+		mkdir -pv cmsdev/bin
 		cd cmsdev && CGO_ENABLED=0 GO111MODULE=on GOARCH=amd64 GOOS=linux go build -o ./bin/cmsdev -mod vendor .
 
 build_python_venv:
 		PY_VERSION=$(PY_VERSION) ./build_python_venv.sh
 
 prepare:
-		rm -rf $(RPM_BUILD_DIR)
-		mkdir -p $(RPM_BUILD_DIR)/SPECS $(RPM_BUILD_DIR)/SOURCES
+		rm -rvf $(RPM_BUILD_DIR)
+		mkdir -pv $(RPM_BUILD_DIR)/SPECS $(RPM_BUILD_DIR)/SOURCES
 		source ./vars.sh && \
 		sed -i 's#@PYTHON_REQUIREMENTS@#$(shell ./generate_rpm_python_requirements.sh)#' ${RPM_SPEC_FILE} && \
-		cp ${RPM_SPEC_FILE} $(RPM_BUILD_DIR)/SPECS/
+		cp -v ${RPM_SPEC_FILE} $(RPM_BUILD_DIR)/SPECS/
 
 rpm_package_source:
 		RPM_BUILD_DIR=$(RPM_BUILD_DIR) PY_VERSION=$(PY_VERSION) source ./vars.sh && \
