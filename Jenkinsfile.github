@@ -46,14 +46,14 @@ pipeline {
     }
 
     environment {
-        NAME = sh(returnStdout: true, script: 'source ./vars ; echo $NAME')
+        NAME = sh(returnStdout: true, script: 'source ./vars ; echo $NAME').trim()
         DESCRIPTION = "Cray Management System - Tests"
         IS_STABLE = getBuildIsStable()
-        RPM_SPEC_FILE = sh(returnStdout: true, script: 'source ./vars ; echo $RPM_SPEC_FILE')
+        RPM_SPEC_FILE = sh(returnStdout: true, script: 'source ./vars ; echo $RPM_SPEC_FILE').trim()
         GO_VERSION = sh(returnStdout: true, script: 'grep -Eo "^go .*" cmsdev/go.mod | cut -d " " -f2').trim()
         INSTALL_VENV_BASE_DIR = "/usr/lib/cray-cmstools-crayctldeploy"
-        INSTALL_VENV_PYTHON_BASE_DIR = sh(returnStdout: true, script: 'source ./vars ; echo $INSTALL_VENV_PYTHON_BASE_DIR')
-        LOCAL_VENV_PYTHON_SUBDIR_NAME = sh(returnStdout: true, script: 'source ./vars ; echo $LOCAL_VENV_PYTHON_SUBDIR_NAME')
+        INSTALL_VENV_PYTHON_BASE_DIR = sh(returnStdout: true, script: 'source ./vars ; echo $INSTALL_VENV_PYTHON_BASE_DIR').trim()
+        LOCAL_VENV_PYTHON_SUBDIR_NAME = sh(returnStdout: true, script: 'source ./vars ; echo $LOCAL_VENV_PYTHON_SUBDIR_NAME').trim()
     }
 
     stages {
@@ -133,7 +133,6 @@ pipeline {
                 }
 
                 environment {
-                    BBIT_INSTALL_VENV_DIR = "${env.INSTALL_VENV_PYTHON_BASE_DIR}/${PY_VERSION}/barebones_image_test-venv"
                     PY_VERSION = "${PY_VERSION}"
                 }
 
@@ -158,7 +157,6 @@ pipeline {
             }
 
             environment {
-                BUILD_DIR = "${env.WORKSPACE}/dist/rpmbuild"
                 BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
                 RPM_ARCH = "${RPM_ARCH}"
             }
