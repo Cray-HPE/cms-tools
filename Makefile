@@ -25,11 +25,8 @@
 # cms-meta-tools repo to ./cms_meta_tools
 
 SHELL=/bin/bash
-RPM_VERSION ?= $(shell head -1 .version)
-RPM_RELEASE ?= $(shell head -1 .rpm_release)
 BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
 PY_VERSION ?= "3.10"
-PYTHON_BIN := python$(PY_VERSION)
 
 RPM_BUILD_DIR ?= $(PWD)/dist/rpmbuild
 
@@ -39,7 +36,7 @@ BBIT_LOGDIR := $(shell ./barebones_image_test_logdir.sh)
 rpm: rpm_package_source rpm_build_source rpm_build
 
 runbuildprep:
-		./cms_tools_run_buildprep.sh
+		PY_VERSION=$(PY_VERSION) ./cms_tools_run_buildprep.sh
 
 lint:
 		./cms_meta_tools/scripts/runLint.sh
@@ -51,16 +48,17 @@ build_cmsdev:
 		cd cmsdev && CGO_ENABLED=0 GO111MODULE=on GOARCH=amd64 GOOS=linux go build -o ./bin/cmsdev -mod vendor .
 
 build_python_venv:
-		./build_python_venv.sh
+		PY_VERSION=$(PY_VERSION) ./build_python_venv.sh
 
 prepare:
 		rm -rf $(RPM_BUILD_DIR)
 		mkdir -p $(RPM_BUILD_DIR)/SPECS $(RPM_BUILD_DIR)/SOURCES
-		source ./vars.sh && sed -i 's#@PYTHON_REQUIREMENTS@#$(shell ./generate_rpm_python_requirements.sh)#' ${RPM_SPEC_FILE}
-		source ./vars.sh && cp ${RPM_SPEC_FILE} $(RPM_BUILD_DIR)/SPECS/
+		source ./vars.sh && \
+		sed -i 's#@PYTHON_REQUIREMENTS@#$(shell ./generate_rpm_python_requirements.sh)#' ${RPM_SPEC_FILE} && \
+		cp ${RPM_SPEC_FILE} $(RPM_BUILD_DIR)/SPECS/
 
 rpm_package_source:
-		source ./vars.sh && \
+		RPM_BUILD_DIR=$(RPM_BUILD_DIR) PY_VERSION=$(PY_VERSION) source ./vars.sh && \
 		touch ${RPM_SOURCE_PATH} && \
 		tar --transform "flags=r;s,^,/${RPM_SOURCE_NAME}/," \
 			--exclude .git \
@@ -71,19 +69,17 @@ rpm_package_source:
 			-cvjf ${RPM_SOURCE_PATH} .
 
 rpm_build_source:
-		source ./vars.sh && \
+		RPM_BUILD_DIR=$(RPM_BUILD_DIR) PY_VERSION=$(PY_VERSION) source ./vars.sh && \
 		BBIT_LOGDIR=$(BBIT_LOGDIR) \
 		CMSDEV_LOGDIR=$(CMSDEV_LOGDIR) \
 		BUILD_METADATA=$(BUILD_METADATA) \
 		LOCAL_VENV_PYTHON_BASE_DIR=$(PWD)/${LOCAL_VENV_PYTHON_SUBDIR_NAME} \
-		RPM_NAME=${NAME} \
-		rpmbuild -bs ${RPM_SPEC_FILE} --target $(RPM_ARCH) --define "_topdir $(RPM_BUILD_DIR)"
+		rpmbuild -bs ${RPM_SPEC_FILE} --target ${RPM_ARCH} --define "_topdir $(RPM_BUILD_DIR)"
 
 rpm_build:
-		source ./vars.sh && \
+		RPM_BUILD_DIR=$(RPM_BUILD_DIR) source ./vars.sh && \
 		BBIT_LOGDIR=$(BBIT_LOGDIR) \
 		CMSDEV_LOGDIR=$(CMSDEV_LOGDIR) \
 		BUILD_METADATA=$(BUILD_METADATA) \
 		LOCAL_VENV_PYTHON_BASE_DIR=$(PWD)/${LOCAL_VENV_PYTHON_SUBDIR_NAME} \
-		RPM_NAME=${NAME} \
-		rpmbuild -ba ${RPM_SPEC_FILE} --target $(RPM_ARCH) --define "_topdir $(RPM_BUILD_DIR)"
+		rpmbuild -ba ${RPM_SPEC_FILE} --target ${RPM_ARCH} --define "_topdir $(RPM_BUILD_DIR)"

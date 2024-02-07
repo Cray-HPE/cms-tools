@@ -26,6 +26,7 @@
 # The format is just <variable_name>=<variable_value>
 # It needs to work if sourced from a shell script
 export NAME=cray-cmstools-crayctldeploy
+export RPM_NAME=${NAME}
 export RPM_SPEC_FILE=${NAME}.spec
 export LOCAL_VENV_PYTHON_SUBDIR_NAME=venv-python
 export INSTALL_VENV_BASE_DIR=/usr/lib/cray-cmstools-crayctldeploy
@@ -34,11 +35,12 @@ export BBIT_VENV_NAME=barebones_image_test-venv
 if [[ -v PY_VERSION && -n ${PY_VERSION} ]]; then
     export BBIT_INSTALL_VENV_DIR=${INSTALL_VENV_PYTHON_BASE_DIR}/${PY_VERSION}/${BBIT_VENV_NAME}
     export BBIT_VENV_PYTHON_BIN=${BBIT_INSTALL_VENV_DIR}/bin/python${PY_VERSION}
+    export PYTHON_BIN=python${PY_VERSION}
 fi
-if [[ -v RPM_VERSION && -n ${RPM_VERSION} ]]; then
-    export RPM_SOURCE_NAME=${NAME}-${RPM_VERSION}
-	export RPM_SOURCE_BASENAME=${RPM_SOURCE_NAME}.tar.bz2
-    if [[ -v RPM_BUILD_DIR && -n ${RPM_BUILD_DIR} ]]; then
-        export RPM_SOURCE_PATH=${RPM_BUILD_DIR}/SOURCES/${RPM_SOURCE_BASENAME}
-    fi
+export RPM_VERSION=$(head -1 .version)
+export RPM_RELEASE=$(head -1 .rpm_release)
+export RPM_SOURCE_NAME=${NAME}-${RPM_VERSION}
+export RPM_SOURCE_BASENAME=${RPM_SOURCE_NAME}.tar.bz2
+if [[ -v RPM_BUILD_DIR && -n ${RPM_BUILD_DIR} ]]; then
+    export RPM_SOURCE_PATH=${RPM_BUILD_DIR}/SOURCES/${RPM_SOURCE_BASENAME}
 fi
