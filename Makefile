@@ -60,7 +60,7 @@ all : runbuildprep lint build_cmsdev prepare rpm
 rpm: rpm_package_source rpm_build_source rpm_build
 
 runbuildprep:
-		sed -i 's#@BB_BASE_DIR@#$(BASE_INSTALL_DIR)#' run_basebones_image_test.sh
+		sed -i 's#@BB_BASE_DIR@#$(BASE_INSTALL_DIR)#' run_barebones_image_test.sh
 		mkdir -pv $(LOCAL_VENV_DIR)
 		./cms_meta_tools/scripts/runBuildPrep.sh
 
