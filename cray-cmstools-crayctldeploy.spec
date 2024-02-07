@@ -76,7 +76,7 @@ install -m 755 -d %{buildroot}%{install_venv_python_base_dir}
 echo %{install_venv_base_dir} | tee -a INSTALLED_FILES
 echo %{install_venv_python_base_dir} | tee -a INSTALLED_FILES
 pushd %{local_venv_python_base_dir}
-cp -prv * %{install_venv_python_base_dir}
+cp -prv * %{buildroot}%{install_venv_python_base_dir}
 find . -print | sed 's#^[.]#%{install_venv_python_base_dir}#' | tee -a INSTALLED_FILES
 popd
 
