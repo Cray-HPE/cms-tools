@@ -85,19 +85,6 @@ pipeline {
             }
         }
 
-        stage("Build cmsdev") {
-            agent {
-                docker {
-                    args '-v /home/jenkins/.ssh:/home/jenkins/.ssh'
-                    reuseNode true
-                    image "${goImage}:${env.GO_VERSION}"
-                }
-            }
-            steps {
-                sh "make build_cmsdev"
-            }
-        }
-
         // The RPM build metadata can be added outside of the matrix, because it is just based on the
         // Git commit being built
         stage("Prepare") {
@@ -112,35 +99,52 @@ pipeline {
             }
         }
 
-        stage('Build Python Venvs') {
-            matrix {
-                axes {
-                    axis {
-                        name 'PY_VERSION'
-                        // This list should be a superset of the Python versions listed in setup.py (or identical)
-                        // Currently Jenkins does not support dynamically reading in the values from the file to use
-                        // as matrix values.
-                        values '3.10', '3.11'
-                    }
-                }
-
-                agent {
-                    docker {
-                        args "-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc -v ${env.WORKSPACE}/${env.LOCAL_VENV_PYTHON_SUBDIR_NAME}:${env.INSTALL_VENV_PYTHON_BASE_DIR}"
-                        reuseNode true
-                        image "${pyImage}:${PY_VERSION}"
-                    }
-                }
-
-                environment {
-                    PY_VERSION = "${PY_VERSION}"
-                }
-
-                stages {
-                    stage('Build Python Venv') {
-                        steps {
-                            sh "make build_python_venv"
+        stage("Build cmsdev and Python venvs") {
+            parallel {
+                stage("Build cmsdev") {
+                    agent {
+                        docker {
+                            args '-v /home/jenkins/.ssh:/home/jenkins/.ssh'
+                            reuseNode true
+                            image "${goImage}:${env.GO_VERSION}"
                         }
+                    }
+                    steps {
+                        sh "make build_cmsdev"
+                    }
+                }
+
+                stage('Build Python 3.10 venv') {
+                    environment {
+                        PY_VERSION = "3.10"
+                    }
+
+                    agent {
+                        docker {
+                            args "-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc -v ${env.WORKSPACE}/${env.LOCAL_VENV_PYTHON_SUBDIR_NAME}:${env.INSTALL_VENV_PYTHON_BASE_DIR}"
+                            reuseNode true
+                            image "${pyImage}:${env.PY_VERSION}"
+                        }
+                    }
+                    steps {
+                        sh "make build_python_venv"
+                    }
+                }
+
+                stage('Build Python 3.11 venv') {
+                    environment {
+                        PY_VERSION = "3.11"
+                    }
+
+                    agent {
+                        docker {
+                            args "-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc -v ${env.WORKSPACE}/${env.LOCAL_VENV_PYTHON_SUBDIR_NAME}:${env.INSTALL_VENV_PYTHON_BASE_DIR}"
+                            reuseNode true
+                            image "${pyImage}:${env.PY_VERSION}"
+                        }
+                    }
+                    steps {
+                        sh "make build_python_venv"
                     }
                 }
             }
