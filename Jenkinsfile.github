@@ -123,7 +123,7 @@ pipeline {
                         docker {
                             args "-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc -v ${env.WORKSPACE}/${env.LOCAL_VENV_PYTHON_SUBDIR_NAME}:${env.INSTALL_VENV_PYTHON_BASE_DIR}"
                             reuseNode true
-                            image "${pyImage}:${env.PY_VERSION}"
+                            image "${pyImage}:3.10"
                         }
                     }
                     steps {
@@ -140,7 +140,7 @@ pipeline {
                         docker {
                             args "-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc -v ${env.WORKSPACE}/${env.LOCAL_VENV_PYTHON_SUBDIR_NAME}:${env.INSTALL_VENV_PYTHON_BASE_DIR}"
                             reuseNode true
-                            image "${pyImage}:${env.PY_VERSION}"
+                            image "${pyImage}:3.11"
                         }
                     }
                     steps {
