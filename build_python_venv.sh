@@ -24,8 +24,8 @@
 #
 
 function check_build {
-    if [[ -d build ]]; do
-        ls build
+    if [[ -d build ]]; fi
+        find build -type d -print
     else
         echo "no build"
     fi
