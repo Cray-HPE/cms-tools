@@ -129,9 +129,11 @@ pipeline {
                     PY_VERSION = "${PY_VERSION}"
                 }
 
-                stage('Build Python Venv') {
-                    steps {
-                        sh "make build_python_venv"
+                stages {
+                    stage('Build Python Venv') {
+                        steps {
+                            sh "make build_python_venv"
+                        }
                     }
                 }
             }
