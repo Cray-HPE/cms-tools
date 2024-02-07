@@ -34,7 +34,7 @@ CMSDEV_LOGDIR := $(shell ./cmsdev_logdir.sh)
 BBIT_LOGDIR := $(shell ./barebones_image_test_logdir.sh)
 
 runbuildprep:
-		PY_VERSION=$(PY_VERSION) ./cms_tools_run_buildprep.sh
+		./cms_tools_run_buildprep.sh
 
 lint:
 		./cms_meta_tools/scripts/runLint.sh
