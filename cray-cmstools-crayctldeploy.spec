@@ -51,7 +51,6 @@ Cray CMS tests and tools
 %build
 
 %install
-%define installed_files 
 # Log directory for barebones image test
 install -m 755 -d %{buildroot}%{bbit_logdir}
 echo %{bbit_logdir} | tee -a INSTALLED_FILES
