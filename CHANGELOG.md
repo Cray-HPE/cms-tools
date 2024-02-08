@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.18.0] - 2024-02-08
+
+### Changed
+- Make RPM spec file more precise in its requirements (`python3-base` should not simply have a minimum requirement, but
+  also a maximum, to ensure the correct Python version is on the system)
+- Combine multiple Python versions in single RPM, allowing RPM to go back to being `noos`.
+
 ## [1.17.0] - 2024-02-01
 
 ### Changed
@@ -267,7 +274,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.17.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.18.0...HEAD
+
+[1.18.0]: https://github.com/Cray-HPE/cms-tools/compare/1.17.0...1.18.0
 
 [1.17.0]: https://github.com/Cray-HPE/cms-tools/compare/1.16.0...1.17.0
 
