@@ -26,7 +26,6 @@
 # Looks at the Python versions listed in the local virtual environment directory.
 # Sets the Requires: field in the spec file accordingly.
 
-source ./vars.sh
 if [[ -z ${LOCAL_VENV_PYTHON_SUBDIR_NAME} ]]; then
     echo "ERROR: $0: LOCAL_VENV_PYTHON_SUBDIR_NAME should be set" 1>&2
     exit 1

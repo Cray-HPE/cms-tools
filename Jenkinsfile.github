@@ -26,13 +26,6 @@
 @Library('cms-meta-tools') _
 @Library('csm-shared-library') __
 
-def sleImage = 'artifactory.algol60.net/csm-docker/stable/csm-docker-sle'
-def sleVersion = 'latest'
-def goImage = 'artifactory.algol60.net/csm-docker/stable/csm-docker-sle-go'
-def pyImage = 'artifactory.algol60.net/csm-docker/stable/csm-docker-sle-python'
-
-def RPM_ARCH = 'x86_64'
-
 pipeline {
     agent {
         label "metal-gcp-builder"
@@ -48,12 +41,19 @@ pipeline {
     environment {
         NAME = sh(returnStdout: true, script: 'source ./vars.sh ; echo $NAME').trim()
         RPM_NAME = sh(returnStdout: true, script: 'source ./vars.sh ; echo $RPM_NAME').trim()
-        DESCRIPTION = "Cray Management System - Tests"
+        DESCRIPTION = sh(returnStdout: true, script: 'source ./vars.sh ; echo $DESCRIPTION').trim()
         IS_STABLE = getBuildIsStable()
         RPM_SPEC_FILE = sh(returnStdout: true, script: 'source ./vars.sh ; echo $RPM_SPEC_FILE').trim()
-        GO_VERSION = sh(returnStdout: true, script: 'grep -Eo "^go .*" cmsdev/go.mod | cut -d " " -f2').trim()
+        GO_VERSION = sh(returnStdout: true, script: 'source ./vars.sh ; echo $GO_VERSION').trim()
         INSTALL_VENV_PYTHON_BASE_DIR = sh(returnStdout: true, script: 'source ./vars.sh ; echo $INSTALL_VENV_PYTHON_BASE_DIR').trim()
         LOCAL_VENV_PYTHON_SUBDIR_NAME = sh(returnStdout: true, script: 'source ./vars.sh ; echo $LOCAL_VENV_PYTHON_SUBDIR_NAME').trim()
+        RPM_BUILD_SUBDIR = sh(returnStdout: true, script: 'source ./vars.sh ; echo $RPM_BUILD_SUBDIR').trim()
+        SLE_IMAGE = sh(returnStdout: true, script: 'source ./vars.sh ; echo $SLE_IMAGE').trim()
+        SLE_VERSION = sh(returnStdout: true, script: 'source ./vars.sh ; echo $SLE_VERSION').trim()
+        GO_IMAGE = sh(returnStdout: true, script: 'source ./vars.sh ; echo $GO_IMAGE').trim()
+        PY_IMAGE = sh(returnStdout: true, script: 'source ./vars.sh ; echo $PY_IMAGE').trim()
+        RPM_ARCH = sh(returnStdout: true, script: 'source ./vars.sh ; echo $RPM_ARCH').trim()
+        RPM_OS = sh(returnStdout: true, script: 'source ./vars.sh ; echo $RPM_OS').trim()
     }
 
     stages {
@@ -112,7 +112,7 @@ pipeline {
                         docker {
                             args '-v /home/jenkins/.ssh:/home/jenkins/.ssh'
                             reuseNode true
-                            image "${goImage}:${env.GO_VERSION}"
+                            image "${env.GO_IMAGE}:${env.GO_VERSION}"
                         }
                     }
                     steps {
@@ -125,7 +125,7 @@ pipeline {
                         docker {
                             args "-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc -v ${env.WORKSPACE}/${env.LOCAL_VENV_PYTHON_SUBDIR_NAME}:${env.INSTALL_VENV_PYTHON_BASE_DIR}"
                             reuseNode true
-                            image "${pyImage}:3.10"
+                            image "${env.PY_IMAGE}:3.10"
                         }
                     }
                     environment {
@@ -141,7 +141,7 @@ pipeline {
                         docker {
                             args "-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc -v ${env.WORKSPACE}/${env.LOCAL_VENV_PYTHON_SUBDIR_NAME}:${env.INSTALL_VENV_PYTHON_BASE_DIR}"
                             reuseNode true
-                            image "${pyImage}:3.11"
+                            image "${env.PY_IMAGE}:3.11"
                         }
                     }
                     environment {
@@ -160,13 +160,12 @@ pipeline {
                 docker {
                     args '-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc'
                     reuseNode true
-                    image "${sleImage}:${sleVersion}"
+                    image "${env.SLE_IMAGE}:${env.SLE_VERSION}"
                 }
             }
 
             environment {
                 BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
-                RPM_ARCH = "${RPM_ARCH}"
             }
 
             stages {
@@ -184,15 +183,15 @@ pipeline {
                                 arch: env.RPM_ARCH,
                                 component: env.RPM_NAME,
                                 isStable: env.IS_STABLE,
-                                os: "noos",
-                                pattern: "dist/rpmbuild/RPMS/${env.RPM_ARCH}/*.rpm",
+                                os: env.RPM_OS,
+                                pattern: "${env.RPM_BUILD_SUBDIR}/RPMS/${env.RPM_ARCH}/*.rpm",
                             )
                             publishCsmRpms(
                                 arch: "src",
                                 component: env.RPM_NAME,
                                 isStable: env.IS_STABLE,
-                                os: "noos",
-                                pattern: "dist/rpmbuild/SRPMS/*.rpm",
+                                os: env.RPM_OS,
+                                pattern: "${env.RPM_BUILD_SUBDIR}/SRPMS/*.rpm",
                             )
                         }
                     }

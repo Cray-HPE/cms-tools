@@ -44,11 +44,6 @@ if [[ -d ${RPM_BUILD_DIR} ]]; then
 fi
 [[ ! -e ${RPM_BUILD_DIR} ]]
 mkdir -pv "${RPM_BUILD_DIR}/SPECS" "${RPM_BUILD_DIR}/SOURCES"
-
-PYTHON_RPM_REQS=$(./generate_rpm_python_requirements.sh)
-echo "${PYTHON_RPM_REQS}"
-
-sed -i "s#@PYTHON_REQUIREMENTS@#${PYTHON_RPM_REQS}#" "${RPM_SPEC_FILE}"
 cp -v "${RPM_SPEC_FILE}" "${RPM_BUILD_DIR}/SPECS/"
 
 check_build

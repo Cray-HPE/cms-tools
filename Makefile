@@ -24,14 +24,8 @@
 # If you wish to perform a local build, you will need to clone or copy the contents of the
 # cms-meta-tools repo to ./cms_meta_tools
 
-SHELL=/bin/bash
 BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
 PY_VERSION ?= "3.10"
-
-RPM_BUILD_DIR ?= $(PWD)/dist/rpmbuild
-
-CMSDEV_LOGDIR := $(shell ./cmsdev_logdir.sh)
-BBIT_LOGDIR := $(shell ./barebones_image_test_logdir.sh)
 
 runbuildprep:
 		./cms_tools_run_buildprep.sh
@@ -49,9 +43,6 @@ build_python_venv:
 		PY_VERSION=$(PY_VERSION) ./build_python_venv.sh
 
 rpm:
-		RPM_BUILD_DIR=$(RPM_BUILD_DIR) \
 		PY_VERSION=$(PY_VERSION) \
-		BBIT_LOGDIR=$(BBIT_LOGDIR) \
-		CMSDEV_LOGDIR=$(CMSDEV_LOGDIR) \
 		BUILD_METADATA=$(BUILD_METADATA) \
 		./build_rpm.sh
