@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.16.1] - 2024-02-08
+
+### Changed
+- Update to cray-tftp-upload to work with more than one ipxe pod and fixed return error.
+
 ## [1.16.0] - 2023-11-30
 
 ### Added
@@ -245,7 +250,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.16.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.16.1...HEAD
+
+[1.16.1]: https://github.com/Cray-HPE/cms-tools/compare/1.16.0...1.16.1
 
 [1.16.0]: https://github.com/Cray-HPE/cms-tools/compare/1.15.0...1.16.0
 
