@@ -1,7 +1,8 @@
+#!/usr/bin/bash
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,26 +22,22 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# If you wish to perform a local build, you will need to clone or copy the contents of the
-# cms-meta-tools repo to ./cms_meta_tools
 
-BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
-PY_VERSION ?= "3.10"
+set -exuo pipefail
 
-runbuildprep:
-		./cms_tools_run_buildprep.sh
+source ./vars.sh
+sed -i "s#@BB_BASE_DIR@#${INSTALL_VENV_PYTHON_BASE_DIR}#" run_barebones_image_test.sh
+if [[ -d ./${LOCAL_VENV_PYTHON_SUBDIR_NAME} ]]; then
+    rm -rvf "./${LOCAL_VENV_PYTHON_SUBDIR_NAME}"
+fi
+if [[ -e ${LOCAL_VENV_PYTHON_SUBDIR_NAME} ]]; then
+    echo "'${LOCAL_VENV_PYTHON_SUBDIR_NAME}' exists, but it should not"
+    exit 1
+fi
+mkdir -pv "${LOCAL_VENV_PYTHON_SUBDIR_NAME}"
+./cms_meta_tools/scripts/runBuildPrep.sh
 
-lint:
-		./cms_meta_tools/scripts/runLint.sh
-
-build_cmsdev:
-		# Record the go version in the build output, just in case it is helpful
-		go version
-		mkdir -pv cmsdev/bin
-		cd cmsdev && CGO_ENABLED=0 GO111MODULE=on GOARCH=amd64 GOOS=linux go build -o ./bin/cmsdev -mod vendor .
-
-build_python_venv:
-		PY_VERSION=$(PY_VERSION) ./build_python_venv.sh
-
-rpm:
-		PY_VERSION=$(PY_VERSION) BUILD_METADATA=$(BUILD_METADATA) ./build_rpm.sh
+# If the `build` directory exists, delete it
+if [[ -e ./build ]]; then
+    rm -rvf ./build
+fi
