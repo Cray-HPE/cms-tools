@@ -47,6 +47,7 @@ pipeline {
 
     environment {
         NAME = sh(returnStdout: true, script: 'source ./vars.sh ; echo $NAME').trim()
+        RPM_NAME = sh(returnStdout: true, script: 'source ./vars.sh ; echo $RPM_NAME').trim()
         DESCRIPTION = "Cray Management System - Tests"
         IS_STABLE = getBuildIsStable()
         RPM_SPEC_FILE = sh(returnStdout: true, script: 'source ./vars.sh ; echo $RPM_SPEC_FILE').trim()
@@ -173,6 +174,7 @@ pipeline {
                 stage('Build RPMs') {
                     steps {
                         sh "make rpm"
+                        sh "find ${env.WORKSPACE} -type f -name \*.rpm -print"
                     }
                 }
 
@@ -180,15 +182,15 @@ pipeline {
                     steps {
                         script {
                             publishCsmRpms(
-                                arch: "${RPM_ARCH}",
-                                component: env.NAME,
+                                arch: env.RPM_ARCH,
+                                component: env.RPM_NAME,
                                 isStable: env.IS_STABLE,
                                 os: "noos",
                                 pattern: "dist/rpmbuild/*.rpm",
                             )
                             publishCsmRpms(
                                 arch: "src",
-                                component: env.NAME,
+                                component: env.RPM_NAME,
                                 isStable: env.IS_STABLE,
                                 os: "noos",
                                 pattern: "dist/rpmbuild/SRPMS/*.rpm",
