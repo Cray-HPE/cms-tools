@@ -64,7 +64,7 @@ find . \
         -name \*.pyc -o \
         -name "${RPM_SOURCE_BASENAME}" \
     \) -prune -o \
-    -print0 > ${findout}
+    -print > ${findout}
 echo "find end"
 grep cmsdev ${findout}
 echo "for real"
@@ -82,8 +82,8 @@ find . \
         -name "${RPM_SOURCE_BASENAME}" \
     \) -prune -o \
     -print0 | 
-tar --transform "flags=r;s,^[.]/,/${RPM_SOURCE_NAME}/," \
-    -cvjf "${RPM_SOURCE_PATH}" --null -T -
+tar --null --transform "flags=r;s,^[.]/,/${RPM_SOURCE_NAME}/," \
+    -cvjf "${RPM_SOURCE_PATH}" -T -
 
 # build source rpm
 rpmbuild -bs "${RPM_SPEC_FILE}" --target "${RPM_ARCH}" --define "_topdir ${RPM_BUILD_DIR}"
