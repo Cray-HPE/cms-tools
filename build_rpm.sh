@@ -59,8 +59,8 @@ find . -type d \( \
         \) -prune -o -type f \( \
             -name \*.pyc -o \
             -name "${RPM_SOURCE_BASENAME}" \
-        \) -prune -o -print | 
-tar --transform "flags=r;s,^,/${RPM_SOURCE_NAME}/," \
+        \) -prune -o -print0 | 
+tar --transform "flags=r;s,^[.]/,/${RPM_SOURCE_NAME}/," \
     -cvjf "${RPM_SOURCE_PATH}" --null -T -
 
 # build source rpm
