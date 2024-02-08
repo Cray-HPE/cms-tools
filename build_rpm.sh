@@ -49,17 +49,39 @@ cp -v "${RPM_SPEC_FILE}" "${RPM_BUILD_DIR}/SPECS/"
 check_build
 
 # Package source
-find . -type d \( \
-            -name __pycache__ -o \
-            -name cms_meta_tools -o \
-            -name .git -o \
-            -path ./build -o \
-            -path ./dist -o \
-            -path ./cmsdev/vendor \
-        \) -prune -o -type f \( \
-            -name \*.pyc -o \
-            -name "${RPM_SOURCE_BASENAME}" \
-        \) -prune -o -print0 | 
+findout=$(mktemp)
+echo "find start"
+find . \
+    -name .git\* -prune -o \
+    -type d \( \
+        -name __pycache__ -o \
+        -name cms_meta_tools -o \
+        -path ./build -o \
+        -path ./dist -o \
+        -path ./cmsdev/vendor \
+    \) -prune -o \
+    -type f \( \
+        -name \*.pyc -o \
+        -name "${RPM_SOURCE_BASENAME}" \
+    \) -prune -o \
+    -print0 > ${findout}
+echo "find end"
+grep cmsdev ${findout}
+echo "for real"
+find . \
+    -name .git\* -prune -o \
+    -type d \( \
+        -name __pycache__ -o \
+        -name cms_meta_tools -o \
+        -path ./build -o \
+        -path ./dist -o \
+        -path ./cmsdev/vendor \
+    \) -prune -o \
+    -type f \( \
+        -name \*.pyc -o \
+        -name "${RPM_SOURCE_BASENAME}" \
+    \) -prune -o \
+    -print0 | 
 tar --transform "flags=r;s,^[.]/,/${RPM_SOURCE_NAME}/," \
     -cvjf "${RPM_SOURCE_PATH}" --null -T -
 
