@@ -98,3 +98,6 @@ check_build
 cd -
 
 rm -rvf "${TEMPDIR}"
+
+# Clean up __pycache__ folders, since we don't need to bundle them into the RPM
+find ${BBIT_INSTALL_VENV_DIR} -type d -name __pycache__ -print | xargs rm -rvf
