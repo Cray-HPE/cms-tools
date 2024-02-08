@@ -61,7 +61,7 @@ find . -type d \( \
             -name "${RPM_SOURCE_BASENAME}" \
         \) -prune -o -print | 
 tar --transform "flags=r;s,^,/${RPM_SOURCE_NAME}/," \
-    -cvjf "${RPM_SOURCE_PATH}" --null -T
+    -cvjf "${RPM_SOURCE_PATH}" --null -T -
 
 # build source rpm
 rpmbuild -bs "${RPM_SPEC_FILE}" --target "${RPM_ARCH}" --define "_topdir ${RPM_BUILD_DIR}"
