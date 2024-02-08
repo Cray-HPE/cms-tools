@@ -51,6 +51,7 @@ Cray CMS tests and tools
 %build
 
 %install
+%define installed_files 
 # Log directory for barebones image test
 install -m 755 -d %{buildroot}%{bbit_logdir}
 echo %{bbit_logdir} | tee -a INSTALLED_FILES
@@ -75,10 +76,8 @@ echo /usr/local/bin/cray-upload-recovery-images | tee -a INSTALLED_FILES
 install -m 755 -d %{buildroot}%{install_venv_python_base_dir}
 echo %{install_venv_base_dir} | tee -a INSTALLED_FILES
 echo %{install_venv_python_base_dir} | tee -a INSTALLED_FILES
-pushd %{local_venv_python_base_dir}
-cp -prv * %{buildroot}%{install_venv_python_base_dir}
-find . -print | sed 's#^[.]#%{install_venv_python_base_dir}#' | tee -a INSTALLED_FILES
-popd
+cp -prv %{local_venv_python_base_dir}/* %{buildroot}%{install_venv_python_base_dir}
+find %{local_venv_python_base_dir} -print | sed 's#^%{local_venv_python_base_dir}#%{install_venv_python_base_dir}#' | tee -a INSTALLED_FILES
 
 # Add script to launch the barebones test in /opt/cray/tests/integration/csm
 install -m 755 -d %{buildroot}/opt/cray/tests/integration/csm/
