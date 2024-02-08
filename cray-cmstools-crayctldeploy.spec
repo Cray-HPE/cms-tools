@@ -26,10 +26,11 @@
 %define install_venv_base_dir %(echo ${INSTALL_VENV_BASE_DIR})
 %define install_venv_python_base_dir %(echo ${INSTALL_VENV_PYTHON_BASE_DIR})
 %define local_venv_python_base_dir %(echo ${LOCAL_VENV_PYTHON_BASE_DIR})
+%define summary %(echo ${DESCRIPTION})
 
 Name: %(echo ${RPM_NAME})
 License: MIT
-Summary: %(echo ${DESCRIPTION})
+Summary: %{summary}
 Group: System/Management
 Version: @RPM_VERSION@
 Release: @RPM_RELEASE@
@@ -41,6 +42,9 @@ BuildRequires: rpm >= 4.13
 BuildRequires: rpm-build >= 4.13
 Requires: rpm >= 4.13
 Requires: %(echo ${RPM_PYTHON_REQUIREMENTS})
+
+%description
+%{summary}
 
 %prep
 %setup

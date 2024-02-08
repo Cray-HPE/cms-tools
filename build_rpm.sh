@@ -49,15 +49,19 @@ cp -v "${RPM_SPEC_FILE}" "${RPM_BUILD_DIR}/SPECS/"
 check_build
 
 # Package source
-touch "${RPM_SOURCE_PATH}"
+find . -type d \( \
+            -name __pycache__ -o \
+            -name cms_meta_tools -o \
+            -name .git -o \
+            -path ./build -o \
+            -path ./dist -o \
+            -path ./cmsdev/vendor \
+        \) -prune -o -type f \( \
+            -name \*.pyc -o \
+            -name "${RPM_SOURCE_BASENAME}" \
+        \) -prune -o -print | 
 tar --transform "flags=r;s,^,/${RPM_SOURCE_NAME}/," \
-    --exclude .git \
-    --exclude ./build \
-    --exclude ./cms_meta_tools \
-    --exclude ./cmsdev/vendor \
-    --exclude ./dist \
-    --exclude "${RPM_SOURCE_BASENAME}" \
-    -cvjf "${RPM_SOURCE_PATH}" .
+    -cvjf "${RPM_SOURCE_PATH}" --null -T
 
 # build source rpm
 rpmbuild -bs "${RPM_SPEC_FILE}" --target "${RPM_ARCH}" --define "_topdir ${RPM_BUILD_DIR}"
