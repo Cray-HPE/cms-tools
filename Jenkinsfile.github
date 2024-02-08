@@ -174,7 +174,6 @@ pipeline {
                 stage('Build RPMs') {
                     steps {
                         sh "make rpm"
-                        sh "find ${env.WORKSPACE} -type f -name \*.rpm -print"
                     }
                 }
 
@@ -186,7 +185,7 @@ pipeline {
                                 component: env.RPM_NAME,
                                 isStable: env.IS_STABLE,
                                 os: "noos",
-                                pattern: "dist/rpmbuild/*.rpm",
+                                pattern: "dist/rpmbuild/RPMS/${env.RPM_ARCH}/*.rpm",
                             )
                             publishCsmRpms(
                                 arch: "src",
