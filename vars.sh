@@ -68,9 +68,19 @@ if [[ -f ./cmsdev/go.mod && -s ./cmsdev/go.mod ]]; then
     export GO_VERSION
 fi
 
-if [[ -f ./generate_rpm_python_requirements.sh && -d ./${LOCAL_VENV_PYTHON_SUBDIR_NAME} ]]; then
-    RPM_PYTHON_REQUIREMENTS=$(./generate_rpm_python_requirements.sh)
-    export RPM_PYTHON_REQUIREMENTS
+if [[ -d ./${LOCAL_VENV_PYTHON_SUBDIR_NAME} ]]; then
+    PY_VERSIONS=()
+    while IFS= read -r line; do
+        PY_VERSIONS+=( "$line" )
+    done < <( ls "./${LOCAL_VENV_PYTHON_SUBDIR_NAME}" | sort -t. -n -k1,1 -k2,2 )
+    export PY_VERSIONS
+    NUM_PY_VERSIONS=${#PY_VERSIONS[@]}
+    export NUM_PY_VERSIONS
+
+    if [[ -f ./generate_rpm_python_requirements.sh ]]; then
+        RPM_PYTHON_REQUIREMENTS=$(./generate_rpm_python_requirements.sh)
+        export RPM_PYTHON_REQUIREMENTS
+    fi
 fi
 
 if [[ -f ./cmsdev_logdir.sh ]]; then

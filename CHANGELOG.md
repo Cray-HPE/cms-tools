@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- If only building for a single Python version, use a simple symbolic link to run the barebones
+  test, instead of the `run_barebones_image_test.sh` script.
+
+### Fixed
+- Fixed a couple bugs in the barebones test S3 module.
+
 ## [1.18.1] - 2024-02-08
 
 ### Changed

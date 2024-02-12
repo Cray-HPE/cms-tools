@@ -26,11 +26,6 @@
 # Looks at the Python versions listed in the local virtual environment directory.
 # Sets the Requires: field in the spec file accordingly.
 
-if [[ -z ${LOCAL_VENV_PYTHON_SUBDIR_NAME} ]]; then
-    echo "ERROR: $0: LOCAL_VENV_PYTHON_SUBDIR_NAME should be set" 1>&2
-    exit 1
-fi
-
 REQUIRE_STRING=""
 
 function add_requirement {
@@ -42,7 +37,7 @@ LAST_MAJOR=""
 FIRST_MINOR=""
 LAST_MINOR=""
 
-for PY_VER in $(ls "./${LOCAL_VENV_PYTHON_SUBDIR_NAME}" | sort -t. -n -k1,1 -k2,2); do
+for PY_VER in "${PY_VERSIONS[@]}"; do
     PY_VER_NODOTS=${PY_VER//.}
     add_requirement "python${PY_VER_NODOTS}-base"
     PY_VER_MAJOR=$(echo ${PY_VER} | cut -d. -f1)
