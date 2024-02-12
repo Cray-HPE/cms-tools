@@ -120,22 +120,6 @@ pipeline {
                     }
                 }
 
-                stage('Build Python 3.10 venv') {
-                    agent {
-                        docker {
-                            args "-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc -v ${env.WORKSPACE}/${env.LOCAL_VENV_PYTHON_SUBDIR_NAME}:${env.INSTALL_VENV_PYTHON_BASE_DIR}"
-                            reuseNode true
-                            image "${env.PY_IMAGE}:3.10"
-                        }
-                    }
-                    environment {
-                        PY_VERSION = "3.10"
-                    }
-                    steps {
-                        sh "make build_python_venv"
-                    }
-                }
-
                 stage('Build Python 3.11 venv') {
                     agent {
                         docker {

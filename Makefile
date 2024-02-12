@@ -25,7 +25,7 @@
 # cms-meta-tools repo to ./cms_meta_tools
 
 BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
-PY_VERSION ?= "3.10"
+PY_VERSION ?= "3.11"
 
 runbuildprep:
 		./cms_tools_run_buildprep.sh
