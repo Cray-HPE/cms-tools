@@ -54,6 +54,12 @@ def s3_client_kwargs() -> JsonDict:
     # Need to convert the 'verify' field to boolean if it is false
     if not kwargs["verify"] or kwargs["verify"].lower() in ('false', 'off', 'no', 'f', '0'):
         kwargs["verify"] = False
+
+    # And if Verify is false, then we need to make sure that our endpoint isn't https, since
+    # it will use SSL verification regardless if the endpoint is https
+    if kwargs["verify"] is False and kwargs["endpoint_url"][:6] == "https:":
+        kwargs["endpoint_url"] = f"http:{kwargs['endpoint_url'][6:]}"
+
     return kwargs
 
 def s3_client():
@@ -73,7 +79,7 @@ def get_s3_artifact_etag(s3_url: S3Url) -> str:
                  s3_url.bucket)
     # Suppress insecure request warnings from this call
     with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', InsecureRequestWarning)
+        warnings.filterwarnings('ignore', category=InsecureRequestWarning)
         s3_resp = s3_cli.head_object(Bucket=s3_url.bucket, Key=s3_url.key)
     logger.debug("S3 response: %s", s3_resp)
     etag = s3_resp["ETag"].strip('"')
