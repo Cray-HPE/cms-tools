@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.0] - 2024-02-12
+
 ### Changed
 - If only building for a single Python version, use a simple symbolic link to run the barebones
   test, instead of the `run_barebones_image_test.sh` script.
@@ -287,7 +289,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.18.1...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.19.0...HEAD
+
+[1.19.0]: https://github.com/Cray-HPE/cms-tools/compare/1.18.1...1.19.0
 
 [1.18.1]: https://github.com/Cray-HPE/cms-tools/compare/1.18.0...1.18.1
 
