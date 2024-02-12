@@ -84,7 +84,7 @@ install -m 755 -d %{buildroot}/opt/cray/tests/integration/csm/
 echo /opt/cray/tests/integration/csm | tee -a INSTALLED_FILES
 # If the RPM contains just a single Python version, then we can use a simple symlink.
 # Otherwise we should use the run_barebones_image_test.sh script
-%if %{num_py_versions} == "1"
+%if %{num_py_versions} == 1
 pushd %{buildroot}/opt/cray/tests/integration/csm
 ln -s ../../../../..%{install_venv_python_base_dir}/*/bin/barebones_image_test barebones_image_test
 popd
