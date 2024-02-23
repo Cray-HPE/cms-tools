@@ -25,8 +25,6 @@
 # This file is the "source of truth" for the repo
 export NAME=cray-cmstools-crayctldeploy
 export RPM_NAME=${NAME}
-export SLE_IMAGE='artifactory.algol60.net/csm-docker/stable/csm-docker-sle'
-export SLE_VERSION='latest'
 export GO_IMAGE='artifactory.algol60.net/csm-docker/stable/csm-docker-sle-go'
 export PY_IMAGE='artifactory.algol60.net/csm-docker/stable/csm-docker-sle-python'
 export RPM_ARCH='x86_64'

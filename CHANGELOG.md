@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a step in the Jenkinsfile to install and uninstall the RPM after building it, to validate
   that both operations succeed.
 
+### Fixed
+- Fixed a bug causing the RPM Python requirements to be filled with invalid data.
+
 ## [1.19.0] - 2024-02-12
 
 ### Changed

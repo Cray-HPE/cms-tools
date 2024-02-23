@@ -48,8 +48,6 @@ pipeline {
         INSTALL_VENV_PYTHON_BASE_DIR = sh(returnStdout: true, script: 'source ./vars.sh ; echo $INSTALL_VENV_PYTHON_BASE_DIR').trim()
         LOCAL_VENV_PYTHON_SUBDIR_NAME = sh(returnStdout: true, script: 'source ./vars.sh ; echo $LOCAL_VENV_PYTHON_SUBDIR_NAME').trim()
         RPM_BUILD_SUBDIR = sh(returnStdout: true, script: 'source ./vars.sh ; echo $RPM_BUILD_SUBDIR').trim()
-        SLE_IMAGE = sh(returnStdout: true, script: 'source ./vars.sh ; echo $SLE_IMAGE').trim()
-        SLE_VERSION = sh(returnStdout: true, script: 'source ./vars.sh ; echo $SLE_VERSION').trim()
         GO_IMAGE = sh(returnStdout: true, script: 'source ./vars.sh ; echo $GO_IMAGE').trim()
         PY_IMAGE = sh(returnStdout: true, script: 'source ./vars.sh ; echo $PY_IMAGE').trim()
         RPM_ARCH = sh(returnStdout: true, script: 'source ./vars.sh ; echo $RPM_ARCH').trim()
@@ -144,7 +142,7 @@ pipeline {
                 docker {
                     args '-v /home/jenkins/.ssh:/home/jenkins/.ssh -v /home/jenkins/.netrc:/home/jenkins/.netrc'
                     reuseNode true
-                    image "${env.SLE_IMAGE}:${env.SLE_VERSION}"
+                    image "${env.PY_IMAGE}:3.11"
                 }
             }
 
