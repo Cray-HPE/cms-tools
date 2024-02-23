@@ -39,21 +39,32 @@ LAST_MINOR=""
 
 for PY_VER in "${PY_VERSIONS[@]}"; do
     PY_VER_NODOTS=${PY_VER//.}
+    echo "PY_VER_NODOTS='${PY_VER_NODOTS}', REQUIRE_STRING='${REQUIRE_STRING}'" >&2
     add_requirement "python${PY_VER_NODOTS}-base"
+    echo "REQUIRE_STRING='${REQUIRE_STRING}'" >&2
     PY_VER_MAJOR=$(echo ${PY_VER} | cut -d. -f1)
     PY_VER_MINOR=$(echo ${PY_VER} | cut -d. -f2)
+    echo "PY_VER_MAJOR='${PY_VER_MAJOR}', PY_VER_MINOR='${PY_VER_MINOR}'" >&2
     if [[ -n ${LAST_MAJOR} ]]; then
+        echo "LAST_MAJOR='${LAST_MAJOR}'" >&2
         if [[ ${PY_VER_MAJOR} -eq ${LAST_MAJOR} && $((LAST_MINOR + 1)) -eq ${PY_VER_MINOR} ]]; then
+            echo "LAST_MINOR='${LAST_MINOR}'" >&2
             LAST_MINOR=${PY_VER_MINOR}
+            echo "LAST_MINOR='${LAST_MINOR}'" >&2
             continue
         fi
+        echo "REQUIRE_STRING='${REQUIRE_STRING}'" >&2
         add_requirement "(python${LAST_MAJOR}-base >= ${LAST_MAJOR}.${FIRST_MINOR} and python${LAST_MAJOR}-base < ${LAST_MAJOR}.$((LAST_MINOR + 1)))"
+        echo "REQUIRE_STRING='${REQUIRE_STRING}'" >&2
     fi
     LAST_MAJOR=${PY_VER_MAJOR}
     FIRST_MINOR=${PY_VER_MINOR}
     LAST_MINOR=${PY_VER_MINOR}
+    echo "LAST_MAJOR='${LAST_MAJOR}', FIRST_MINOR='${FIRST_MINOR}', LAST_MINOR='${LAST_MINOR}'" >&2
 done
+echo "REQUIRE_STRING='${REQUIRE_STRING}'" >&2
 add_requirement "(python${LAST_MAJOR}-base >= ${LAST_MAJOR}.${FIRST_MINOR} and python${LAST_MAJOR}-base < ${LAST_MAJOR}.$((LAST_MINOR + 1)))"
+echo "REQUIRE_STRING='${REQUIRE_STRING}'" >&2
 
 echo "(${REQUIRE_STRING})"
 exit 0
