@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.1] - 2024-02-23
+
+### Changed
+- Added a step in the Jenkinsfile to test install the RPM after building it, to validate
+  there are no obvious problems.
+
+### Fixed
+- Fixed a bug causing the RPM Python requirements to be filled with invalid data.
+
 ## [1.19.0] - 2024-02-12
 
 ### Changed
@@ -289,7 +298,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.19.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.19.1...HEAD
+
+[1.19.1]: https://github.com/Cray-HPE/cms-tools/compare/1.19.0...1.19.1
 
 [1.19.0]: https://github.com/Cray-HPE/cms-tools/compare/1.18.1...1.19.0
 
