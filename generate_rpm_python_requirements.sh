@@ -37,7 +37,7 @@ LAST_MAJOR=""
 FIRST_MINOR=""
 LAST_MINOR=""
 
-for PY_VER in "${PY_VERSIONS[@]}"; do
+for PY_VER in ${PY_VERSIONS}; do
     PY_VER_NODOTS=${PY_VER//.}
     echo "PY_VER_NODOTS='${PY_VER_NODOTS}', REQUIRE_STRING='${REQUIRE_STRING}'" >&2
     add_requirement "python${PY_VER_NODOTS}-base"
