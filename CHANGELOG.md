@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Added a step in the Jenkinsfile to install and uninstall the RPM after building it, to validate
+  that both operations succeed.
+
 ## [1.19.0] - 2024-02-12
 
 ### Changed

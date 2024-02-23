@@ -160,6 +160,13 @@ pipeline {
                     }
                 }
 
+                stage('Test RPM install') {
+                    steps {
+                        sh "rpm -Uvh ${env.RPM_BUILD_SUBDIR}/RPMS/${env.RPM_ARCH}/*.rpm"
+                        sh "rpm -e ${env.RPM_NAME}"
+                    }
+                }
+
                 stage('Publish Rpms') {
                     steps {
                         script {
