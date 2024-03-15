@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.0] - 2024-03-15
+
+### Changed
+- Remove BOS-v1-specific checks from `cmsdev` BOS test.
+
 ## [1.19.1] - 2024-02-23
 
 ### Changed
@@ -298,7 +303,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.19.1...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.20.0...HEAD
+
+[1.20.0]: https://github.com/Cray-HPE/cms-tools/compare/1.19.1...1.20.0
 
 [1.19.1]: https://github.com/Cray-HPE/cms-tools/compare/1.19.0...1.19.1
 
