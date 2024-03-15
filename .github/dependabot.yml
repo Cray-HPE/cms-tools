@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2023-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -54,6 +54,8 @@ updates:
     groups:
       k8s:
         patterns: [ "k8s.io/*" ]
+      protobuf:
+        patterns: [ "github.com/golang/protobuf", "google.golang.org/protobuf" ]
     allow:
       # Allow updates to both direct and indirect dependencies
       - dependency-type: "all"
@@ -62,7 +64,7 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-major", "version-update:semver-minor" ]
       - dependency-name: "k8s.io/*"
-        versions: [ ">0.22.13" ]
+        versions: [ ">=0.23.0" ]
 
   - package-ecosystem: "pip"
     directory: "/"
