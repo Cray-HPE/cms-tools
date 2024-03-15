@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `k8s.io/api` from 0.22.13 to 0.22.17 ([#176](https://github.com/Cray-HPE/cms-tools/pull/176))
 - Bump `k8s.io/apimachinery` from 0.22.13 to 0.22.17 ([#176](https://github.com/Cray-HPE/cms-tools/pull/176))
 - Bump `k8s.io/client-go` from 0.22.13 to 0.22.17 ([#176](https://github.com/Cray-HPE/cms-tools/pull/176))
+- Bump `github.com/golang/protobuf` from 1.5.3 to 1.5.4 ([#174](https://github.com/Cray-HPE/cms-tools/pull/174))
 ## [1.20.0] - 2024-03-15
 
 ### Changed
