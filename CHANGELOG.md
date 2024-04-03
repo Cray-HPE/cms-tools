@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.21.0] - 2024-04-03
+
+### Added/Changed
+- `cmsdev`: Overhauled CFS API and CLI checks, primarily to prevent them from failing with the addition of pagination
+  in CFS v3. However, prior to this, the test only covered CFS v2. This modifies it to include CFS v3. In addition, it
+  adds coverage to some overlooked endpoints.
+
+### Removed
+- `cmsdev` CFS test no longer checks status of components in CFS. Customers use SAT for this already, and this really only
+  served to make people think there were CFS errors just because a CFS configuration session failed on a node.
+
 ## [1.20.0] - 2024-03-15
 
 ### Changed
@@ -309,7 +320,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.20.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.21.0...HEAD
+
+[1.21.0]: https://github.com/Cray-HPE/cms-tools/compare/1.20.0...1.21.0
 
 [1.20.0]: https://github.com/Cray-HPE/cms-tools/compare/1.19.1...1.20.0
 
