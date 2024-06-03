@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -35,13 +35,6 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 	"strings"
 )
-
-var optionalCompletedPodNames = []string{
-	"cray-bos-wait-for-etcd-",
-	"cray-bos-bitnami-etcd-snapshotter-",
-	"cray-bos-etcd-post-install-",
-	"cray-bos-pre-upgrade-etcd-backup-",
-}
 
 // For tests which need a tenant name, if they can work even with a nonexistent tenant, use the
 // following name if no actual tenants exist
@@ -79,12 +72,6 @@ func IsBOSRunning() (passed bool) {
 
 	// Check for:
 	// Exactly 3 BOS etcd pods
-	// All pods are expected to be Running except for the following, which are expected to
-	// be Succeeded if they exist:
-	// - cray-bos-wait-for-etcd
-	// - cray-bos-bitnami-etcd-snapshotter
-	// - cray-bos-etcd-post-install
-	// - cray-bos-pre-upgrade-etcd-backup
 	etcPodCount := 0
 	etcdRe := regexp.MustCompile("cray-bos-bitnami-etcd-[0-9]")
 	pvcNames := make([]string, 0, 3)
@@ -99,7 +86,6 @@ func IsBOSRunning() (passed bool) {
 			common.Infof("Pod %s status is %s", podName, status)
 		}
 
-		expectedStatus := "Running"
 		if etcdRe.MatchString(podName) {
 			etcPodCount += 1
 			// There should be a corresponding pvc with the same name prepended with "data-"
@@ -109,18 +95,9 @@ func IsBOSRunning() (passed bool) {
 			if !test.CheckPVCStatus(pvcName) {
 				passed = false
 			}
-		} else {
-			for _, podPrefix := range optionalCompletedPodNames {
-				if strings.HasPrefix(podName, podPrefix) {
-					// These pods, if they exist, are expected to be Succeeded
-					expectedStatus = "Succeeded"
-					break
-				}
-			}
 		}
 
-		if status != "" && status != expectedStatus {
-			common.VerboseFailedf("Pod %s has status %s, but we expect it to be %s", podName, status, expectedStatus)
+		if status != "" && !podHasExpectedStatus(podName, status, etcdRe) {
 			passed = false
 		}
 	}
@@ -159,4 +136,59 @@ func IsBOSRunning() (passed bool) {
 	}
 
 	return
+}
+
+var optionalCompletedPodNames = []string{
+	"cray-bos-wait-for-etcd-",
+	"cray-bos-etcd-post-install-",
+	"cray-bos-pre-upgrade-etcd-backup-",
+}
+
+const succeededStatus = "Succeeded"
+const pendingStatus = "Pending"
+const runningStatus = "Running"
+
+func podHasExpectedStatus(podName, status string, etcdRe *regexp.Regexp) (passed bool) {
+	// All pods are expected to be Running except...
+	//
+	// the following, which are expected to be Succeeded if they exist:
+	// - cray-bos-wait-for-etcd
+	// - cray-bos-etcd-post-install
+	// - cray-bos-pre-upgrade-etcd-backup
+	//
+	// and the following, which may be Pending, Running, or Succeeded, if it exists:
+	// - cray-bos-bitnami-etcd-snapshotter
+
+	expectedStatus := ""
+	if etcdRe.MatchString(podName) {
+		expectedStatus = runningStatus
+	} else {
+		for _, podPrefix := range optionalCompletedPodNames {
+			if strings.HasPrefix(podName, podPrefix) {
+				// These pods, if they exist, are expected to be Succeeded
+				expectedStatus = succeededStatus
+				break
+			}
+		}
+		if expectedStatus == "" && !strings.HasPrefix(podName, "cray-bos-bitnami-etcd-snapshotter-") {
+			expectedStatus = runningStatus
+		}
+	}
+
+	// expectedStatus will be set except in the case where this is a cray-bos-bitnami-etcd-snapshotter- pod.
+	if expectedStatus != "" {
+		if status != expectedStatus {
+			common.VerboseFailedf("Pod %s has status %s, but we expect it to be %s", podName, status, expectedStatus)
+			return false
+		}
+		return true
+	}
+
+	// Now it only remains to check the cray-bos-bitnami-etcd-snapshotter-, which we allow to be Pending, Running, or Succeeded,
+	// since they run periodically, and it is possible for us to be executing this test while one is starting or underway
+	if status != runningStatus && status != succeededStatus && status != pendingStatus {
+		common.VerboseFailedf("Pod %s has status %s, but we expect it to be Pending, Running, or Succeeded", podName, status)
+		return false
+	}
+	return true
 }
