@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.16.3] - 2024-06-03
+
+### Changed
+- `cmsdev`: Do not fail BOS test if etcd snapshotter pods are running.
+
 ## [1.16.2] - 2024-04-03
 
 ### Added/Changed
