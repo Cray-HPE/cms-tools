@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Compile `cmsdev` with verbose flag
+
 ### Dependencies
 - Bump `golang.org/x/net` from 0.17.0 to 0.23.0 ([#183](https://github.com/Cray-HPE/cms-tools/pull/183))
 
