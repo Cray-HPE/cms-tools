@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+//  (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -33,7 +33,9 @@ package common
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
+	"strings"
 )
 
 var CommandPaths = map[string]string{}
@@ -42,10 +44,13 @@ const CmdRcCannotGet = -1
 
 // Ran is set to true if the Run command was called on the
 // Cmd object. It does not mean that the command itself actually
-// was run necessarily
+// was run necessarily.
+// Environment variables in CmdEnv (if any) are APPENDED to the
+// current environment variables, not used in place of them
 type CommandResult struct {
 	CmdPath, CmdString string
 	CmdArgs            []string
+	CmdEnv             map[string]string
 	CmdErr             error
 	ExecCmd            *exec.Cmd
 	Rc                 int
@@ -53,13 +58,19 @@ type CommandResult struct {
 	Ran                bool
 }
 
-func (cmdResult *CommandResult) Init(cmdPath string, cmdArgs ...string) error {
+func (cmdResult *CommandResult) Init(cmdEnv map[string]string, cmdPath string, cmdArgs ...string) error {
 	if len(cmdPath) == 0 {
-		Debugf("CommandResult init(): cmdArgs = %v", cmdArgs)
-		return fmt.Errorf("CommandResult init(): cmdPath may not be empty")
+		Debugf("CommandResult Init(): cmdArgs = %v", cmdArgs)
+		return fmt.Errorf("CommandResult Init(): cmdPath may not be empty")
 	}
 	cmdResult.CmdPath = cmdPath
 	cmdResult.CmdArgs = cmdArgs
+	cmdResult.CmdEnv = cmdEnv
+	for envVarName := range cmdEnv {
+		if len(envVarName) == 0 {
+			return fmt.Errorf("CommandResult Init(): cmdEnv may not contain blank environment variable names")
+		}
+	}
 	return nil
 }
 
@@ -71,6 +82,23 @@ func (cmdResult *CommandResult) ErrString() string {
 	return string(cmdResult.ErrBytes)
 }
 
+func (cmdResult *CommandResult) SetEnvVars() string {
+	if len(cmdResult.CmdEnv) == 0 {
+		return ""
+	}
+
+	var envVarNames strings.Builder
+	cmdResult.ExecCmd.Env = os.Environ()
+	for envVarName, envVarValue := range cmdResult.CmdEnv {
+		if envVarNames.Len() > 0 {
+			envVarNames.WriteString(" ")
+		}
+		envVarNames.WriteString(envVarName)
+		cmdResult.ExecCmd.Env = append(cmdResult.ExecCmd.Env, fmt.Sprintf("%s=%s", envVarName, envVarValue))
+	}
+	return envVarNames.String()
+}
+
 // The command returning non-0 does NOT constitute an error -- that
 // is communicated back via the command return code, and the calling
 // function is responsible for determining how to handle that
@@ -79,8 +107,13 @@ func (cmdResult *CommandResult) Run() (err error) {
 
 	cmdResult.ExecCmd = exec.Command(cmdResult.CmdPath, cmdResult.CmdArgs...)
 	cmdResult.CmdString = fmt.Sprintf("%s", cmdResult.ExecCmd)
-	Debugf("Running command: %s", cmdResult.CmdString)
-
+	envVarNames := cmdResult.SetEnvVars()
+	if len(envVarNames) > 0 {
+		Debugf("Running command: %s", cmdResult.CmdString)
+		Debugf("The following additional environment variables are set for the command: %s", envVarNames)
+	} else {
+		Debugf("Running command with no additional environment variables set: %s", cmdResult.CmdString)
+	}
 	cmdResult.ExecCmd.Stdout = &stdout
 	cmdResult.ExecCmd.Stderr = &stderr
 
@@ -138,9 +171,9 @@ func GetPath(cmdName string) (path string, err error) {
 // The command returning non-0 does NOT constitute an error -- that
 // is communicated back via the command return code, and the calling
 // function is responsible for determining how to handle that
-func RunPath(cmdPath string, cmdArgs ...string) (cmdResult *CommandResult, err error) {
+func RunPathWithEnv(cmdEnv map[string]string, cmdPath string, cmdArgs ...string) (cmdResult *CommandResult, err error) {
 	cmdResult = new(CommandResult)
-	err = cmdResult.Init(cmdPath, cmdArgs...)
+	err = cmdResult.Init(cmdEnv, cmdPath, cmdArgs...)
 	if err != nil {
 		return
 	}
@@ -148,15 +181,25 @@ func RunPath(cmdPath string, cmdArgs ...string) (cmdResult *CommandResult, err e
 	return
 }
 
+// Wrapper for RunPathWithEnv with no environment variables
+func RunPath(cmdPath string, cmdArgs ...string) (*CommandResult, error) {
+	return RunPathWithEnv(nil, cmdPath, cmdArgs...)
+}
+
 // The command returning non-0 does NOT constitute an error -- that
 // is communicated back via the command return code, and the calling
 // function is responsible for determining how to handle that
-func RunName(cmdName string, cmdArgs ...string) (cmdResult *CommandResult, err error) {
+func RunNameWithEnv(cmdEnv map[string]string, cmdName string, cmdArgs ...string) (cmdResult *CommandResult, err error) {
 	cmdResult = new(CommandResult)
 	cmdPath, err := GetPath(cmdName)
 	if err != nil {
 		return
 	}
-	cmdResult, err = RunPath(cmdPath, cmdArgs...)
+	cmdResult, err = RunPathWithEnv(cmdEnv, cmdPath, cmdArgs...)
 	return
+}
+
+// Wrapper for RunNameWithEnv with no environment variables
+func RunName(cmdName string, cmdArgs ...string) (*CommandResult, error) {
+	return RunNameWithEnv(nil, cmdName, cmdArgs...)
 }
