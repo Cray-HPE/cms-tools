@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Compile `cmsdev` with verbose flag
+- Modify VCS test to specify git credentials using environment variables rather than URL
+- Look up Kubernetes secrets using golang module instead of `kubectl` command
+- Do not log VCS credentials
+- When installing cmsdev RPM, remove from the log any previously-logged credentials
+- Do not log credentials when getting API token
 
 ### Dependencies
 - Bump `golang.org/x/net` from 0.17.0 to 0.23.0 ([#183](https://github.com/Cray-HPE/cms-tools/pull/183))
