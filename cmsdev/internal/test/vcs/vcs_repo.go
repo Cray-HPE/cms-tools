@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2020-2023 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2020-2024 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -42,6 +42,78 @@ import (
 const VCSURL = common.BASEURL + "/vcs/api/v1"
 
 var useInsecure bool = false
+
+type GitRepo struct {
+	RepoName   string
+	Host       string
+	VcsOrgName string
+	Username   string
+	Password   string
+}
+
+func (gitRepo *GitRepo) Url() string {
+	return fmt.Sprintf("https://%s/vcs/%s/%s.git", gitRepo.Host, gitRepo.VcsOrgName, gitRepo.RepoName)
+}
+
+func (gitRepo *GitRepo) GitCmdEnvVars() map[string]string {
+	return map[string]string{
+		"GIT_CONFIG_COUNT":   "2",
+		"GIT_CONFIG_KEY_0":   fmt.Sprintf("credential.https://%s.username", gitRepo.Host),
+		"GIT_CONFIG_VALUE_0": gitRepo.Username,
+		"GIT_CONFIG_KEY_1":   fmt.Sprintf("credential.https://%s.helper", gitRepo.Host),
+		"GIT_CONFIG_VALUE_1": fmt.Sprintf("!f() { test \"$1\" = get && echo \"password=%s\"; }; f", gitRepo.Password),
+	}
+}
+
+// When running git commands, just like with the vcs requests we want to retry them insecurely
+// if needed
+func (gitRepo *GitRepo) runGitCmd(shouldPass bool, cmdArgs ...string) bool {
+	var cmdResult *common.CommandResult
+	var err error
+	var tryInsecure bool
+	var newCmdArgs []string
+
+	tryInsecure = false
+
+	if !shouldPass {
+		// Because this command should not work anyway, we will run it insecurely,
+		// to avoid failures that are because of that
+
+		// Do some lovely golang gymnastics to prepend two strings to the
+		// variadic cmdArgs argument
+		newCmdArgs = make([]string, 0, 2+len(cmdArgs))
+		newCmdArgs = append(append(newCmdArgs, "-c", "http.sslVerify=false"), cmdArgs...)
+		return runCmdWithEnv(shouldPass, gitRepo.GitCmdEnvVars(), "git", newCmdArgs...)
+	} else if !useInsecure {
+		cmdResult, err = common.RunNameWithEnv(gitRepo.GitCmdEnvVars(), "git", cmdArgs...)
+		if err != nil {
+			common.Error(err)
+			common.Errorf("Error attempting to run command")
+			return false
+		} else if cmdResult.Rc == 0 {
+			return true
+		}
+		// Check to see if this may be an SSL error
+		if strings.Contains(cmdResult.ErrString(), "SSL") {
+			common.Infof("Command failure may be an SSL issue. Will retry insecurely.")
+			common.Infof("Important: This means the overall test will fail even if this command works on retry!")
+			tryInsecure = true
+		} else {
+			common.Errorf("Command failed")
+			return false
+		}
+	}
+	// Run the command insecurely
+	newCmdArgs = make([]string, 0, 2+len(cmdArgs))
+	newCmdArgs = append(append(newCmdArgs, "-c", "http.sslVerify=false"), cmdArgs...)
+	ok := runCmdWithEnv(shouldPass, gitRepo.GitCmdEnvVars(), "git", newCmdArgs...)
+	if ok && tryInsecure {
+		// Let's remember that we had to run this command insecurely in order for it to work, so that
+		// we'll be insecure for our future git commands in this test
+		useInsecure = true
+	}
+	return ok
+}
 
 // Perform a VCS request of the specified type to the specified uri, with the specified JSON data (if any)
 // If the request fails, it is retried with authentication disabled.
@@ -165,7 +237,7 @@ func vcsPost(requestUri, jsonString string) bool {
 // 9) Deletes the new org via API
 // 10) Queries the new org via API to verify it is not found
 func repoTest() (passed bool) {
-	var repoUrl, vcsUser, vcsPass string
+	var vcsUser, vcsPass string
 
 	passed = true
 
@@ -223,6 +295,11 @@ func repoTest() (passed bool) {
 		// create request did appear to work
 	}
 
+	gitRepo := new(GitRepo)
+	gitRepo.Host = common.BASEHOST
+	gitRepo.VcsOrgName = orgName
+	gitRepo.RepoName = repoName
+
 	// Get vcs user and password
 	common.Debugf("Getting vcs user and password")
 	vcsUser, vcsPass, err := k8s.GetVcsUsernamePassword()
@@ -231,8 +308,9 @@ func repoTest() (passed bool) {
 		passed = false
 		common.Infof("Unable to perform clone test without vcs user credentials")
 	} else {
-		repoUrl = fmt.Sprintf("https://%s:%s@%s/vcs/%s/%s.git", vcsUser, vcsPass, common.BASEHOST, orgName, repoName)
-		if !cloneTest(repoName, repoUrl) {
+		gitRepo.Username = vcsUser
+		gitRepo.Password = vcsPass
+		if !gitRepo.cloneTest() {
 			passed = false
 		}
 	}
@@ -262,7 +340,9 @@ func repoTest() (passed bool) {
 	}
 
 	// Try a clone to verify that it now fails
-	if !cloneShouldFail(repoName, repoUrl) {
+	if len(gitRepo.Username) == 0 {
+		common.Infof("Unable to perform bad path clone test without vcs user credentials")
+	} else if !gitRepo.cloneShouldFail() {
 		passed = false
 	}
 
@@ -297,13 +377,13 @@ func repoTest() (passed bool) {
 // Wrapper to run a command and verify it passes or fails
 // Logs errors if any
 // Returns true if no errors, false otherwise
-func runCmd(shouldPass bool, cmdName string, cmdArgs ...string) bool {
+func runCmdWithEnv(shouldPass bool, cmdEnv map[string]string, cmdName string, cmdArgs ...string) bool {
 	var cmdResult *common.CommandResult
 	var err error
 	if !shouldPass {
 		common.Debugf("WE EXPECT THE FOLLOWING %s COMMAND TO FAIL", cmdName)
 	}
-	cmdResult, err = common.RunName(cmdName, cmdArgs...)
+	cmdResult, err = common.RunNameWithEnv(cmdEnv, cmdName, cmdArgs...)
 	if err != nil {
 		common.Error(err)
 		common.Errorf("Error attempting to run command")
@@ -323,54 +403,9 @@ func runCmd(shouldPass bool, cmdName string, cmdArgs ...string) bool {
 	}
 }
 
-// When running git commands, just like with the vcs requests we want to retry them insecurely
-// if needed
-func runGitCmd(shouldPass bool, cmdArgs ...string) bool {
-	var cmdResult *common.CommandResult
-	var err error
-	var tryInsecure bool
-	var newCmdArgs []string
-
-	tryInsecure = false
-
-	if !shouldPass {
-		// Because this command should not work anyway, we will run it insecurely,
-		// to avoid failures that are because of that
-
-		// Do some lovely golang gymnastics to prepend two strings to the
-		// variadic cmdArgs argument
-		newCmdArgs = make([]string, 0, 2+len(cmdArgs))
-		newCmdArgs = append(append(newCmdArgs, "-c", "http.sslVerify=false"), cmdArgs...)
-		return runCmd(shouldPass, "git", newCmdArgs...)
-	} else if !useInsecure {
-		cmdResult, err = common.RunName("git", cmdArgs...)
-		if err != nil {
-			common.Error(err)
-			common.Errorf("Error attempting to run command")
-			return false
-		} else if cmdResult.Rc == 0 {
-			return true
-		}
-		// Check to see if this may be an SSL error
-		if strings.Contains(cmdResult.ErrString(), "SSL") {
-			common.Infof("Command failure may be an SSL issue. Will retry insecurely.")
-			common.Infof("Important: This means the overall test will fail even if this command works on retry!")
-			tryInsecure = true
-		} else {
-			common.Errorf("Command failed")
-			return false
-		}
-	}
-	// Run the command insecurely
-	newCmdArgs = make([]string, 0, 2+len(cmdArgs))
-	newCmdArgs = append(append(newCmdArgs, "-c", "http.sslVerify=false"), cmdArgs...)
-	ok := runCmd(shouldPass, "git", newCmdArgs...)
-	if ok && tryInsecure {
-		// Let's remember that we had to run this command insecurely in order for it to work, so that
-		// we'll be insecure for our future git commands in this test
-		useInsecure = true
-	}
-	return ok
+// Wrapper to runCmdWithEnv with no env variables set
+func runCmd(shouldPass bool, cmdName string, cmdArgs ...string) bool {
+	return runCmdWithEnv(shouldPass, nil, cmdName, cmdArgs...)
 }
 
 // Does the following:
@@ -383,23 +418,23 @@ func runGitCmd(shouldPass bool, cmdArgs ...string) bool {
 // 7) Deletes the local copy of repo
 // Logs errors if any
 // Returns true if no errors, false otherwise
-func cloneTest(repoName, repoUrl string) bool {
+func (gitRepo *GitRepo) cloneTest() bool {
 	var repoDir string
 	var err error
 
-	repoDir = fmt.Sprintf("/tmp/%s", repoName)
+	repoDir = fmt.Sprintf("/tmp/%s", gitRepo.RepoName)
 
-	if !runGitCmd(true, "clone", repoUrl, repoDir) {
+	if !gitRepo.runGitCmd(true, "clone", gitRepo.Url(), repoDir) {
 		return false
 	}
 
 	// set user.email and user.name in cloned repo, to avoid errors/warnings
-	if !runGitCmd(true, "-C", repoDir, "config", "user.email", "catfood@dogfood.gov") {
+	if !gitRepo.runGitCmd(true, "-C", repoDir, "config", "user.email", "catfood@dogfood.gov") {
 		runCmd(true, "rm", "-r", repoDir)
 		return false
 	}
 
-	if !runGitCmd(true, "-C", repoDir, "config", "user.name", "Joseph Catfood") {
+	if !gitRepo.runGitCmd(true, "-C", repoDir, "config", "user.name", "Joseph Catfood") {
 		runCmd(true, "rm", "-r", repoDir)
 		return false
 	}
@@ -433,19 +468,19 @@ func cloneTest(repoName, repoUrl string) bool {
 	}
 
 	// git add
-	if !runGitCmd(true, "-C", repoDir, "add", ".") {
+	if !gitRepo.runGitCmd(true, "-C", repoDir, "add", ".") {
 		runCmd(true, "rm", "-r", repoDir, textFile)
 		return false
 	}
 
 	// git commit
-	if !runGitCmd(true, "-C", repoDir, "commit", "-m", "Test commit") {
+	if !gitRepo.runGitCmd(true, "-C", repoDir, "commit", "-m", "Test commit") {
 		runCmd(true, "rm", "-r", repoDir, textFile)
 		return false
 	}
 
 	// git push
-	if !runGitCmd(true, "-C", repoDir, "push") {
+	if !gitRepo.runGitCmd(true, "-C", repoDir, "push") {
 		runCmd(true, "rm", "-r", repoDir, textFile)
 		return false
 	}
@@ -457,8 +492,8 @@ func cloneTest(repoName, repoUrl string) bool {
 	}
 
 	// Clone into new directory
-	repoDir = fmt.Sprintf("/tmp/%s-take2", repoName)
-	if !runGitCmd(true, "clone", repoUrl, repoDir) {
+	repoDir = fmt.Sprintf("/tmp/%s-take2", gitRepo.RepoName)
+	if !gitRepo.runGitCmd(true, "clone", gitRepo.Url(), repoDir) {
 		runCmd(true, "rm", textFile)
 		return false
 	}
@@ -477,11 +512,11 @@ func cloneTest(repoName, repoUrl string) bool {
 	return true
 }
 
-func cloneShouldFail(repoName, repoUrl string) bool {
+func (gitRepo *GitRepo) cloneShouldFail() bool {
 	var repoDir string
 
-	repoDir = fmt.Sprintf("/tmp/%s-shouldfail", repoName)
-	if runGitCmd(false, "clone", repoUrl, repoDir) {
+	repoDir = fmt.Sprintf("/tmp/%s-shouldfail", gitRepo.RepoName)
+	if gitRepo.runGitCmd(false, "clone", gitRepo.Url(), repoDir) {
 		return true
 	}
 
