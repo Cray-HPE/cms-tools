@@ -63,6 +63,9 @@ echo /usr/local/bin | tee -a INSTALLED_FILES
 install -m 755 cmsdev/bin/cmsdev %{buildroot}/usr/local/bin/cmsdev
 echo /usr/local/bin/cmsdev | tee -a INSTALLED_FILES
 
+install -m 755 cmsdev/redact_cmsdev_log.py %{buildroot}/usr/local/bin/redact_cmsdev_log.py
+echo /usr/local/bin/redact_cmsdev_log.py | tee -a INSTALLED_FILES
+
 # Log directory for cmsdev
 install -m 755 -d %{buildroot}%{cmsdev_logdir}
 echo %{cmsdev_logdir} | tee -a INSTALLED_FILES
@@ -95,6 +98,10 @@ install -m 755 run_barebones_image_test.sh %{buildroot}/opt/cray/tests/integrati
 echo /opt/cray/tests/integration/csm/barebones_image_test | tee -a INSTALLED_FILES
 
 cat INSTALLED_FILES | xargs -i sh -c 'test -L $RPM_BUILD_ROOT{} -o -f $RPM_BUILD_ROOT{} && echo {} || echo %dir {}' | sort -u > FILES
+
+%post
+# Redact any credentials that were logged by earlier cmsdev versions
+/usr/local/bin/redact_cmsdev_log.py
 
 %clean
 

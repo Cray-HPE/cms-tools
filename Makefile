@@ -37,7 +37,7 @@ build_cmsdev:
 		# Record the go version in the build output, just in case it is helpful
 		go version
 		mkdir -pv cmsdev/bin
-		cd cmsdev && CGO_ENABLED=0 GO111MODULE=on GOARCH=amd64 GOOS=linux go build -o ./bin/cmsdev -mod vendor .
+		cd cmsdev && CGO_ENABLED=0 GO111MODULE=on GOARCH=amd64 GOOS=linux go build -v -o ./bin/cmsdev -mod vendor .
 
 build_python_venv:
 		PY_VERSION=$(PY_VERSION) ./build_python_venv.sh
