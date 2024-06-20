@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Modify VCS test to specify git credentials using environment variables rather than URL
+- Look up Kubernetes secrets using golang module instead of `kubectl` command
+- Do not log VCS credentials
+- When installing cmsdev RPM, remove from the log any previously-logged credentials
+- Do not log credentials when getting API token
+
 ## [1.10.9] - 2023-06-27
 
 ### Fixed
@@ -143,7 +150,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.10.8...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.10.9...HEAD
+
+[1.10.9]: https://github.com/Cray-HPE/cms-tools/compare/1.10.8...1.10.9
 
 [1.10.8]: https://github.com/Cray-HPE/cms-tools/compare/1.10.7...1.10.8
 

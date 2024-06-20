@@ -1,4 +1,4 @@
-# Copyright 2019-2022 Hewlett Packard Enterprise Development LP
+# Copyright 2019-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -49,13 +49,19 @@ popd
 %install
 install -m 755 -d %{buildroot}/usr/local/bin/
 install -m 755 cmsdev/bin/cmsdev %{buildroot}/usr/local/bin/cmsdev
+install -m 755 cmsdev/redact_cmsdev_log.py %{buildroot}/usr/local/bin/redact_cmsdev_log.py
 install -m 700 cms-tftp/cray-tftp-upload %{buildroot}/usr/local/bin/cray-tftp-upload
 install -m 700 cms-tftp/cray-upload-recovery-images %{buildroot}/usr/local/bin/cray-upload-recovery-images
 install -m 755 -d %{buildroot}/opt/cray/tests/integration/csm/
 install -m 755 csm-health-checks/barebones-boot/barebonesImageTest.py %{buildroot}/opt/cray/tests/integration/csm/barebonesImageTest
 
+%post
+# Redact any credentials that were logged by earlier cmsdev versions
+/usr/local/bin/redact_cmsdev_log.py
+
 %clean
 rm -f %{buildroot}/usr/local/bin/cmsdev
+rm -f %{buildroot}/usr/local/bin/redact_cmsdev_log.py
 rm -f %{buildroot}/usr/local/bin/cray-tftp-upload
 rm -f %{buildroot}/usr/local/bin/cray-upload-recovery-images
 rm -f %{buildroot}/opt/cray/tests/integration/csm/barebonesImageTest
@@ -63,6 +69,7 @@ rm -f %{buildroot}/opt/cray/tests/integration/csm/barebonesImageTest
 %files
 %attr(-,root,root)
 /usr/local/bin/cmsdev
+/usr/local/bin/redact_cmsdev_log.py
 /usr/local/bin/cray-tftp-upload
 /usr/local/bin/cray-upload-recovery-images
 /opt/cray/tests/integration/csm/barebonesImageTest
