@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  (C) Copyright 2020-2022 Hewlett Packard Enterprise Development LP
+//  (C) Copyright 2020-2022, 2024 Hewlett Packard Enterprise Development LP
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -27,11 +27,12 @@ package k8s
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	resty "gopkg.in/resty.v1"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -118,7 +119,6 @@ func RunCommandInContainer(podName, namespace, containerName string, cmdStrings 
 }
 
 func GetVcsUsernamePassword() (vcsUsername, vcsPassword string, err error) {
-	// TODO: clean this up. remove exec.Command and replace with clientgo
 	if len(VcsUser) != 0 && len(VcsPass) != 0 {
 		common.Debugf("Using cached values of vcs user and password")
 		vcsUsername = VcsUser
@@ -126,109 +126,30 @@ func GetVcsUsernamePassword() (vcsUsername, vcsPassword string, err error) {
 		return
 	}
 
-	var cmdOut []byte
-	var cmd *exec.Cmd
-
-	path, err := GetKubectlPath()
+	secret, err := GetSecret("services", "vcs-user-credentials")
 	if err != nil {
 		return
 	}
 
-	cmd = exec.Command(path, "get", "secret", "-n", "services", "vcs-user-credentials", "--template={{.data.vcs_username}}")
-	common.Debugf("Running command: %s", cmd)
-	cmdOut, err = cmd.CombinedOutput()
-	if len(cmdOut) > 0 {
-		common.Debugf("Command output: %s", cmdOut)
-	} else if err == nil {
-		err = fmt.Errorf("No output from command: %s", cmd)
-	} else {
-		common.Errorf("No output from command: %s", cmd)
-	}
+	vcsUsername, err = GetDataFieldFromSecret(secret, "vcs_username")
 	if err != nil {
 		return
 	}
-	base64Str := strings.TrimSpace(string(cmdOut))
-	common.Debugf("vcs username (base 64) = \"%s\"", base64Str)
-	common.Debugf("Decoding vcs username from base 64")
-	decodedBytes, err := base64.StdEncoding.DecodeString(base64Str)
-	if err != nil {
-		return
-	} else if len(decodedBytes) == 0 {
-		err = fmt.Errorf("Decoded string is empty")
-		return
-	}
-	vcsUsername = strings.TrimSpace(string(decodedBytes))
-	common.Debugf("Decoded vcs username = \"%s\"", vcsUsername)
 
-	cmd = exec.Command(path, "get", "secret", "-n", "services", "vcs-user-credentials", "--template={{.data.vcs_password}}")
-	common.Debugf("Running command: %s", cmd)
-	cmdOut, err = cmd.CombinedOutput()
-	if len(cmdOut) > 0 {
-		common.Debugf("Command output: %s", cmdOut)
-	} else if err == nil {
-		err = fmt.Errorf("No output from command: %s", cmd)
-	} else {
-		common.Errorf("No output from command: %s", cmd)
-	}
+	vcsPassword, err = GetDataFieldFromSecret(secret, "vcs_password")
 	if err != nil {
 		return
 	}
-	base64Str = strings.TrimSpace(string(cmdOut))
-	common.Debugf("vcs password (base 64) = \"%s\"", base64Str)
-	common.Debugf("Decoding vcs password from base 64")
-	decodedBytes, err = base64.StdEncoding.DecodeString(base64Str)
-	if err != nil {
-		return
-	} else if len(decodedBytes) == 0 {
-		err = fmt.Errorf("Decoded string is empty")
-		return
-	}
-	vcsPassword = strings.TrimSpace(string(decodedBytes))
-	common.Debugf("Decoded vcs password = \"%s\"", vcsPassword)
 	VcsUser = vcsUsername
 	VcsPass = vcsPassword
 	return
 }
 
 func GetOauthClientSecret() (string, error) {
-	// TODO: clean this up. remove exec.Command and replace with clientgo
-	var cmdOut []byte
-	var err error
-	var cmd *exec.Cmd
-
-	path, err := GetKubectlPath()
-	if err != nil {
-		return "", err
-	}
-	cmd = exec.Command(path, "get", "secrets", "admin-client-auth", "-ojsonpath='{.data.client-secret}'")
-	common.Debugf("Running command: %s", cmd)
-	cmdOut, err = cmd.CombinedOutput()
-	if len(cmdOut) > 0 {
-		common.Debugf("Command output: %s", cmdOut)
-	} else if err == nil {
-		err = fmt.Errorf("No output from command: %s", cmd)
-	} else {
-		common.Errorf("No output from command: %s", cmd)
-	}
-	if err != nil {
-		return "", err
-	}
-	cmdStr := fmt.Sprintf("echo %s | base64 -d", strings.Trim(string(cmdOut), "'"))
-	common.Debugf("Running command: %s", cmdStr)
-	cmdOut, err = exec.Command("bash", "-c", cmdStr).Output()
-	if len(cmdOut) > 0 {
-		common.Debugf("Command output: %s", cmdOut)
-	} else if err == nil {
-		err = fmt.Errorf("No output from command: %s", cmd)
-	} else {
-		common.Errorf("No output from command: %s", cmd)
-	}
-	return string(cmdOut), nil
+	return GetSecretDataField("default", "admin-client-auth", "client-secret")
 }
 
 func GetAccessJSON(params ...string) ([]byte, error) {
-	// TODO: clean this up. remove curl and replace with clientgo or a rest call
-	var cmdOut []byte
 	var err error
 	var clientSecret string = ""
 
@@ -247,19 +168,20 @@ func GetAccessJSON(params ...string) ([]byte, error) {
 		}
 		clientSecret = string(clientSecretByte)
 	}
-
-	cmdStr := fmt.Sprintf("curl -k -s -d grant_type=client_credentials -d client_id=admin-client -d client_secret=%s "+
-		"https://api-gw-service-nmn.local/keycloak/realms/shasta/protocol/openid-connect/token", clientSecret)
-	common.Debugf("Running command: bash -c \"%s\"", cmdStr)
-	cmdOut, err = exec.Command("bash", "-c", cmdStr).Output()
+	client := resty.New()
+	client.SetHeader("Content-Type", "application/json")
+	client.SetFormData(map[string]string{
+		"grant_type":    "client_credentials",
+		"client_id":     "admin-client",
+		"client_secret": clientSecret,
+	})
+	resp, err := client.R().Post("https://api-gw-service-nmn.local/keycloak/realms/shasta/protocol/openid-connect/token")
 	if err != nil {
-		if len(cmdOut) > 0 {
-			common.Debugf("Command output: %s", cmdOut)
-		}
 		return nil, err
-	} else {
-		return cmdOut, nil
+	} else if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("POST to Keycloak: expected status code %d, got %d", http.StatusOK, resp.StatusCode())
 	}
+	return resp.Body(), nil
 }
 
 func GetAccessToken(params ...string) (string, error) {
@@ -353,6 +275,41 @@ func GetNodeNames(params ...string) ([]string, error) {
 		names = append(names, node.ObjectMeta.Name)
 	}
 	return names, err
+}
+
+func GetDataFieldFromSecret(secret *coreV1.Secret, field_name string) (string, error) {
+	common.Debugf("Retrieving '%s' data field from %s in namespace %s",
+		field_name, secret.ObjectMeta.Name, secret.ObjectMeta.Namespace)
+	fieldBytes, keyFound := secret.Data[field_name]
+	if !keyFound {
+		return "", fmt.Errorf("No '%s' data field found in Kubernetes secret %s in %s namespace",
+			field_name, secret.ObjectMeta.Name, secret.ObjectMeta.Namespace)
+	} else if len(fieldBytes) == 0 {
+		return "", fmt.Errorf("Value for %s is an empty string", field_name)
+	}
+	return strings.TrimSpace(string(fieldBytes)), nil
+}
+
+// Given a namespace and a name, returns the matching secret
+func GetSecret(namespace, name string) (*coreV1.Secret, error) {
+	common.Debugf("Retrieving kubernetes secret %s in %s namespace", name, namespace)
+	clientset, err := GetClientset()
+	if err != nil {
+		return nil, err
+	}
+	return clientset.CoreV1().Secrets(namespace).Get(
+		context.TODO(),
+		name,
+		v1.GetOptions{},
+	)
+}
+
+func GetSecretDataField(namespace, name, field_name string) (string, error) {
+	k8sSecret, err := GetSecret(namespace, name)
+	if err != nil {
+		return "", err
+	}
+	return GetDataFieldFromSecret(k8sSecret, field_name)
 }
 
 // Given a namespace and name, returns the matching configmap
