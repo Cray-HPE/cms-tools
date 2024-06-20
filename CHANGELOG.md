@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.10] - 2024-06-20
+
 ### Changed
 - Modify VCS test to specify git credentials using environment variables rather than URL
 - Look up Kubernetes secrets using golang module instead of `kubectl` command
@@ -150,7 +152,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.10.9...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.10.10...HEAD
+
+[1.10.10]: https://github.com/Cray-HPE/cms-tools/compare/1.10.9...1.10.10
 
 [1.10.9]: https://github.com/Cray-HPE/cms-tools/compare/1.10.8...1.10.9
 
