@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.22.0] - 2024-06-20
+
 ### Changed
 - Compile `cmsdev` with verbose flag
 - Modify VCS test to specify git credentials using environment variables rather than URL
@@ -331,7 +333,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.21.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.22.0...HEAD
+
+[1.22.0]: https://github.com/Cray-HPE/cms-tools/compare/1.21.0...1.22.0
 
 [1.21.0]: https://github.com/Cray-HPE/cms-tools/compare/1.20.0...1.21.0
 
