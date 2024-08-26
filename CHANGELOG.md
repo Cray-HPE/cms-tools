@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `sigs.k8s.io/yaml` from 1.2.0 to 1.4.0 ([#213](https://github.com/Cray-HPE/cms-tools/pull/213))
 - Bump `sigs.k8s.io/structured-merge-diff/v4` from 4.2.3 to 4.4.1 ([#202](https://github.com/Cray-HPE/cms-tools/pull/202))
 - Bump `github.com/fatih/color` from 1.15.0 to 1.17.0 ([#214](https://github.com/Cray-HPE/cms-tools/pull/214))
+- Bump `github.com/PuerkitoBio/purell` from 1.1.1 to 1.2.1 ([#215](https://github.com/Cray-HPE/cms-tools/pull/215))
+- Bump `github.com/subosito/gotenv` from 1.4.2 to 1.6.0 ([#218](https://github.com/Cray-HPE/cms-tools/pull/218))
+- Bump `github.com/go-openapi/jsonpointer` from 0.19.5 to 0.21.0 ([#217](https://github.com/Cray-HPE/cms-tools/pull/217))
+- Bump `github.com/go-openapi/jsonreference` from 0.19.5 to 0.21.0 ([#212](https://github.com/Cray-HPE/cms-tools/pull/212))
 
 ## [1.22.0] - 2024-06-20
 
