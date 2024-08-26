@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - barebones image test: Pin major/minor but take latest patch version
 - barebones image test: CSM 1.6 now uses Kubernetes 1.24, so use Python client v24.x
 - cmsdev: CSM 1.6 now uses Kubernetes 1.24, so change dependabot `k8s.io` package restriction to match
+- Bump `k8s.io/api` from 0.22.17 to 0.24.17 ([#191](https://github.com/Cray-HPE/cms-tools/pull/191))
+- Bump `k8s.io/apimachinery` from 0.22.17 to 0.24.17 ([#191](https://github.com/Cray-HPE/cms-tools/pull/191))
+- Bump `k8s.io/client-go` from 0.22.17 to 0.24.17 ([#191](https://github.com/Cray-HPE/cms-tools/pull/191))
+- Bump `k8s.io/klog/v2` from 2.9.0 to 2.60.1 ([#191](https://github.com/Cray-HPE/cms-tools/pull/191))
+- Bump `k8s.io/utils` from 0.0.0-20211116205334-6203023598ed to 0.0.0-20220210201930-3a6ce19ff2f9 ([#191](https://github.com/Cray-HPE/cms-tools/pull/191))
 
 ## [1.22.0] - 2024-06-20
 
