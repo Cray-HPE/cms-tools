@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `github.com/go-openapi/jsonpointer` from 0.19.5 to 0.21.0 ([#217](https://github.com/Cray-HPE/cms-tools/pull/217))
 - Bump `github.com/go-openapi/jsonreference` from 0.19.5 to 0.21.0 ([#212](https://github.com/Cray-HPE/cms-tools/pull/212))
 - Bump `github.com/google/gnostic` from 0.5.7-v3refs to 0.7.0 ([#211](https://github.com/Cray-HPE/cms-tools/pull/211))
+- Bump `github.com/fsnotify/fsnotify` from 1.6.0 to 1.7.0 ([#197](https://github.com/Cray-HPE/cms-tools/pull/197))
 
 ## [1.22.0] - 2024-06-20
 
