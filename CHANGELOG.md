@@ -8,7 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Use `requests-retry-session` Python module instead of duplicating its code
+- barebones image test: Use `requests-retry-session` Python module instead of duplicating its code
+
+### Dependencies
+- barebones image test: Pin major/minor but take latest patch version
 
 ## [1.22.0] - 2024-06-20
 
