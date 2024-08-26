@@ -58,9 +58,6 @@ updates:
       # Allow updates to both direct and indirect dependencies
       - dependency-type: "all"
     ignore:
-      # Only look for patch version updates
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major", "version-update:semver-minor" ]
       - dependency-name: "k8s.io/*"
         versions: [ ">=0.25.0" ]
 
