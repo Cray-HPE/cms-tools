@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.23.0] - 2024-08-26
+
+### Dependencies
+- barebones image test: Use `requests-retry-session` Python module instead of duplicating its code
+- barebones image test: Pin major/minor but take latest patch version
+- barebones image test: CSM 1.6 now uses Kubernetes 1.24, so use Python client v24.x
+- cmsdev: CSM 1.6 now uses Kubernetes 1.24, so change dependabot `k8s.io` package restriction to match
+- Bump `k8s.io/api` from 0.22.17 to 0.24.17 ([#191](https://github.com/Cray-HPE/cms-tools/pull/191))
+- Bump `k8s.io/apimachinery` from 0.22.17 to 0.24.17 ([#191](https://github.com/Cray-HPE/cms-tools/pull/191))
+- Bump `k8s.io/client-go` from 0.22.17 to 0.24.17 ([#191](https://github.com/Cray-HPE/cms-tools/pull/191))
+- Bump `k8s.io/klog/v2` from 2.9.0 to 2.60.1 ([#191](https://github.com/Cray-HPE/cms-tools/pull/191))
+- Bump `k8s.io/utils` from 0.0.0-20211116205334-6203023598ed to 0.0.0-20220210201930-3a6ce19ff2f9 ([#191](https://github.com/Cray-HPE/cms-tools/pull/191))
+- Bump `github.com/emicklei/go-restful` from 2.9.5+incompatible to 2.16.0+incompatible ([#207](https://github.com/Cray-HPE/cms-tools/pull/207))
+- Bump `github.com/mailru/easyjson` from 0.7.6 to 0.7.7 ([#208](https://github.com/Cray-HPE/cms-tools/pull/208))
+- Bump `sigs.k8s.io/yaml` from 1.2.0 to 1.4.0 ([#213](https://github.com/Cray-HPE/cms-tools/pull/213))
+- Bump `sigs.k8s.io/structured-merge-diff/v4` from 4.2.3 to 4.4.1 ([#202](https://github.com/Cray-HPE/cms-tools/pull/202))
+- Bump `github.com/fatih/color` from 1.15.0 to 1.17.0 ([#214](https://github.com/Cray-HPE/cms-tools/pull/214))
+- Bump `github.com/PuerkitoBio/purell` from 1.1.1 to 1.2.1 ([#215](https://github.com/Cray-HPE/cms-tools/pull/215))
+- Bump `github.com/subosito/gotenv` from 1.4.2 to 1.6.0 ([#218](https://github.com/Cray-HPE/cms-tools/pull/218))
+- Bump `github.com/go-openapi/jsonpointer` from 0.19.5 to 0.21.0 ([#217](https://github.com/Cray-HPE/cms-tools/pull/217))
+- Bump `github.com/go-openapi/jsonreference` from 0.19.5 to 0.21.0 ([#212](https://github.com/Cray-HPE/cms-tools/pull/212))
+- Bump `github.com/google/gnostic` from 0.5.7-v3refs to 0.7.0 ([#211](https://github.com/Cray-HPE/cms-tools/pull/211))
+- Bump `github.com/spf13/afero` from 1.9.5 to 1.11.0 ([#196](https://github.com/Cray-HPE/cms-tools/pull/196))
+- Bump `github.com/fsnotify/fsnotify` from 1.6.0 to 1.7.0 ([#197](https://github.com/Cray-HPE/cms-tools/pull/197))
+- Bump `github.com/google/gofuzz` from 1.1.0 to 1.2.0 ([#201](https://github.com/Cray-HPE/cms-tools/pull/201))
+- Bump `github.com/go-logr/logr` from 1.2.0 to 1.2.4 ([#219](https://github.com/Cray-HPE/cms-tools/pull/219))
+
 ## [1.22.0] - 2024-06-20
 
 ### Changed
@@ -333,7 +360,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.22.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.23.0...HEAD
+
+[1.23.0]: https://github.com/Cray-HPE/cms-tools/compare/1.22.0...1.23.0
 
 [1.22.0]: https://github.com/Cray-HPE/cms-tools/compare/1.21.0...1.22.0
 

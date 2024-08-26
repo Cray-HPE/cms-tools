@@ -30,8 +30,7 @@ import base64
 import json
 
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+from requests_retry_session import requests_retry_session
 from urllib3.exceptions import MaxRetryError
 
 from barebones_image_test.defs import BBException, JsonDict, JsonObject
@@ -47,24 +46,6 @@ API_BASE_URL = f"{API_GW_SECURE}/apis"
 PROTOCOL = "https"
 
 SYSTEM_CA_CERTS = "/etc/ssl/ca-bundle.pem"
-
-def requests_retry_session(retries: int = 10,
-                           backoff_factor: float = 0.5,
-                           status_forcelist: set = (500, 502, 503, 504),
-                           session: requests.Session = None) -> requests.Session:
-    """
-    Return a requests session with retries enabled.
-    Shamelessly cribbed from the cfs-debugger source.
-    """
-    session = session or requests.Session()
-    retry = Retry(total=retries,
-                  read=retries,
-                  connect=retries,
-                  backoff_factor=backoff_factor,
-                  status_forcelist=status_forcelist)
-    adapter = HTTPAdapter(max_retries=retry)
-    session.mount(PROTOCOL, adapter)
-    return session
 
 def add_api_auth(headers: JsonDict) -> None:
     """
