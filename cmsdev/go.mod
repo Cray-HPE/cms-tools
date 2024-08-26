@@ -25,7 +25,7 @@ module stash.us.cray.com/SCMS/cms-tools/cmsdev
 go 1.20
 
 require (
-	github.com/fatih/color v1.15.0
+	github.com/fatih/color v1.17.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pin/tftp v2.1.0+incompatible
 	github.com/sirupsen/logrus v1.9.3
