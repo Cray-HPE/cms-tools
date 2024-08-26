@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `k8s.io/utils` from 0.0.0-20211116205334-6203023598ed to 0.0.0-20220210201930-3a6ce19ff2f9 ([#191](https://github.com/Cray-HPE/cms-tools/pull/191))
 - Bump `github.com/emicklei/go-restful` from 2.9.5+incompatible to 2.16.0+incompatible ([#207](https://github.com/Cray-HPE/cms-tools/pull/207))
 - Bump `github.com/mailru/easyjson` from 0.7.6 to 0.7.7 ([#208](https://github.com/Cray-HPE/cms-tools/pull/208))
+- Bump `golang.org/x/sys` from 0.18.0 to 0.24.0 ([#216](https://github.com/Cray-HPE/cms-tools/pull/216))
 
 ## [1.22.0] - 2024-06-20
 
