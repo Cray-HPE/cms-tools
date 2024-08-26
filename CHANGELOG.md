@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `github.com/emicklei/go-restful` from 2.9.5+incompatible to 2.16.0+incompatible ([#207](https://github.com/Cray-HPE/cms-tools/pull/207))
 - Bump `github.com/mailru/easyjson` from 0.7.6 to 0.7.7 ([#208](https://github.com/Cray-HPE/cms-tools/pull/208))
 - Bump `sigs.k8s.io/yaml` from 1.2.0 to 1.4.0 ([#213](https://github.com/Cray-HPE/cms-tools/pull/213))
+- Bump `sigs.k8s.io/structured-merge-diff/v4` from 4.2.3 to 4.4.1 ([#202](https://github.com/Cray-HPE/cms-tools/pull/202))
 
 ## [1.22.0] - 2024-06-20
 
