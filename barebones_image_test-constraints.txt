@@ -6,8 +6,8 @@ charset-normalizer>=3.3.2,<3.4
 google-auth>=2.27,<2.28
 idna>=3.6,<3.7
 jmespath>=1.0.1,<1.1
-# CSM 1.6 uses Kubernetes 1.22, so use client v22.x to ensure compatability
-kubernetes>=22.6,<22.7
+# CSM 1.6 uses Kubernetes 1.24, so use client v24.x to ensure compatability
+kubernetes>=24.2,<24.3
 oathlib>=3.2.2,<3.3
 packaging>=23.2,<23.3
 pip>=23.3.2,<23.4
