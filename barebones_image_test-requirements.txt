@@ -8,5 +8,6 @@ kubernetes
 packaging
 PyYAML
 requests
+requests-retry-session
 setuptools
 urllib3

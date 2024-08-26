@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Use `requests-retry-session` Python module instead of duplicating its code
+
 ## [1.22.0] - 2024-06-20
 
 ### Changed
