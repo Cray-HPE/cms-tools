@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `github.com/spf13/afero` from 1.9.5 to 1.11.0 ([#196](https://github.com/Cray-HPE/cms-tools/pull/196))
 - Bump `github.com/fsnotify/fsnotify` from 1.6.0 to 1.7.0 ([#197](https://github.com/Cray-HPE/cms-tools/pull/197))
 - Bump `github.com/google/gofuzz` from 1.1.0 to 1.2.0 ([#201](https://github.com/Cray-HPE/cms-tools/pull/201))
+- Bump `github.com/go-logr/logr` from 1.2.0 to 1.2.4 ([#219](https://github.com/Cray-HPE/cms-tools/pull/219))
 
 ## [1.22.0] - 2024-06-20
 
