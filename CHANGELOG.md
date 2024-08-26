@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Dependencies
 - barebones image test: Pin major/minor but take latest patch version
 - barebones image test: CSM 1.6 now uses Kubernetes 1.24, so use Python client v24.x
+- cmsdev: CSM 1.6 now uses Kubernetes 1.24, so change dependabot `k8s.io` package restriction to match
 
 ## [1.22.0] - 2024-06-20
 
