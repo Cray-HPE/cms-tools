@@ -370,7 +370,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.23.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.23.1...HEAD
+
+[1.23.1]: https://github.com/Cray-HPE/cms-tools/compare/1.23.0...1.23.1
 
 [1.23.0]: https://github.com/Cray-HPE/cms-tools/compare/1.22.0...1.23.0
 
