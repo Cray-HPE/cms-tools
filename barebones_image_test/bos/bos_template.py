@@ -69,8 +69,6 @@ class BosTemplate(TestResource):
             "kernel_parameters": kernel_parameters,
             "node_roles_groups": ["Compute"],
             "path": ims_image.s3_path,
-            "rootfs_provider": "",
-            "rootfs_provider_passthrough": "",
             "type": "s3" }
 
         bos_params = {
