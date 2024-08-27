@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.23.1] - 2024-08-27
+
+### Added
+- barebones image test: Improved logging of API calls
+
+### Fixed
+- barebones image test: Remove `rootfs_provider` and `rootfs_provider_passthrough` fields from
+  session template that is created. They are set to empty strings, and this is not legal under
+  the now-enforced (starting in CSM 1.6) API spec.
+
 ## [1.23.0] - 2024-08-26
 
 ### Dependencies
@@ -360,7 +370,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.23.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.23.1...HEAD
+
+[1.23.1]: https://github.com/Cray-HPE/cms-tools/compare/1.23.0...1.23.1
 
 [1.23.0]: https://github.com/Cray-HPE/cms-tools/compare/1.22.0...1.23.0
 

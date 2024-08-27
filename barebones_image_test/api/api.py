@@ -78,9 +78,15 @@ def request(verb, url, headers=None, add_auth_header=True, verify=SYSTEM_CA_CERT
     Automatically adds API auth to header, if specified.
     """
     if add_auth_header:
-        if not headers:
+        logger.debug("API %s request to %s with args: %s", verb, url, kwargs)
+        if headers:
+            logger.debug("headers: %s", headers)
+        else:
             headers = {}
         add_api_auth(headers)
+    else:
+        # We don't want the client_secret to be logged
+        logger.debug("API %s request to %s (args not logged)", verb, url)
     session = requests_retry_session()
     try:
         return session.request(verb, url=url, headers=headers, verify=verify, **kwargs)
