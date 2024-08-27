@@ -75,7 +75,4 @@ class TestResource(ABC):
         """
         Calls the API to get data on this resource
         """
-        logger.debug("Making API GET query for %s (URL=%s)", self.label_and_name, self.url)
-        resp_json = request_and_check_status("get", self.url, expected_status=200, parse_json=True)
-        logger.debug("Completed API GET query for %s: %s", self.label_and_name, resp_json)
-        return resp_json
+        return request_and_check_status("get", self.url, expected_status=200, parse_json=True)
