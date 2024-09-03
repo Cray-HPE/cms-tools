@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- cmsdev: BOS test should expect cray-bos-migration pod to be Succeeded, not Running
+
 ## [1.23.1] - 2024-08-27
 
 ### Added

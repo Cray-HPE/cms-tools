@@ -32,6 +32,7 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
+	"strings"
 )
 
 // For tests which need a tenant name, if they can work even with a nonexistent tenant, use the
@@ -68,19 +69,24 @@ func IsBOSRunning() (passed bool) {
 	// section of the check has been simplified.
 
 	// Check for:
-	// All pods are expected to be Running
+	// All pods are expected to be Running except the migration pod, which should be Succeeded
 	for _, podName := range podNames {
 		common.Infof("Getting pod status for %s", podName)
 		status, err := k8s.GetPodStatus(common.NAMESPACE, podName)
 		if err != nil {
 			common.VerboseFailedf(err.Error())
 			passed = false
-			status = ""
+			continue
 		} else {
 			common.Infof("Pod %s status is %s", podName, status)
 		}
 
-		if status != "" && status != "Running" {
+		if strings.HasPrefix(podName, "cray-bos-migration-") {
+			if status != "Succeeded" {
+				common.VerboseFailedf("Pod %s has status %s, but we expect it to be Succeeded", podName, status)
+				passed = false
+			}
+		} else if status != "Running" {
 			common.VerboseFailedf("Pod %s has status %s, but we expect it to be Running", podName, status)
 			passed = false
 		}
