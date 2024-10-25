@@ -69,7 +69,10 @@ func IsBOSRunning() (passed bool) {
 	// section of the check has been simplified.
 
 	// Check for:
-	// All pods are expected to be Running except the migration pod, which should be Succeeded
+	// All pods are expected to be Running except the migration pods, where
+	// (if there are any) we require one of them to be Succeeded
+	numMigrationPodsSucceeded := 0
+	numMigrationPodsNotSucceeded := 0
 	for _, podName := range podNames {
 		common.Infof("Getting pod status for %s", podName)
 		status, err := k8s.GetPodStatus(common.NAMESPACE, podName)
@@ -82,14 +85,20 @@ func IsBOSRunning() (passed bool) {
 		}
 
 		if strings.HasPrefix(podName, "cray-bos-migration-") {
-			if status != "Succeeded" {
-				common.VerboseFailedf("Pod %s has status %s, but we expect it to be Succeeded", podName, status)
-				passed = false
+			if status == "Succeeded" {
+				numMigrationPodsSucceeded += 1
+			} else {
+				numMigrationPodsNotSucceeded += 1
 			}
 		} else if status != "Running" {
 			common.VerboseFailedf("Pod %s has status %s, but we expect it to be Running", podName, status)
 			passed = false
 		}
+	}
+
+	if numMigrationPodsNotSucceeded > 0 && numMigrationPodsSucceeded == 0 {
+		common.VerboseFailedf("There are %d cray-bos-migration pods, and none of them have status Succeeded", numMigrationPodsNotSucceeded)
+		passed = false
 	}
 
 	if !passed {
