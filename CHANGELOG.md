@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.24.1] - 2024-10-25
+
+### Fixed
+- cmsdev: BOS test should pass if there are no cray-bos-migration pods, or if at least one
+  of them Succeeded. In other words, it should only fail if there are one or more
+  cray-bos-migration pods, and none of them Succeeded. This is because during an upgrade,
+  the initial migration pods may fail because the BOS database is not yet ready. As long
+  as the migration job eventually succeeded, we do not care about the initial failures.
+
 ## [1.24.0] - 2024-09-03
 
 ### Changed
