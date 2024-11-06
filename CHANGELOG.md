@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.16.5] - 2024-11-06
+
 ### Fixed
 - cmsdev: Update CFS and IMS tests to explicitly check for 0-length resource ID fields
 
@@ -278,7 +280,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.16.4...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.16.5...HEAD
+
+[1.16.5]: https://github.com/Cray-HPE/cms-tools/compare/1.16.4...1.16.5
 
 [1.16.4]: https://github.com/Cray-HPE/cms-tools/compare/1.16.3...1.16.4
 
