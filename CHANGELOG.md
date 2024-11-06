@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.25.0] - 2024-11-06
+
 ### Dependencies
 - Bump `sigs.k8s.io/structured-merge-diff/v4` from 4.4.1 to 4.4.2 ([#228](https://github.com/Cray-HPE/cms-tools/pull/228))
 
@@ -390,7 +392,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.23.1...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.25.0...HEAD
+
+[1.25.0]: https://github.com/Cray-HPE/cms-tools/compare/1.24.1...1.25.0
+
+[1.24.1]: https://github.com/Cray-HPE/cms-tools/compare/1.24.0...1.24.1
+
+[1.24.0]: https://github.com/Cray-HPE/cms-tools/compare/1.23.1...1.24.0
 
 [1.23.1]: https://github.com/Cray-HPE/cms-tools/compare/1.23.0...1.23.1
 
