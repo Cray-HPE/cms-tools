@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- cmsdev: Update CFS and IMS tests to explicitly check for 0-length resource ID fields
+
 ## [1.24.1] - 2024-10-25
 
 ### Fixed
