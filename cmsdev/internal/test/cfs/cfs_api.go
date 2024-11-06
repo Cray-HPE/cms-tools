@@ -307,6 +307,8 @@ func (endpoint cfsEndpoint) getFirstId(itemsList []interface{}) (idFieldValue st
 	idFieldValue, ok = idFieldRawValue.(string)
 	if !ok {
 		err = fmt.Errorf("In first item listed, '%s' field does not map to a string, but it should", endpoint.IdField)
+	} else if len(idFieldValue) == 0 {
+		err = fmt.Errorf("In first item listed, '%s' field maps to a 0-length string, but it should have non-0 length", endpoint.IdField)
 	}
 	return
 }

@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -174,8 +174,10 @@ func IsIMSRunning() (passed bool) {
 			}
 
 			// Validate that we can retrieve a specific recipe via API
-			_, ok = getIMSRecipeRecordAPI(imsRecipeList[0].Id)
-			if !ok {
+			if imsRecipeId := imsRecipeList[0].Id; len(imsRecipeId) == 0 {
+				common.Errorf("First IMS recipe record in list has 0-length ID field")
+				passed = false
+			} else if _, getOk := getIMSRecipeRecordAPI(imsRecipeId); !getOk {
 				passed = false
 			}
 		}
@@ -201,8 +203,10 @@ func IsIMSRunning() (passed bool) {
 	} else {
 		common.Infof("Found %d IMS image records via API", len(imsImageList))
 		if len(imsImageList) > 0 {
-			_, ok = getIMSImageRecordAPI(imsImageList[0].Id)
-			if !ok {
+			if imsImageId := imsImageList[0].Id; len(imsImageId) == 0 {
+				common.Errorf("First IMS image record in list has 0-length ID field")
+				passed = false
+			} else if _, getOk := getIMSImageRecordAPI(imsImageId); !getOk {
 				passed = false
 			}
 		}
@@ -214,8 +218,10 @@ func IsIMSRunning() (passed bool) {
 	} else {
 		common.Infof("Found %d IMS job records via API", len(imsJobList))
 		if len(imsJobList) > 0 {
-			_, ok = getIMSJobRecordAPI(imsJobList[0].Id)
-			if !ok {
+			if imsJobId := imsJobList[0].Id; len(imsJobId) == 0 {
+				common.Errorf("First IMS job record in list has 0-length ID field")
+				passed = false
+			} else if _, getOk := getIMSJobRecordAPI(imsJobId); !getOk {
 				passed = false
 			}
 		}
@@ -227,8 +233,10 @@ func IsIMSRunning() (passed bool) {
 	} else {
 		common.Infof("Found %d IMS public key records via API", len(imsPkeyList))
 		if len(imsPkeyList) > 0 {
-			_, ok = getIMSPublicKeyRecordAPI(imsPkeyList[0].Id)
-			if !ok {
+			if imsPkeyId := imsPkeyList[0].Id; len(imsPkeyId) == 0 {
+				common.Errorf("First IMS public key record in list has 0-length ID field")
+				passed = false
+			} else if _, getOk := getIMSPublicKeyRecordAPI(imsPkeyId); !getOk {
 				passed = false
 			}
 		}
@@ -242,8 +250,10 @@ func IsIMSRunning() (passed bool) {
 	} else {
 		common.Infof("Found %d IMS image records via CLI", len(imsImageList))
 		if len(imsImageList) > 0 {
-			_, ok = getIMSImageRecordCLI(imsImageList[0].Id)
-			if !ok {
+			if imsImageId := imsImageList[0].Id; len(imsImageId) == 0 {
+				common.Errorf("First IMS image record in list has 0-length ID field")
+				passed = false
+			} else if _, getOk := getIMSImageRecordCLI(imsImageId); !getOk {
 				passed = false
 			}
 		}
@@ -255,8 +265,10 @@ func IsIMSRunning() (passed bool) {
 	} else {
 		common.Infof("Found %d IMS job records via CLI", len(imsJobList))
 		if len(imsJobList) > 0 {
-			_, ok = getIMSJobRecordCLI(imsJobList[0].Id)
-			if !ok {
+			if imsJobId := imsJobList[0].Id; len(imsJobId) == 0 {
+				common.Errorf("First IMS job record in list has 0-length ID field")
+				passed = false
+			} else if _, getOk := getIMSJobRecordCLI(imsJobId); !getOk {
 				passed = false
 			}
 		}
@@ -268,8 +280,10 @@ func IsIMSRunning() (passed bool) {
 	} else {
 		common.Infof("Found %d IMS public key records via CLI", len(imsPkeyList))
 		if len(imsPkeyList) > 0 {
-			_, ok = getIMSPublicKeyRecordCLI(imsPkeyList[0].Id)
-			if !ok {
+			if imsPkeyId := imsPkeyList[0].Id; len(imsPkeyId) == 0 {
+				common.Errorf("First IMS public key record in list has 0-length ID field")
+				passed = false
+			} else if _, getOk := getIMSPublicKeyRecordCLI(imsPkeyId); !getOk {
 				passed = false
 			}
 		}
@@ -281,8 +295,10 @@ func IsIMSRunning() (passed bool) {
 	} else {
 		common.Infof("Found %d IMS recipe records via CLI", len(imsRecipeList))
 		if len(imsRecipeList) > 0 {
-			_, ok = getIMSRecipeRecordCLI(imsRecipeList[0].Id)
-			if !ok {
+			if imsRecipeId := imsRecipeList[0].Id; len(imsRecipeId) == 0 {
+				common.Errorf("First IMS recipe record in list has 0-length ID field")
+				passed = false
+			} else if _, getOk := getIMSRecipeRecordCLI(imsRecipeId); !getOk {
 				passed = false
 			}
 		}
