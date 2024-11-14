@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dependencies
+- Bump `sigs.k8s.io/structured-merge-diff/v4` from 4.4.2 to 4.4.3 ([#232](https://github.com/Cray-HPE/cms-tools/pull/232))
+
 ## [1.25.0] - 2024-11-06
 
 ### Dependencies
