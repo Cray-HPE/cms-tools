@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dependencies
+- Bump `github.com/magiconair/properties` from 1.8.7 to 1.8.9 ([#234](https://github.com/Cray-HPE/cms-tools/pull/234))
+
 ## [1.25.0] - 2024-11-06
 
 ### Dependencies
