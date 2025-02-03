@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dependencies
+- Bump `github.com/google/gnostic-models` from 0.6.9-0.20230804172637-c7be7c783f49 to 0.6.9 ([#233](https://github.com/Cray-HPE/cms-tools/pull/233))
+
 ## [1.26.0] - 2025-02-03
 
 ### Dependencies
