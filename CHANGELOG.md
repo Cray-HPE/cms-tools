@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dependencies
+- Bump `github.com/mattn/go-colorable` from 0.1.13 to 0.1.14 ([#235](https://github.com/Cray-HPE/cms-tools/pull/235))
+
 ## [1.26.0] - 2025-02-03
 
 ### Dependencies
