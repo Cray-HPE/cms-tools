@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.27.0] - 2025-02-03
+
 ### Dependencies
 - Bump `github.com/google/gnostic-models` from 0.6.9-0.20230804172637-c7be7c783f49 to 0.6.9 ([#233](https://github.com/Cray-HPE/cms-tools/pull/233))
 - Bump `github.com/mattn/go-colorable` from 0.1.13 to 0.1.14 ([#235](https://github.com/Cray-HPE/cms-tools/pull/235))
@@ -404,7 +406,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.26.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.27.0...HEAD
+
+[1.27.0]: https://github.com/Cray-HPE/cms-tools/compare/1.26.0...1.27.0
 
 [1.26.0]: https://github.com/Cray-HPE/cms-tools/compare/1.25.0...1.26.0
 
