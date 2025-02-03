@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.26.0] - 2025-02-03
+
 ### Dependencies
 - Bump `golang.org/x/net` from 0.23.0 to 0.33.0 ([#237](https://github.com/Cray-HPE/cms-tools/pull/237))
 
@@ -395,7 +397,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.25.0...HEAD
+[Unreleased]: https://github.com/Cray-HPE/cms-tools/compare/1.26.0...HEAD
+
+[1.26.0]: https://github.com/Cray-HPE/cms-tools/compare/1.25.0...1.26.0
 
 [1.25.0]: https://github.com/Cray-HPE/cms-tools/compare/1.24.1...1.25.0
 
