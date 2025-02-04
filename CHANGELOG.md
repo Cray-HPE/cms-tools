@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dependencies
+- Bump `google.golang.org/protobuf` from 1.35.1 to 1.35.2 ([#242](https://github.com/Cray-HPE/cms-tools/pull/242))
+
 ## [1.27.0] - 2025-02-03
 
 ### Dependencies
