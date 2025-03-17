@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
+//  (C) Copyright 2019-2025 Hewlett Packard Enterprise Development LP
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -31,6 +31,10 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/spf13/cobra"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/test/bos"
@@ -39,9 +43,6 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/test/ims"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/test/ipxe_tftp"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/test/vcs"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // Test timeouts (in seconds)
@@ -196,7 +197,10 @@ func RunTests(services []string, retry bool, noclean bool) (passed, failed []str
 		}
 		common.UnsetTestService()
 	}
-
+	// Capture OS specific information after test failure.
+	if len(failed) > 0 {
+		common.ArtifactGetAdditionalInfo()
+	}
 	// Compress test artifacts, if any
 	common.CompressArtifacts()
 	return
