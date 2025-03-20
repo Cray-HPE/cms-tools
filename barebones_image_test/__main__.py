@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -150,7 +150,7 @@ def run(script_args: ScriptArgs) -> None:
     logger.debug("Using customized %s", ims_image.label_and_name)
 
     # create BOS session template for this image
-    bos_st = BosTemplate(ims_image)
+    bos_st = BosTemplate(ims_image=ims_image, cfs_config_name=CfsConfig.name)
     record_resource_creation(bos_st)
 
     # Create a BOS session to reboot the node using the created BOS template,
