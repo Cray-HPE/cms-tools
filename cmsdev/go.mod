@@ -1,4 +1,4 @@
-// Copyright 2021, 2023 Hewlett Packard Enterprise Development LP
+// Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -22,7 +22,7 @@
 
 module stash.us.cray.com/SCMS/cms-tools/cmsdev
 
-go 1.20
+go 1.23
 
 require (
 	github.com/fatih/color v1.17.0
