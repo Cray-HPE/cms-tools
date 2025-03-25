@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Dependencies
 - Bump `dangoslen/dependabot-changelog-helper` from 3 to 4 ([#243](https://github.com/Cray-HPE/cms-tools/pull/243))
+- Bump `github.com/go-openapi/jsonpointer` from 0.21.0 to 0.21.1 ([#245](https://github.com/Cray-HPE/cms-tools/pull/245))
 
 ### Fixed
 - CASMCMS-9181: cmsdev Should record installed version of Cray CLI RPM
