@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dependencies
+- Bump `dangoslen/dependabot-changelog-helper` from 3 to 4 ([#243](https://github.com/Cray-HPE/cms-tools/pull/243))
+
 ### Fixed
 - CASMCMS-9181: cmsdev Should record installed version of Cray CLI RPM
 - CASMCMS-9328: IMS: Store Artifact logs after signing key test failure
