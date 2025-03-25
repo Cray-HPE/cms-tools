@@ -127,7 +127,7 @@ def cleanup_resources() -> None:
     while created_resources:
         created_resources.pop().delete()
 
-def get_cfs_config(script_args:ScriptArgs, csm_prodcat_data: CsmProductCatalogData) -> CfsConfig:
+def get_cfs_config(script_args:ScriptArgs, csm_prodcat_data: CsmProductCatalogData=None) -> CfsConfig:
     """
     Get the CFS configuration to use for the test
     """
@@ -169,7 +169,7 @@ def run(script_args: ScriptArgs) -> None:
     logger.debug("Using customized %s", ims_image.label_and_name)
 
     # create BOS session template for this image
-    cfs_config = get_cfs_config(script_args=script_args, csm_prodcat_data=csm_prodcat_data)
+    cfs_config = get_cfs_config(script_args=script_args)
     bos_st = BosTemplate(ims_image=ims_image, cfs_config_name=cfs_config.name)
     record_resource_creation(bos_st)
 
