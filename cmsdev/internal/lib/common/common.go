@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
+//  (C) Copyright 2019-2025 Hewlett Packard Enterprise Development LP
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -32,7 +32,6 @@ package common
 
 import (
 	"fmt"
-	resty "gopkg.in/resty.v1"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -40,12 +39,22 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	resty "gopkg.in/resty.v1"
 )
 
 const BASEHOST = "api-gw-service-nmn.local"
 const BASEURL = "https://" + BASEHOST
 const LOCALHOST = "http://localhost:5000"
 const NAMESPACE string = "services"
+
+// List of RPMs version captured at the start of the test. In case of failure, rpm -qa will be captured.
+var RPMLIST = []string{
+	"craycli",
+	"docs-csm",
+	"csm-testing",
+	"goss-servers",
+}
 
 // struct to hold endpoint METHOD operation details
 type endpointMethod struct {
@@ -166,6 +175,19 @@ func ChangeRunSubTag(tag string) {
 	SetRunSubTag(tag)
 }
 
+// Capture csmdev version used for testing
+
+func GetPackageVersion(packageName string) string {
+	cmd := exec.Command("rpm", "-q", packageName)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		Errorf("Error getting %s version: %v\n", packageName, err)
+		return ""
+	}
+	installedPkg := strings.TrimSpace(string(output))
+	return installedPkg
+}
+
 func ArtifactCommand(label, cmdName string, cmdArgs ...string) {
 	if len(artifactDirectory) == 0 {
 		return
@@ -195,6 +217,10 @@ func ArtifactCommand(label, cmdName string, cmdArgs ...string) {
 	} else {
 		Debugf("Command completed without error")
 	}
+}
+
+func ArtifactGetAdditionalInfo() {
+	ArtifactCommand("rpm-qa", "rpm", "-qa")
 }
 
 func ArtifactGetAllThings(thing string) {

@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
+//  (C) Copyright 2019-2025 Hewlett Packard Enterprise Development LP
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -34,13 +34,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	c "github.com/fatih/color"
-	"github.com/sirupsen/logrus"
-	resty "gopkg.in/resty.v1"
 	"os"
 	"runtime"
 	"strings"
 	"time"
+
+	c "github.com/fatih/color"
+	"github.com/sirupsen/logrus"
+	resty "gopkg.in/resty.v1"
 )
 
 // The following line is also used by the Makefile and RPM spec file in this repo. Any changes to it
@@ -396,5 +397,8 @@ func CreateLogFile(path, version string, logs, retry, quiet, verbose bool) {
 	testLog = logFile.WithFields(logrus.Fields{"version": version, "args": strings.Join(args, ",")})
 	logFileDir = path
 	Infof("cmsdev starting")
+	for _, pkg := range RPMLIST {
+		Debugf("%s version: %s", pkg, GetPackageVersion(pkg))
+	}
 	fmt.Printf("Starting main run, version: %s, tag: %s\n", version, runTag)
 }
