@@ -127,6 +127,25 @@ def cleanup_resources() -> None:
     while created_resources:
         created_resources.pop().delete()
 
+def get_cfs_config(script_args:ScriptArgs, csm_prodcat_data: CsmProductCatalogData) -> CfsConfig:
+    """
+    Get the CFS configuration to use for the test
+    """
+    if script_args.cfs_config is not None:
+        logger.debug("Using user-specified %s to customize image", script_args.cfs_config.label_and_name)
+        return script_args.cfs_config
+
+    for resource in created_resources:
+        if isinstance(resource, CfsConfig):
+            logger.debug("Using created %s to customize image", resource.label_and_name)
+            return resource
+
+    # This means we are creating a new CFS config
+    cfs_config_layer_data = get_cfs_config_layer_data(script_args, csm_prodcat_data)
+    cfs_config = CfsConfig.create_in_cfs(cfs_config_layer_data)
+    record_resource_creation(cfs_config)
+    return cfs_config
+
 
 def run(script_args: ScriptArgs) -> None:
     """
@@ -150,7 +169,8 @@ def run(script_args: ScriptArgs) -> None:
     logger.debug("Using customized %s", ims_image.label_and_name)
 
     # create BOS session template for this image
-    bos_st = BosTemplate(ims_image=ims_image, cfs_config_name=CfsConfig.name)
+    cfs_config = get_cfs_config(script_args=script_args, csm_prodcat_data=csm_prodcat_data)
+    bos_st = BosTemplate(ims_image=ims_image, cfs_config_name=cfs_config.name)
     record_resource_creation(bos_st)
 
     # Create a BOS session to reboot the node using the created BOS template,
@@ -195,15 +215,7 @@ def customize_base_image(base_ims_image: ImsImage, csm_prodcat_data: CsmProductC
     """
     Create a customized image from the specified base image
     """
-    if script_args.cfs_config is not None:
-        cfs_config = script_args.cfs_config
-        logger.debug("Using user-specified %s to customize image", cfs_config.label_and_name)
-    else:
-        # This means we are creating a new CFS config
-        cfs_config_layer_data = get_cfs_config_layer_data(script_args, csm_prodcat_data)
-        cfs_config = CfsConfig.create_in_cfs(cfs_config_layer_data)
-        record_resource_creation(cfs_config)
-
+    cfs_config = get_cfs_config(script_args=script_args, csm_prodcat_data=csm_prodcat_data)
     cfs_session = CfsSession(base_ims_image=base_ims_image, cfs_config=cfs_config)
     record_resource_creation(cfs_session)
     cfs_session.wait_for_session_to_complete()
