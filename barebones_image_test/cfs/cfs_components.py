@@ -22,7 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 from dataclasses import dataclass
-from defs import CFS_COMPONENTS_URL
+from .defs import CFS_COMPONENTS_URL
 from barebones_image_test.log import logger
 from barebones_image_test.api import request_and_check_status
 
