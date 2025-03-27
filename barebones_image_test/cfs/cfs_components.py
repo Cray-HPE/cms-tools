@@ -46,7 +46,7 @@ class CfsComponents:
         """
         url = f"{CFS_COMPONENTS_URL}/{cfs_component_name}"
         update_data_json = {
-            "desiredConfig": data.desired_config
+            "desired_config": data.desired_config
         }
         _ = request_and_check_status("patch", url, expected_status=200,
                                              parse_json=True, json=update_data_json)
