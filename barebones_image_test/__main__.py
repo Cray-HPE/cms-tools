@@ -58,7 +58,7 @@ import sys
 from typing import NamedTuple
 
 from barebones_image_test.bos import BosSession, BosTemplate
-from barebones_image_test.cfs import CfsConfigLayerData, CfsConfig, CfsSession
+from barebones_image_test.cfs import CfsConfigLayerData, CfsConfig, CfsSession, CfsComponents, CfsComponentUpdateData
 from barebones_image_test.hsm import ComputeNode, find_compute_node, get_compute_node
 from barebones_image_test.prodcat import CsmProductCatalogData
 from barebones_image_test.defs import ARCH_LIST, BBException
@@ -117,7 +117,7 @@ def record_resource_creation(resource: TestResource) -> None:
     logger.info("Created %s", resource.label_and_name)
 
 
-def cleanup_resources() -> None:
+def cleanup_resources(xname: str=None) -> None:
     """
     Delete each created resource
     """
@@ -125,6 +125,9 @@ def cleanup_resources() -> None:
         return
     logger.info("Cleaning up resources created during the test execution")
     while created_resources:
+        if isinstance(created_resources[-1], CfsConfig):
+            # CFS config should be unset from component before deletion
+            CfsComponents.update_cfs_component(cfs_component_name=xname, data=CfsComponentUpdateData(desired_config=""))
         created_resources.pop().delete()
 
 def get_cfs_config(script_args:ScriptArgs, csm_prodcat_data: CsmProductCatalogData=None) -> CfsConfig:
@@ -180,7 +183,7 @@ def run(script_args: ScriptArgs) -> None:
     bos_session.wait_for_session_to_complete()
     logger.info("BOS session completed with no errors - success!!!")
     if script_args.cleanup_on_success:
-        cleanup_resources()
+        cleanup_resources(xname=compute_node.xname)
 
 
 def get_customized_image(csm_prodcat_data: CsmProductCatalogData,
