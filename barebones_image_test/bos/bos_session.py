@@ -47,7 +47,7 @@ class BosSessionStatusFields(SessionStatusFields):
     .status.error
     """
     error: str|None = None
-    error_summary: dict|None = None
+    error_summary: list|None = None
     percent_failed: int|None = None
 
     def passed(self) -> bool:
@@ -60,8 +60,9 @@ class BosSessionStatusFields(SessionStatusFields):
             return False
         if not self.error:
             if self.percent_failed != 0:
-                logger.error("%s completed unsuccessfully with one or more errors: %s",
-                             self.session.label_and_name, self.error_summary)
+                for err in self.error_summary:
+                    logger.error("%s completed unsuccessfully with error: %s",
+                                 self.session.label_and_name, err)
                 raise BBException()
 
             return True
@@ -108,8 +109,9 @@ class BosSession(TestSession):
         Query BOS session and return its status fields
         """
         status_dict = self.get()["status"]
+        # get BOS session status list
         list_status_dict = self.get(uri="status")
         return BosSessionStatusFields(session=self, status=status_dict["status"],
                                       error=status_dict["error"],
-                                      error_summary=list_status_dict["error_summary"],
+                                      error_summary=list(list_status_dict["error_summary"].keys()),
                                       percent_failed=list_status_dict["percent_failed"])
