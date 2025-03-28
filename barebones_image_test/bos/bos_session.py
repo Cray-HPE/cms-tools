@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -47,6 +47,8 @@ class BosSessionStatusFields(SessionStatusFields):
     .status.error
     """
     error: str|None = None
+    error_summary: dict|None = None
+    percent_failed: int|None = None
 
     def passed(self) -> bool:
         """
@@ -57,6 +59,11 @@ class BosSessionStatusFields(SessionStatusFields):
         if not self.completed:
             return False
         if not self.error:
+            if self.percent_failed != 0:
+                logger.error("%s completed unsuccessfully with one or more errors: %s",
+                             self.session.label_and_name, self.error_summary)
+                raise BBException()
+
             return True
         logger.error("%s completed unsuccessfully with one or more errors: %s",
                      self.session.label_and_name, self.error)
@@ -101,5 +108,8 @@ class BosSession(TestSession):
         Query BOS session and return its status fields
         """
         status_dict = self.get()["status"]
+        list_status_dict = self.get(uri="status")
         return BosSessionStatusFields(session=self, status=status_dict["status"],
-                                      error=status_dict["error"])
+                                      error=status_dict["error"],
+                                      error_summary=list_status_dict["error_summary"],
+                                      percent_failed=list_status_dict["percent_failed"])
