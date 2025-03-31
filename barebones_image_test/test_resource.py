@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -71,8 +71,10 @@ class TestResource(ABC):
         request_and_check_status("delete", self.url, expected_status=204, parse_json=False)
         logger.info("Deleted %s", self.label_and_name)
 
-    def get(self) -> JsonObject:
+    def get(self, uri: str=None) -> JsonObject:
         """
         Calls the API to get data on this resource
         """
+        if uri:
+            return request_and_check_status("get", f"{self.url}/{uri}", expected_status=200, parse_json=True)
         return request_and_check_status("get", self.url, expected_status=200, parse_json=True)
