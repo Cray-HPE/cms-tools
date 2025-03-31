@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.28.0] - 2025-03-31
+
+### Changed
+- Build `cmsdev` using Golang 1.23 (up from 1.20)
+
+### Dependencies
+- Bump `dangoslen/dependabot-changelog-helper` from 3 to 4 ([#243](https://github.com/Cray-HPE/cms-tools/pull/243))
+- Bump `github.com/go-openapi/jsonpointer` from 0.21.0 to 0.21.1 ([#245](https://github.com/Cray-HPE/cms-tools/pull/245))
+- Bump `google.golang.org/protobuf` from 1.35.1 to 1.35.2 ([#242](https://github.com/Cray-HPE/cms-tools/pull/242))
+- Bump `golang.org/x/net` from 0.33.0 to 0.36.0 ([#244](https://github.com/Cray-HPE/cms-tools/pull/244))
+
+### Fixed
+- CASMCMS-9181: cmsdev Should record installed version of Cray CLI RPM
+- CASMCMS-9328: IMS: Store Artifact logs after signing key test failure
+- CASMCMS-8703: TESTS: Add CFS node personalization to the barebones image boot test
+
 ## [1.27.0] - 2025-02-03
 
 ### Dependencies

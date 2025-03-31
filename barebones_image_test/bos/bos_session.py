@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -47,6 +47,8 @@ class BosSessionStatusFields(SessionStatusFields):
     .status.error
     """
     error: str|None = None
+    error_summary: list|None = None
+    percent_failed: int|None = None
 
     def passed(self) -> bool:
         """
@@ -57,6 +59,17 @@ class BosSessionStatusFields(SessionStatusFields):
         if not self.completed:
             return False
         if not self.error:
+            if self.percent_failed != 0:
+                if not self.error_summary:
+                    logger.error("%s completed with percent_failed = %.2f but no "
+                                 "errors listed in extended session status",
+                                 self.session.label_and_name,
+                                 self.percent_failed)
+                for err in self.error_summary:
+                    logger.error("%s completed unsuccessfully with error: %s",
+                                 self.session.label_and_name, err)
+                raise BBException()
+
             return True
         logger.error("%s completed unsuccessfully with one or more errors: %s",
                      self.session.label_and_name, self.error)
@@ -101,5 +114,9 @@ class BosSession(TestSession):
         Query BOS session and return its status fields
         """
         status_dict = self.get()["status"]
+        # get BOS session status list
+        list_status_dict = self.get(uri="status")
         return BosSessionStatusFields(session=self, status=status_dict["status"],
-                                      error=status_dict["error"])
+                                      error=status_dict["error"],
+                                      error_summary=list(list_status_dict["error_summary"].keys()),
+                                      percent_failed=list_status_dict["percent_failed"])
