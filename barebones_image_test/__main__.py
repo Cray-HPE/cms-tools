@@ -135,12 +135,12 @@ def get_cfs_config(script_args:ScriptArgs, csm_prodcat_data: CsmProductCatalogDa
     Get the CFS configuration to use for the test
     """
     if script_args.cfs_config is not None:
-        logger.debug("Using user-specified %s to customize image", script_args.cfs_config.label_and_name)
+        logger.debug("Using user-specified %s", script_args.cfs_config.label_and_name)
         return script_args.cfs_config
 
     for resource in created_resources:
         if isinstance(resource, CfsConfig):
-            logger.debug("Using created %s to customize image", resource.label_and_name)
+            logger.debug("Using created %s", resource.label_and_name)
             return resource
 
     # This means we are creating a new CFS config

@@ -60,6 +60,11 @@ class BosSessionStatusFields(SessionStatusFields):
             return False
         if not self.error:
             if self.percent_failed != 0:
+                if not self.error_summary:
+                    logger.error("%s completed with percent_failed = %.2f but no "
+                                 "errors listed in extended session status",
+                                 self.session.label_and_name,
+                                 self.percent_failed)
                 for err in self.error_summary:
                     logger.error("%s completed unsuccessfully with error: %s",
                                  self.session.label_and_name, err)
