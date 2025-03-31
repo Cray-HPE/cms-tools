@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -42,7 +42,7 @@ class BosTemplate(TestResource):
     base_url: ClassVar[str] = BOS_TEMPLATES_URL
     label: ClassVar[str] = "BOS session template"
 
-    def __init__(self, ims_image: ImsImage, template_name: str|None=None):
+    def __init__(self, ims_image: ImsImage, cfs_config_name: str, template_name: str|None=None):
         """
         Create the specified BOS session template
         """
@@ -71,8 +71,13 @@ class BosTemplate(TestResource):
             "path": ims_image.s3_path,
             "type": "s3" }
 
+        cfs_config = {
+            "configuration": cfs_config_name
+        }
+
         bos_params = {
-            "enable_cfs": False,
+            "cfs": cfs_config,
+            "enable_cfs": True,
             "boot_sets": {"compute": compute_set} }
 
         # make the call to bos to create the session template

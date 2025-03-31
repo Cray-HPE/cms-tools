@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2019-2025 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -30,10 +30,11 @@ package cfs
 
 import (
 	"regexp"
+	"strings"
+
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
-	"strings"
 )
 
 func IsCFSRunning() (passed bool) {
