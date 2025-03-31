@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - CASMCMS-9181: cmsdev Should record installed version of Cray CLI RPM
 - CASMCMS-9328: IMS: Store Artifact logs after signing key test failure
+- CASMCMS-8703: TESTS: Add CFS node personalization to the barebones image boot test
 
 ## [1.27.0] - 2025-02-03
 

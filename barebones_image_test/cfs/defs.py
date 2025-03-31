@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -32,3 +32,4 @@ from barebones_image_test.api import API_BASE_URL
 CFS_URL = f"{API_BASE_URL}/cfs/v3"
 CFS_CONFIGS_URL = f"{CFS_URL}/configurations"
 CFS_SESSIONS_URL = f"{CFS_URL}/sessions"
+CFS_COMPONENTS_URL = f"{CFS_URL}/components"

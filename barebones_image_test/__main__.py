@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -58,7 +58,7 @@ import sys
 from typing import NamedTuple
 
 from barebones_image_test.bos import BosSession, BosTemplate
-from barebones_image_test.cfs import CfsConfigLayerData, CfsConfig, CfsSession
+from barebones_image_test.cfs import CfsConfigLayerData, CfsConfig, CfsSession, CfsComponents, CfsComponentUpdateData
 from barebones_image_test.hsm import ComputeNode, find_compute_node, get_compute_node
 from barebones_image_test.prodcat import CsmProductCatalogData
 from barebones_image_test.defs import ARCH_LIST, BBException
@@ -117,7 +117,7 @@ def record_resource_creation(resource: TestResource) -> None:
     logger.info("Created %s", resource.label_and_name)
 
 
-def cleanup_resources() -> None:
+def cleanup_resources(xname: str=None) -> None:
     """
     Delete each created resource
     """
@@ -125,7 +125,29 @@ def cleanup_resources() -> None:
         return
     logger.info("Cleaning up resources created during the test execution")
     while created_resources:
+        if isinstance(created_resources[-1], CfsConfig):
+            # CFS config should be unset from component before deletion
+            CfsComponents.update_cfs_component(cfs_component_name=xname, data=CfsComponentUpdateData(desired_config=""))
         created_resources.pop().delete()
+
+def get_cfs_config(script_args:ScriptArgs, csm_prodcat_data: CsmProductCatalogData=None) -> CfsConfig:
+    """
+    Get the CFS configuration to use for the test
+    """
+    if script_args.cfs_config is not None:
+        logger.debug("Using user-specified %s", script_args.cfs_config.label_and_name)
+        return script_args.cfs_config
+
+    for resource in created_resources:
+        if isinstance(resource, CfsConfig):
+            logger.debug("Using created %s", resource.label_and_name)
+            return resource
+
+    # This means we are creating a new CFS config
+    cfs_config_layer_data = get_cfs_config_layer_data(script_args, csm_prodcat_data)
+    cfs_config = CfsConfig.create_in_cfs(cfs_config_layer_data)
+    record_resource_creation(cfs_config)
+    return cfs_config
 
 
 def run(script_args: ScriptArgs) -> None:
@@ -150,7 +172,8 @@ def run(script_args: ScriptArgs) -> None:
     logger.debug("Using customized %s", ims_image.label_and_name)
 
     # create BOS session template for this image
-    bos_st = BosTemplate(ims_image)
+    cfs_config = get_cfs_config(script_args=script_args)
+    bos_st = BosTemplate(ims_image=ims_image, cfs_config_name=cfs_config.name)
     record_resource_creation(bos_st)
 
     # Create a BOS session to reboot the node using the created BOS template,
@@ -160,7 +183,7 @@ def run(script_args: ScriptArgs) -> None:
     bos_session.wait_for_session_to_complete()
     logger.info("BOS session completed with no errors - success!!!")
     if script_args.cleanup_on_success:
-        cleanup_resources()
+        cleanup_resources(xname=compute_node.xname)
 
 
 def get_customized_image(csm_prodcat_data: CsmProductCatalogData,
@@ -195,15 +218,7 @@ def customize_base_image(base_ims_image: ImsImage, csm_prodcat_data: CsmProductC
     """
     Create a customized image from the specified base image
     """
-    if script_args.cfs_config is not None:
-        cfs_config = script_args.cfs_config
-        logger.debug("Using user-specified %s to customize image", cfs_config.label_and_name)
-    else:
-        # This means we are creating a new CFS config
-        cfs_config_layer_data = get_cfs_config_layer_data(script_args, csm_prodcat_data)
-        cfs_config = CfsConfig.create_in_cfs(cfs_config_layer_data)
-        record_resource_creation(cfs_config)
-
+    cfs_config = get_cfs_config(script_args=script_args, csm_prodcat_data=csm_prodcat_data)
     cfs_session = CfsSession(base_ims_image=base_ims_image, cfs_config=cfs_config)
     record_resource_creation(cfs_session)
     cfs_session.wait_for_session_to_complete()
