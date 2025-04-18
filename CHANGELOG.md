@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- CASMCMS-9350: IMS Add create/modify/delete tests for images, recipes and public-keys
+
 ## [1.28.0] - 2025-03-31
 
 ### Changed

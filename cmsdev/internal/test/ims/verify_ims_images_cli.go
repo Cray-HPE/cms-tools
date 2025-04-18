@@ -1,0 +1,150 @@
+// MIT License
+//
+// (C) Copyright 2025 Hewlett Packard Enterprise Development LP
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+// OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+// ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
+package ims
+
+/*
+ * ims_images_cli_test.go
+ *
+ * ims images cli test functions
+ *
+ */
+import (
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+)
+
+func TestImageCRUDOperationUsingCLI() (passed bool) {
+	// Test creating an image
+	imageRecord, success := TestCLIImageCreate()
+	if !success {
+		return false
+	}
+	// Test updating the image
+	updated := TestCLIImageUpdate(imageRecord.Id)
+
+	// Test soft deleting the image
+	deleted := TestCLIImageDelete(imageRecord.Id)
+
+	// Test undeleting the image
+	undeleted := TestCLIImageUndelete(imageRecord.Id)
+
+	// Test hard deleting the image
+	hardDeleted := TestCLIImageHardDelete(imageRecord.Id)
+
+	// Test get all images
+	getAll := TestCLIGetAllImages()
+
+	return updated && deleted && undeleted && hardDeleted && getAll
+}
+
+func TestCLIImageCreate() (imageRecord IMSImageRecord, passed bool) {
+
+	// Create the image
+	imageName := "image_" + string(common.GetRandomString(10))
+	imageRecord, success := CreateIMSImageRecordCLI(imageName)
+	if !success {
+		return IMSImageRecord{}, false
+	}
+	// Get the image record
+	imageRecord, success = getIMSImageRecordCLI(imageRecord.Id)
+	if !success {
+		return IMSImageRecord{}, false
+	}
+	common.Infof("Created image %s with ID %s", imageName, imageRecord.Id)
+	return imageRecord, true
+}
+
+func TestCLIImageUpdate(imageId string) (passed bool) {
+	// Update the image
+	arch := "aarch64"
+	if _, success := UpdateIMSImageRecordCLI(imageId, arch); !success {
+		return false
+	}
+	// Verify the image is updated
+	imageRecord, success := getIMSImageRecordCLI(imageId)
+	if !success || imageRecord.Arch != arch {
+		common.Errorf("Image %s was not updated with arch %s", imageId, arch)
+		return false
+	}
+	common.Infof("Updated image %s with arch %s", imageId, arch)
+	return true
+}
+
+func TestCLIImageDelete(imageId string) (passed bool) {
+	// Soft delete the image
+	if success := DeleteIMSImageRecordCLI(imageId); !success {
+		return false
+	}
+	// Verify the image is soft deleted
+	if _, success := GetDeletedIMSImageRecordCLI(imageId); !success {
+		common.Errorf("Image %s was not soft deleted", imageId)
+		return false
+	}
+	common.Infof("Image %s was soft deleted", imageId)
+	return true
+}
+
+func TestCLIImageUndelete(imageId string) (passed bool) {
+	// Undelete the image
+	if success := UndeleteIMSImageRecordCLI(imageId); !success {
+		return false
+	}
+	// Verify the image is undeleted
+	if _, success := getIMSImageRecordCLI(imageId); !success {
+		common.Errorf("Image %s was not restored", imageId)
+		return false
+	}
+	common.Infof("Image %s was restored", imageId)
+	return true
+}
+
+func TestCLIImageHardDelete(imageId string) (passed bool) {
+	// Soft delete the image
+	if success := DeleteIMSImageRecordCLI(imageId); !success {
+		return false
+	}
+
+	// Hard delete the image
+	if success := HardDeleteIMSImageRecordCLI(imageId); !success {
+		return false
+	}
+	// Verify the image is hard deleted
+	if _, success := GetDeletedIMSImageRecordCLI(imageId); success {
+		common.Errorf("Image %s was not  permanently deleted", imageId)
+		return false
+	}
+	// Verify the image is not in the list of images
+	if _, success := getIMSImageRecordCLI(imageId); success {
+		common.Errorf("Image %s was not permanently deleted", imageId)
+		return false
+	}
+	common.Infof("Image %s was permanently deleted", imageId)
+	return true
+}
+
+func TestCLIGetAllImages() (passed bool) {
+	// Get all images
+	if _, success := getIMSImageRecordsCLI(); !success {
+		return false
+	}
+	common.Infof("Got all images")
+	return true
+}

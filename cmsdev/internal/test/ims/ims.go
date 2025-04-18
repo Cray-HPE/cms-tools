@@ -161,26 +161,9 @@ func IsIMSRunning() (passed bool) {
 		passed = false
 	}
 
-	// Get all recipe records from IMS
-	imsRecipeList, ok := getIMSRecipeRecordsAPI()
-	if !ok {
+	// Verify recipe CRUD operations via API
+	if !TestRecipeCRUDOperation() {
 		passed = false
-	} else {
-		common.Infof("Found %d recipe records in IMS", len(imsRecipeList))
-		if len(expectedRecipes) > 0 {
-			// Verify that all expected base recipes are available in IMS
-			if !verifyDefaultRecipes(expectedRecipes, imsRecipeList) {
-				passed = false
-			}
-
-			// Validate that we can retrieve a specific recipe via API
-			if imsRecipeId := imsRecipeList[0].Id; len(imsRecipeId) == 0 {
-				common.Errorf("First IMS recipe record in list has 0-length ID field")
-				passed = false
-			} else if _, getOk := getIMSRecipeRecordAPI(imsRecipeId); !getOk {
-				passed = false
-			}
-		}
 	}
 
 	// Do a few basic API and CLI tests
@@ -197,19 +180,9 @@ func IsIMSRunning() (passed bool) {
 		common.Infof("IMS version is reported to be %s", ver)
 	}
 
-	imsImageList, ok := getIMSImageRecordsAPI()
-	if !ok {
+	// Verify that we can perform CRUD operation on image via API
+	if !TestImageCRUDOperation() {
 		passed = false
-	} else {
-		common.Infof("Found %d IMS image records via API", len(imsImageList))
-		if len(imsImageList) > 0 {
-			if imsImageId := imsImageList[0].Id; len(imsImageId) == 0 {
-				common.Errorf("First IMS image record in list has 0-length ID field")
-				passed = false
-			} else if _, getOk := getIMSImageRecordAPI(imsImageId); !getOk {
-				passed = false
-			}
-		}
 	}
 
 	imsJobList, ok := getIMSJobRecordsAPI()
@@ -227,36 +200,13 @@ func IsIMSRunning() (passed bool) {
 		}
 	}
 
-	imsPkeyList, ok := getIMSPublicKeyRecordsAPI()
-	if !ok {
+	// Verify that we can perform CRUD operation on public key via API
+	if !TestPublicKeyCRUDOperation() {
 		passed = false
-	} else {
-		common.Infof("Found %d IMS public key records via API", len(imsPkeyList))
-		if len(imsPkeyList) > 0 {
-			if imsPkeyId := imsPkeyList[0].Id; len(imsPkeyId) == 0 {
-				common.Errorf("First IMS public key record in list has 0-length ID field")
-				passed = false
-			} else if _, getOk := getIMSPublicKeyRecordAPI(imsPkeyId); !getOk {
-				passed = false
-			}
-		}
 	}
 
-	// We don't get the recipes via API as we have done so already earlier in this test
-
-	imsImageList, ok = getIMSImageRecordsCLI()
-	if !ok {
+	if TestImageCRUDOperationUsingCLI() {
 		passed = false
-	} else {
-		common.Infof("Found %d IMS image records via CLI", len(imsImageList))
-		if len(imsImageList) > 0 {
-			if imsImageId := imsImageList[0].Id; len(imsImageId) == 0 {
-				common.Errorf("First IMS image record in list has 0-length ID field")
-				passed = false
-			} else if _, getOk := getIMSImageRecordCLI(imsImageId); !getOk {
-				passed = false
-			}
-		}
 	}
 
 	imsJobList, ok = getIMSJobRecordsCLI()
@@ -274,34 +224,14 @@ func IsIMSRunning() (passed bool) {
 		}
 	}
 
-	imsPkeyList, ok = getIMSPublicKeyRecordsCLI()
-	if !ok {
+	// Verify that we can perform CRUD operation on public key via CLI
+	if !TestPublicKeyCRUDOperationUsingCLI() {
 		passed = false
-	} else {
-		common.Infof("Found %d IMS public key records via CLI", len(imsPkeyList))
-		if len(imsPkeyList) > 0 {
-			if imsPkeyId := imsPkeyList[0].Id; len(imsPkeyId) == 0 {
-				common.Errorf("First IMS public key record in list has 0-length ID field")
-				passed = false
-			} else if _, getOk := getIMSPublicKeyRecordCLI(imsPkeyId); !getOk {
-				passed = false
-			}
-		}
 	}
 
-	imsRecipeList, ok = getIMSRecipeRecordsCLI()
-	if !ok {
+	// Verify that we can perform CRUD operation on recipes via CLI
+	if !TestRecipeCRUDOperationUsingCLI() {
 		passed = false
-	} else {
-		common.Infof("Found %d IMS recipe records via CLI", len(imsRecipeList))
-		if len(imsRecipeList) > 0 {
-			if imsRecipeId := imsRecipeList[0].Id; len(imsRecipeId) == 0 {
-				common.Errorf("First IMS recipe record in list has 0-length ID field")
-				passed = false
-			} else if _, getOk := getIMSRecipeRecordCLI(imsRecipeId); !getOk {
-				passed = false
-			}
-		}
 	}
 
 	if !signingkeysTest() {

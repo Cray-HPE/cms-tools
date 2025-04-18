@@ -1,0 +1,158 @@
+// MIT License
+//
+// (C) Copyright 2025 Hewlett Packard Enterprise Development LP
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+// OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+// ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
+package ims
+
+import (
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+)
+
+/*
+ * ims_images_test.go
+ *
+ * ims images test api functions
+ *
+ */
+
+func testPackage() {
+	common.Infof("Testing package")
+}
+
+func TestImageCRUDOperation() (passed bool) {
+	// Test creating an image
+	imageRecord, success := TestImageCreate()
+	if !success {
+		return false
+	}
+	// Test updating the image
+	updated := TestImageUpdate(imageRecord.Id)
+
+	// Test soft deleting the image
+	deleted := TestImageDelete(imageRecord.Id)
+
+	// Test undeleting the image
+	undeleted := TestImageUndelete(imageRecord.Id)
+
+	// Test hard deleting the image
+	hardDeleted := TestImageHardDelete(imageRecord.Id)
+
+	// Test get all images
+	getAll := TestGetAllImages()
+
+	return updated && deleted && undeleted && hardDeleted && getAll
+}
+
+func TestImageHardDelete(imageId string) (passed bool) {
+	// Soft delete the image
+	if success := DeleteIMSImageRecordAPI(imageId); !success {
+		return false
+	}
+
+	// Hard delete the image
+	if success := HardDeleteIMSImageRecordAPI(imageId); !success {
+		return false
+	}
+
+	// Verify the image is hard deleted
+	if _, success := GetDeletedIMSImageRecordAPI(imageId); success {
+		common.Errorf("Image %s was not permanently deleted", imageId)
+		return false
+	}
+	// Verify the image is not in the list of images
+	if _, success := GetIMSImageRecordAPI(imageId); success {
+		common.Errorf("Image %s was not permanently deleted", imageId)
+		return false
+	}
+	common.Infof("Image %s was permanently deleted", imageId)
+	return true
+}
+
+func TestImageUndelete(imageId string) (passed bool) {
+	if success := UndeleteIMSImageRecordAPI(imageId); !success {
+		return false
+	}
+
+	// Verify the image is undeleted
+	if _, success := GetIMSImageRecordAPI(imageId); !success {
+		common.Errorf("Image %s was not restored", imageId)
+		return false
+	}
+	common.Infof("Image %s was restored", imageId)
+	return true
+}
+
+func TestImageDelete(imageId string) (passed bool) {
+	if success := DeleteIMSImageRecordAPI(imageId); !success {
+		return false
+	}
+
+	// Verify the image is deleted
+	if _, success := GetDeletedIMSImageRecordAPI(imageId); !success {
+		common.Errorf("Image %s was not deleted", imageId)
+		return false
+	}
+	common.Infof("Image %s was deleted", imageId)
+	return true
+}
+
+func TestImageUpdate(imageId string) (passed bool) {
+	arch := "aarch64"
+	imageRecord, success := UpdateIMSImageRecordAPI(imageId, arch)
+	if !success || imageRecord.Id == "" {
+		return false
+	}
+
+	if imageRecord.Arch != arch {
+		common.Errorf("Expected architecture %s, got %s", arch, imageRecord.Arch)
+		return false
+	}
+	common.Infof("Image %s was updated with arch %s", imageId, arch)
+	return true
+}
+
+func TestImageCreate() (imageRecord IMSImageRecord, passed bool) {
+	// Create a new image
+	imageName := "image_" + string(common.GetRandomString(10))
+	imageRecord, success := CreateIMSImageRecordAPI(imageName)
+	if !success || imageRecord.Id == "" {
+		return IMSImageRecord{}, false
+	}
+
+	// Get the created image details
+	if imageRecord, success = GetIMSImageRecordAPI(imageRecord.Id); !success {
+		return IMSImageRecord{}, false
+	}
+	if imageRecord.Name != imageName {
+		common.Errorf("Expected image name %s, got %s", imageName, imageRecord.Name)
+		return IMSImageRecord{}, false
+	}
+	common.Infof("Image %s was created with id %s", imageName, imageRecord.Id)
+	return imageRecord, true
+}
+
+func TestGetAllImages() (passed bool) {
+	_, success := GetIMSImageRecordsAPI()
+	if !success {
+		return false
+	}
+	common.Infof("All images were retrieved successfully")
+	return true
+}

@@ -39,8 +39,8 @@ type Recipe struct {
 }
 
 type IMSImageRecord struct {
-	Created, Id, Name string
-	Link              map[string]string
+	Created, Id, Name, Arch string
+	Link                    map[string]string
 }
 
 type IMSConnectionInfoRecord struct {
@@ -69,8 +69,8 @@ type IMSPublicKeyRecord struct {
 }
 
 type IMSRecipeRecord struct {
-	Id, Created, Recipe_type, Linux_distribution, Name string
-	Link                                               map[string]string
+	Id, Created, Recipe_type, Linux_distribution, Name, Arch string
+	Link                                                     map[string]string
 }
 
 type IMSVersionRecord struct {
