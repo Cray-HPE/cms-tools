@@ -48,7 +48,9 @@ func GetDeletedIMSRecipeRecordCLI(recipeId string) (recipeRecord IMSRecipeRecord
 
 func CreateIMSRecipeRecordCLI(recipeName string) (recipeRecord IMSRecipeRecord, ok bool) {
 	common.Infof("Creating recipe %s in IMS via CLI", recipeName)
-	if cmdOut := runCLICommand("recipes", "create", "--name", recipeName, "--linux-distribution", "sles15", "--recipe-type", "kiwi-ng"); cmdOut != nil {
+	if cmdOut := runCLICommand("recipes", "create", "--name",
+		recipeName, "--linux-distribution", "sles15",
+		"--recipe-type", "kiwi-ng"); cmdOut != nil {
 		common.Infof("Decoding JSON in command output")
 		if err := json.Unmarshal(cmdOut, &recipeRecord); err == nil {
 			ok = true

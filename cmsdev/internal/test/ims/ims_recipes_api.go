@@ -36,17 +36,19 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
-func CreateIMSRecipeRecordAPI(recipeName string) (recipeRecord IMSRecipeRecord, ok bool) {
+func CreateIMSRecipeRecordAPI(recipeName string, templateDict []map[string]string, requireDKMS bool) (recipeRecord IMSRecipeRecord, ok bool) {
 	common.Infof("Creating recipe %s in IMS via API", recipeName)
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		return
 	}
 	// setting the payload
-	payload := map[string]string{
-		"name":               recipeName,
-		"recipe_type":        "kiwi-ng",
-		"linux_distribution": "sles15",
+	payload := map[string]interface{}{
+		"name":                recipeName,
+		"recipe_type":         "kiwi-ng",
+		"linux_distribution":  "sles15",
+		"require_dkms":        requireDKMS,
+		"template_dictionary": templateDict,
 	}
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
@@ -71,15 +73,16 @@ func CreateIMSRecipeRecordAPI(recipeName string) (recipeRecord IMSRecipeRecord, 
 	return
 }
 
-func UpdateIMSRecipeRecordAPI(recipeId string, arch string) (recipeRecord IMSRecipeRecord, ok bool) {
+func UpdateIMSRecipeRecordAPI(recipeId string, arch string, templateDict []map[string]string) (recipeRecord IMSRecipeRecord, ok bool) {
 	common.Infof("Updating recipe %s with arch %s", recipeId, arch)
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		return
 	}
 	// setting the payload
-	payload := map[string]string{
-		"arch": arch,
+	payload := map[string]interface{}{
+		"arch":                arch,
+		"template_dictionary": templateDict,
 	}
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
@@ -172,7 +175,7 @@ func UndeleteIMSRecipeRecordAPI(recipeId string) (ok bool) {
 	return
 }
 
-func HardDeleteIMSRecipeRecordAPI(recipeId string) (ok bool) {
+func PermanentDeleteIMSRecipeRecordAPI(recipeId string) (ok bool) {
 	common.Infof("Permanently deleting recipe %s", recipeId)
 	params := test.GetAccessTokenParams()
 	if params == nil {

@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -41,6 +41,7 @@ type Recipe struct {
 type IMSImageRecord struct {
 	Created, Id, Name, Arch string
 	Link                    map[string]string
+	Metadata                map[string]string
 }
 
 type IMSConnectionInfoRecord struct {
@@ -71,6 +72,8 @@ type IMSPublicKeyRecord struct {
 type IMSRecipeRecord struct {
 	Id, Created, Recipe_type, Linux_distribution, Name, Arch string
 	Link                                                     map[string]string
+	Require_dkms                                             bool
+	Template_dictionary                                      []map[string]string
 }
 
 type IMSVersionRecord struct {

@@ -36,16 +36,16 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
-func CreateIMSImageRecordAPI(imageName string) (imageRecord IMSImageRecord, ok bool) {
+func CreateIMSImageRecordAPI(imageName string, metadata map[string]string) (imageRecord IMSImageRecord, ok bool) {
 	common.Infof("Creating image %s in IMS via API", imageName)
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		return
 	}
-
 	// setting the payload
-	payload := map[string]string{
-		"name": imageName,
+	payload := map[string]interface{}{
+		"name":     imageName,
+		"metadata": metadata,
 	}
 
 	jsonPayload, err := json.Marshal(payload)
@@ -156,13 +156,13 @@ func UndeleteIMSImageRecordAPI(imageId string) (ok bool) {
 	return
 }
 
-func HardDeleteIMSImageRecordAPI(imageId string) (ok bool) {
+func PermanentDeleteIMSImageRecordAPI(imageId string) (ok bool) {
 	common.Infof("Permanently deleting image %s", imageId)
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		return
 	}
-	// getting the base uri needed for hard delete
+	// getting the base uri needed for permanent delete
 	uri := strings.Split(endpoints["ims"]["images"].Url, "/images")
 	url := common.BASEURL + uri[0] + "/deleted/images" + "/" + imageId
 	_, err := test.RestfulVerifyStatus("DELETE", url, *params, http.StatusNoContent)

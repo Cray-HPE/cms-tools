@@ -670,6 +670,42 @@ func GetSSHPublicKey() (sshKey string, err error) {
 	return
 }
 
+func CompareSlicesOfMaps(a, b []map[string]string) bool {
+	// Check if lengths are different
+	Infof("Comparing slices of maps: %v and %v", a, b)
+	if len(a) != len(b) {
+		Errorf("Slices are different lengths: %v and %v", a, b)
+		return false
+	}
+
+	// Compare each map in the slices
+	for i := range a {
+		if !CompareMaps(a[i], b[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func CompareMaps(a, b map[string]string) bool {
+	// Check if lengths are different
+	if len(a) != len(b) {
+		Errorf("Maps are different lengths: %v and %v", a, b)
+		return false
+	}
+
+	// Compare each key-value pair
+	for key, value := range a {
+		if b[key] != value {
+			Errorf("Maps differ at key %s: %s != %s", key, value, b[key])
+			return false
+		}
+	}
+
+	return true
+}
+
 func init() {
 	// Set default values
 	runStartTimes = append(runStartTimes, time.Now())

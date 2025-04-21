@@ -48,22 +48,22 @@ func TestRecipeCRUDOperation() (passed bool) {
 	undeleted := TestRecipeUndelete(recipeRecord.Id)
 
 	// Test hard deleting the recipe
-	hardDeleted := TestRecipeHardDelete(recipeRecord.Id)
+	permDeleted := TestRecipePermanentDelete(recipeRecord.Id)
 
 	// Test get all recipes
 	getAll := TestGetAllRecipes()
 
-	return updated && deleted && undeleted && hardDeleted && getAll
+	return updated && deleted && undeleted && permDeleted && getAll
 }
 
-func TestRecipeHardDelete(recipeId string) (passed bool) {
+func TestRecipePermanentDelete(recipeId string) (passed bool) {
 	// Soft delete the recipe
 	if success := DeleteIMSRecipeRecordAPI(recipeId); !success {
 		return false
 	}
 
-	// Hard delete the recipe
-	if success := HardDeleteIMSRecipeRecordAPI(recipeId); !success {
+	// Permanently delete the recipe
+	if success := PermanentDeleteIMSRecipeRecordAPI(recipeId); !success {
 		return false
 	}
 	// Verify the recipe is hard deleted
@@ -82,14 +82,29 @@ func TestRecipeHardDelete(recipeId string) (passed bool) {
 
 func TestRecipeCreate() (recipeRecord IMSRecipeRecord, passed bool) {
 	recipeName := "recipe_" + string(common.GetRandomString(10))
-	recipeRecord, success := CreateIMSRecipeRecordAPI(recipeName)
+	templatesDict := []map[string]string{
+		{
+			"key":   "USS_VERSION",
+			"value": "1.1.2-1-cos-base-3.1",
+		},
+		{
+			"key":   "FULL_COS_BASE_VERSION",
+			"value": "3.1.2-1-sle-15.5",
+		},
+	}
+	requireDKMS := false
+	recipeRecord, success := CreateIMSRecipeRecordAPI(recipeName, templatesDict, requireDKMS)
 	if !success {
 		return IMSRecipeRecord{}, false
 	}
 
 	// Verify the recipe is created
 	recipeRecord, success = GetIMSRecipeRecordAPI(recipeRecord.Id)
-	if !success || recipeRecord.Name != recipeName {
+	if !success ||
+		recipeRecord.Name != recipeName ||
+		!common.CompareSlicesOfMaps(recipeRecord.Template_dictionary, templatesDict) ||
+		recipeRecord.Require_dkms != requireDKMS {
+
 		common.Errorf("Recipe %s was not created", recipeName)
 		return IMSRecipeRecord{}, false
 	}
@@ -99,13 +114,21 @@ func TestRecipeCreate() (recipeRecord IMSRecipeRecord, passed bool) {
 
 func TestRecipeUpdate(recipeId string) (passed bool) {
 	arch := "aarch64"
-	if _, success := UpdateIMSRecipeRecordAPI(recipeId, arch); !success {
+	templatesDict := []map[string]string{
+		{
+			"key":   "USS_VERSION",
+			"value": "1.1.2-1-cos-3.1",
+		},
+	}
+	if _, success := UpdateIMSRecipeRecordAPI(recipeId, arch, templatesDict); !success {
 		return false
 	}
 
 	// Verify the recipe is updated
 	recipeRecord, success := GetIMSRecipeRecordAPI(recipeId)
-	if !success || recipeRecord.Arch != arch {
+	if !success ||
+		recipeRecord.Arch != arch ||
+		!common.CompareSlicesOfMaps(recipeRecord.Template_dictionary, templatesDict) {
 		common.Errorf("Recipe %s was not updated", recipeId)
 		return false
 	}

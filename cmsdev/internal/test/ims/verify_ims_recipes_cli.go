@@ -21,7 +21,9 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 package ims
 
-import "stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+import (
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+)
 
 /*
  * ims_recipes_cli_test.go
@@ -58,6 +60,7 @@ func TestCLIRecipeCreate() (recipeRecord IMSRecipeRecord, passed bool) {
 
 	// Create the recipe
 	recipeName := "recipe_" + string(common.GetRandomString(10))
+
 	recipeRecord, success := CreateIMSRecipeRecordCLI(recipeName)
 	if !success {
 		return IMSRecipeRecord{}, false

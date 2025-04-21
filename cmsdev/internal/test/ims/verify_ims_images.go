@@ -52,7 +52,7 @@ func TestImageCRUDOperation() (passed bool) {
 	undeleted := TestImageUndelete(imageRecord.Id)
 
 	// Test hard deleting the image
-	hardDeleted := TestImageHardDelete(imageRecord.Id)
+	hardDeleted := TestImagePermanentDelete(imageRecord.Id)
 
 	// Test get all images
 	getAll := TestGetAllImages()
@@ -60,18 +60,18 @@ func TestImageCRUDOperation() (passed bool) {
 	return updated && deleted && undeleted && hardDeleted && getAll
 }
 
-func TestImageHardDelete(imageId string) (passed bool) {
+func TestImagePermanentDelete(imageId string) (passed bool) {
 	// Soft delete the image
 	if success := DeleteIMSImageRecordAPI(imageId); !success {
 		return false
 	}
 
-	// Hard delete the image
-	if success := HardDeleteIMSImageRecordAPI(imageId); !success {
+	// Permanently delete the image
+	if success := PermanentDeleteIMSImageRecordAPI(imageId); !success {
 		return false
 	}
 
-	// Verify the image is hard deleted
+	// Verify the image is permanently deleted
 	if _, success := GetDeletedIMSImageRecordAPI(imageId); success {
 		common.Errorf("Image %s was not permanently deleted", imageId)
 		return false
@@ -131,7 +131,11 @@ func TestImageUpdate(imageId string) (passed bool) {
 func TestImageCreate() (imageRecord IMSImageRecord, passed bool) {
 	// Create a new image
 	imageName := "image_" + string(common.GetRandomString(10))
-	imageRecord, success := CreateIMSImageRecordAPI(imageName)
+	metadata := map[string]string{
+		"key":   "name",
+		"value": imageName,
+	}
+	imageRecord, success := CreateIMSImageRecordAPI(imageName, metadata)
 	if !success || imageRecord.Id == "" {
 		return IMSImageRecord{}, false
 	}
@@ -144,6 +148,11 @@ func TestImageCreate() (imageRecord IMSImageRecord, passed bool) {
 		common.Errorf("Expected image name %s, got %s", imageName, imageRecord.Name)
 		return IMSImageRecord{}, false
 	}
+	if !common.CompareMaps(imageRecord.Metadata, metadata) {
+		common.Errorf("Expected metadata %v, got %v", metadata, imageRecord.Metadata)
+		return IMSImageRecord{}, false
+	}
+
 	common.Infof("Image %s was created with id %s", imageName, imageRecord.Id)
 	return imageRecord, true
 }
