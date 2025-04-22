@@ -72,7 +72,7 @@ func CreateIMSImageRecordAPI(imageName string, metadata map[string]string) (imag
 	return
 }
 
-func UpdateIMSImageRecordAPI(imageId string, arch string) (imageRecord IMSImageRecord, ok bool) {
+func UpdateIMSImageRecordAPI(imageId string, arch string, metadata map[string]string) (imageRecord IMSImageRecord, ok bool) {
 	common.Infof("Updating image %s with arch %s", imageId, arch)
 	params := test.GetAccessTokenParams()
 	if params == nil {
@@ -80,8 +80,9 @@ func UpdateIMSImageRecordAPI(imageId string, arch string) (imageRecord IMSImageR
 	}
 
 	// setting the payload
-	payload := map[string]string{
-		"arch": arch,
+	payload := map[string]interface{}{
+		"arch":     arch,
+		"metadata": metadata,
 	}
 
 	jsonPayload, err := json.Marshal(payload)

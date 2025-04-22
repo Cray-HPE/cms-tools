@@ -52,12 +52,12 @@ func TestImageCRUDOperation() (passed bool) {
 	undeleted := TestImageUndelete(imageRecord.Id)
 
 	// Test hard deleting the image
-	hardDeleted := TestImagePermanentDelete(imageRecord.Id)
+	permDeleted := TestImagePermanentDelete(imageRecord.Id)
 
 	// Test get all images
 	getAll := TestGetAllImages()
 
-	return updated && deleted && undeleted && hardDeleted && getAll
+	return updated && deleted && undeleted && permDeleted && getAll
 }
 
 func TestImagePermanentDelete(imageId string) (passed bool) {
@@ -114,8 +114,23 @@ func TestImageDelete(imageId string) (passed bool) {
 }
 
 func TestImageUpdate(imageId string) (passed bool) {
+	// getting the existing metedata info for the image and updating it as per the test
+	existingImageRecord, success := GetIMSImageRecordAPI(imageId)
+	if !success {
+		common.Errorf("Unable to fetch Image %s ", imageId)
+		return false
+	}
+	expectedMetadata := existingImageRecord.Metadata
+	expectedMetadata["project"] = "csm"
+	common.Infof("Expected metadata %v", expectedMetadata)
+
 	arch := "aarch64"
-	imageRecord, success := UpdateIMSImageRecordAPI(imageId, arch)
+	metadata := map[string]string{
+		"operation": "set",
+		"key":       "project",
+		"value":     "csm",
+	}
+	imageRecord, success := UpdateIMSImageRecordAPI(imageId, arch, metadata)
 	if !success || imageRecord.Id == "" {
 		return false
 	}
@@ -124,7 +139,11 @@ func TestImageUpdate(imageId string) (passed bool) {
 		common.Errorf("Expected architecture %s, got %s", arch, imageRecord.Arch)
 		return false
 	}
-	common.Infof("Image %s was updated with arch %s", imageId, arch)
+
+	if !common.CompareMaps(imageRecord.Metadata, expectedMetadata) {
+		common.Errorf("Expected metadata %v, got %v", expectedMetadata, imageRecord.Metadata)
+		return false
+	}
 	return true
 }
 
@@ -135,6 +154,10 @@ func TestImageCreate() (imageRecord IMSImageRecord, passed bool) {
 		"key":   "name",
 		"value": imageName,
 	}
+	expectedMetadata := map[string]string{
+		"name": imageName,
+	}
+
 	imageRecord, success := CreateIMSImageRecordAPI(imageName, metadata)
 	if !success || imageRecord.Id == "" {
 		return IMSImageRecord{}, false
@@ -148,8 +171,8 @@ func TestImageCreate() (imageRecord IMSImageRecord, passed bool) {
 		common.Errorf("Expected image name %s, got %s", imageName, imageRecord.Name)
 		return IMSImageRecord{}, false
 	}
-	if !common.CompareMaps(imageRecord.Metadata, metadata) {
-		common.Errorf("Expected metadata %v, got %v", metadata, imageRecord.Metadata)
+	if !common.CompareMaps(imageRecord.Metadata, expectedMetadata) {
+		common.Errorf("Expected metadata %v, got %v", expectedMetadata, imageRecord.Metadata)
 		return IMSImageRecord{}, false
 	}
 

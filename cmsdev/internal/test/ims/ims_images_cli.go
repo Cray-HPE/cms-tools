@@ -48,7 +48,8 @@ func GetDeletedIMSImageRecordCLI(imageId string) (imageRecord IMSImageRecord, ok
 
 func CreateIMSImageRecordCLI(imageName string) (imageRecord IMSImageRecord, ok bool) {
 	common.Infof("Creating image %s in IMS via CLI", imageName)
-	if cmdOut := runCLICommand("images", "create", "--name", imageName); cmdOut != nil {
+	if cmdOut := runCLICommand("images", "create", "--name", imageName,
+		"--metadata-key", "name", "--metadata-value", imageName); cmdOut != nil {
 		common.Infof("Decoding JSON in command output")
 		if err := json.Unmarshal(cmdOut, &imageRecord); err == nil {
 			ok = true
@@ -61,7 +62,8 @@ func CreateIMSImageRecordCLI(imageName string) (imageRecord IMSImageRecord, ok b
 
 func UpdateIMSImageRecordCLI(imageId string, arch string) (imageRecord IMSImageRecord, ok bool) {
 	common.Infof("Updating image %s with arch %s", imageId, arch)
-	if cmdOut := runCLICommand("images", "update", imageId, "--arch", arch); cmdOut != nil {
+	if cmdOut := runCLICommand("images", "update", imageId, "--arch", arch, "--metadata-operation", "set",
+		"--metadata-key", "project", "--metadata-value", "csm"); cmdOut != nil {
 		common.Infof("Decoding JSON in command output")
 		if err := json.Unmarshal(cmdOut, &imageRecord); err == nil {
 			ok = true
@@ -82,7 +84,7 @@ func UndeleteIMSImageRecordCLI(imageId string) (ok bool) {
 	return runCLICommand("deleted", "images", "update", imageId, "--operation", "undelete") != nil
 }
 
-func HardDeleteIMSImageRecordCLI(imageId string) (ok bool) {
+func PermanentDeleteIMSImageRecordCLI(imageId string) (ok bool) {
 	common.Infof("Permanently deleting image %s", imageId)
 	return runCLICommand("deleted", "images", "delete", imageId) != nil
 }

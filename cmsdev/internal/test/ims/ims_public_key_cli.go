@@ -78,7 +78,7 @@ func UndeleteIMSPublicKeyRecordCLI(publicKeyId string) (ok bool) {
 	return runCLICommand("deleted", "public-keys", "update", publicKeyId, "--operation", "undelete") != nil
 }
 
-func HardDeleteIMSPublicKeyRecordCLI(publicKeyId string) (ok bool) {
+func PermanentDeleteIMSPublicKeyRecordCLI(publicKeyId string) (ok bool) {
 	common.Infof("Hard deleting public key %s in IMS via CLI", publicKeyId)
 	return runCLICommand("deleted", "public-keys", "delete", publicKeyId) != nil
 }

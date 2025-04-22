@@ -47,18 +47,23 @@ func TestImageCRUDOperationUsingCLI() (passed bool) {
 	undeleted := TestCLIImageUndelete(imageRecord.Id)
 
 	// Test hard deleting the image
-	hardDeleted := TestCLIImageHardDelete(imageRecord.Id)
+	permDeleted := TestCLIImagePermanentDelete(imageRecord.Id)
 
 	// Test get all images
 	getAll := TestCLIGetAllImages()
 
-	return updated && deleted && undeleted && hardDeleted && getAll
+	return updated && deleted && undeleted && permDeleted && getAll
 }
 
 func TestCLIImageCreate() (imageRecord IMSImageRecord, passed bool) {
 
 	// Create the image
 	imageName := "image_" + string(common.GetRandomString(10))
+
+	expectedMetadata := map[string]string{
+		"name": imageName,
+	}
+
 	imageRecord, success := CreateIMSImageRecordCLI(imageName)
 	if !success {
 		return IMSImageRecord{}, false
@@ -68,11 +73,26 @@ func TestCLIImageCreate() (imageRecord IMSImageRecord, passed bool) {
 	if !success {
 		return IMSImageRecord{}, false
 	}
+	if imageRecord.Name != imageName {
+		common.Errorf("Image %s was not created with name %s", imageRecord.Id, imageName)
+		return IMSImageRecord{}, false
+	}
+
+	if !common.CompareMaps(imageRecord.Metadata, expectedMetadata) {
+		common.Errorf("Expected metadata %v, got %v", expectedMetadata, imageRecord.Metadata)
+		return IMSImageRecord{}, false
+	}
+
 	common.Infof("Created image %s with ID %s", imageName, imageRecord.Id)
 	return imageRecord, true
 }
 
 func TestCLIImageUpdate(imageId string) (passed bool) {
+	// build the expected metadata
+	existingImageRecord, success := getIMSImageRecordCLI(imageId)
+	expectedMetadata := existingImageRecord.Metadata
+	expectedMetadata["project"] = "csm"
+	common.Infof(("Expected metadata: %v"), expectedMetadata)
 	// Update the image
 	arch := "aarch64"
 	if _, success := UpdateIMSImageRecordCLI(imageId, arch); !success {
@@ -80,8 +100,14 @@ func TestCLIImageUpdate(imageId string) (passed bool) {
 	}
 	// Verify the image is updated
 	imageRecord, success := getIMSImageRecordCLI(imageId)
+
 	if !success || imageRecord.Arch != arch {
 		common.Errorf("Image %s was not updated with arch %s", imageId, arch)
+		return false
+	}
+
+	if !common.CompareMaps(imageRecord.Metadata, expectedMetadata) {
+		common.Errorf("Expected metadata %v, got %v", expectedMetadata, imageRecord.Metadata)
 		return false
 	}
 	common.Infof("Updated image %s with arch %s", imageId, arch)
@@ -116,14 +142,14 @@ func TestCLIImageUndelete(imageId string) (passed bool) {
 	return true
 }
 
-func TestCLIImageHardDelete(imageId string) (passed bool) {
+func TestCLIImagePermanentDelete(imageId string) (passed bool) {
 	// Soft delete the image
 	if success := DeleteIMSImageRecordCLI(imageId); !success {
 		return false
 	}
 
-	// Hard delete the image
-	if success := HardDeleteIMSImageRecordCLI(imageId); !success {
+	// Permanently delete the image
+	if success := PermanentDeleteIMSImageRecordCLI(imageId); !success {
 		return false
 	}
 	// Verify the image is hard deleted

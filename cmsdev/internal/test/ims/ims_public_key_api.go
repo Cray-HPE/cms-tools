@@ -109,7 +109,7 @@ func UndeleteIMSPublicKeyRecordAPI(publicKeyId string) (ok bool) {
 	return
 }
 
-func HardDeleteIMSPublicKeyRecordAPI(publicKeyId string) (ok bool) {
+func PermanentDeleteIMSPublicKeyRecordAPI(publicKeyId string) (ok bool) {
 	common.Infof("Permanently deleting public key record %s in IMS via API", publicKeyId)
 	params := test.GetAccessTokenParams()
 	if params == nil {

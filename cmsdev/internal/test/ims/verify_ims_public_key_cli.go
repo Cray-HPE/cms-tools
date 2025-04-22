@@ -44,12 +44,12 @@ func TestPublicKeyCRUDOperationUsingCLI() (passed bool) {
 	undeleted := TestCLIPublicKeyUndelete(publicKeyRecord.Id)
 
 	// Test hard deleting the public key
-	hardDeleted := TestCLIPublicKeyHardDelete(publicKeyRecord.Id)
+	permDeleted := TestCLIPublicKeyPermanentDelete(publicKeyRecord.Id)
 
 	// Test get all public keys
 	getAll := TestCLIGetAllPublicKeys()
 
-	return deleted && undeleted && hardDeleted && getAll
+	return deleted && undeleted && permDeleted && getAll
 }
 
 func TestCLIPublicKeyCreate() (publicKeyRecord IMSPublicKeyRecord, passed bool) {
@@ -92,14 +92,14 @@ func TestCLIPublicKeyUndelete(publicKeyId string) (passed bool) {
 	return true
 }
 
-func TestCLIPublicKeyHardDelete(publicKeyId string) (passed bool) {
+func TestCLIPublicKeyPermanentDelete(publicKeyId string) (passed bool) {
 	// soft delete the public key
 	if success := DeleteIMSPublicKeyRecordCLI(publicKeyId); !success {
 		return false
 	}
 
 	// hard delete the public key
-	if success := HardDeleteIMSPublicKeyRecordCLI(publicKeyId); !success {
+	if success := PermanentDeleteIMSPublicKeyRecordCLI(publicKeyId); !success {
 		return false
 	}
 	// Verify the public key is hard deleted

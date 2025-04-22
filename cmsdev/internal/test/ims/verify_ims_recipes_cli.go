@@ -47,13 +47,13 @@ func TestRecipeCRUDOperationUsingCLI() (passed bool) {
 	// Test undeleting the recipe
 	undeleted := TestCLIRecipeUndelete(recipeRecord.Id)
 
-	// Test hard deleting the recipe
-	hardDeleted := TestCLIRecipeHardDelete(recipeRecord.Id)
+	// Test permanent deleting the recipe
+	permDeleted := TestCLIRecipePermanentDelete(recipeRecord.Id)
 
 	// Test get all recipes
 	getAll := TestCLIGetAllRecipes()
 
-	return updated && deleted && undeleted && hardDeleted && getAll
+	return updated && deleted && undeleted && permDeleted && getAll
 }
 
 func TestCLIRecipeCreate() (recipeRecord IMSRecipeRecord, passed bool) {
@@ -61,13 +61,31 @@ func TestCLIRecipeCreate() (recipeRecord IMSRecipeRecord, passed bool) {
 	// Create the recipe
 	recipeName := "recipe_" + string(common.GetRandomString(10))
 
+	expectedTemplatesDict := []map[string]string{
+		{
+			"key":   "USS_VERSION",
+			"value": "1.1.2-1-cos-base-3.1",
+		},
+		{
+			"key":   "FULL_COS_BASE_VERSION",
+			"value": "3.1.2-1-sle-15.5",
+		},
+	}
+
 	recipeRecord, success := CreateIMSRecipeRecordCLI(recipeName)
 	if !success {
 		return IMSRecipeRecord{}, false
 	}
 	// Get the recipe record
 	recipeRecord, success = getIMSRecipeRecordCLI(recipeRecord.Id)
-	if !success {
+	if !success || recipeRecord.Name != recipeName {
+		common.Errorf("Recipe %s was not created with name %s", recipeRecord.Id, recipeName)
+		return IMSRecipeRecord{}, false
+	}
+
+	// Verify the recipe metadata
+	if !common.CompareSlicesOfMaps(recipeRecord.Template_dictionary, expectedTemplatesDict) {
+		common.Errorf("Expected template dictionary %v, got %v", expectedTemplatesDict, recipeRecord.Template_dictionary)
 		return IMSRecipeRecord{}, false
 	}
 	common.Infof("Created recipe ID %s with name %s", recipeRecord.Id, recipeName)
@@ -76,6 +94,12 @@ func TestCLIRecipeCreate() (recipeRecord IMSRecipeRecord, passed bool) {
 
 func TestCLIRecipeUpdate(recipeId string) (passed bool) {
 	arch := "aarch64"
+	expectedTemplatesDict := []map[string]string{
+		{
+			"key":   "USS_VERSION",
+			"value": "1.1.2-1-cos-3.1",
+		},
+	}
 	if _, success := UpdateIMSRecipeRecordCLI(recipeId, arch); !success {
 		return false
 	}
@@ -83,6 +107,12 @@ func TestCLIRecipeUpdate(recipeId string) (passed bool) {
 	recipeRecord, success := getIMSRecipeRecordCLI(recipeId)
 	if !success || recipeRecord.Arch != arch {
 		common.Errorf("Recipe %s was not updated with arch %s", recipeId, arch)
+		return false
+	}
+
+	// Verify the recipe metadata
+	if !common.CompareSlicesOfMaps(recipeRecord.Template_dictionary, expectedTemplatesDict) {
+		common.Errorf("Expected template dictionary %v, got %v", expectedTemplatesDict, recipeRecord.Template_dictionary)
 		return false
 	}
 	common.Infof("Updated recipe ID %s with arch %s", recipeRecord.Id, arch)
@@ -115,13 +145,13 @@ func TestCLIRecipeUndelete(recipeId string) (passed bool) {
 	return true
 }
 
-func TestCLIRecipeHardDelete(recipeId string) (passed bool) {
+func TestCLIRecipePermanentDelete(recipeId string) (passed bool) {
 	// Soft delete the recipe
 	if success := DeleteIMSRecipeRecordCLI(recipeId); !success {
 		return false
 	}
 
-	if success := HardDeleteIMSRecipeRecordCLI(recipeId); !success {
+	if success := PermanentDeleteIMSRecipeRecordCLI(recipeId); !success {
 		return false
 	}
 	// Verify the recipe is hard deleted

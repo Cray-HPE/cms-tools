@@ -50,7 +50,8 @@ func CreateIMSRecipeRecordCLI(recipeName string) (recipeRecord IMSRecipeRecord, 
 	common.Infof("Creating recipe %s in IMS via CLI", recipeName)
 	if cmdOut := runCLICommand("recipes", "create", "--name",
 		recipeName, "--linux-distribution", "sles15",
-		"--recipe-type", "kiwi-ng"); cmdOut != nil {
+		"--recipe-type", "kiwi-ng", "--template-dictionary-key", "USS_VERSION,FULL_COS_BASE_VERSION",
+		"--template-dictionary-value", "1.1.2-1-cos-base,3.1.2-1-sle-15.5"); cmdOut != nil {
 		common.Infof("Decoding JSON in command output")
 		if err := json.Unmarshal(cmdOut, &recipeRecord); err == nil {
 			ok = true
@@ -63,7 +64,8 @@ func CreateIMSRecipeRecordCLI(recipeName string) (recipeRecord IMSRecipeRecord, 
 
 func UpdateIMSRecipeRecordCLI(recipeId string, arch string) (recipeRecord IMSRecipeRecord, ok bool) {
 	common.Infof("Updating recipe %s with arch %s", recipeId, arch)
-	if cmdOut := runCLICommand("recipes", "update", recipeId, "--arch", arch); cmdOut != nil {
+	if cmdOut := runCLICommand("recipes", "update", recipeId, "--arch", arch,
+		"--template-dictionary-key", "USS_VERSION", "--template-dictionary-value", "1.1.2-1-cos-3.1"); cmdOut != nil {
 		common.Infof("Decoding JSON in command output")
 		if err := json.Unmarshal(cmdOut, &recipeRecord); err == nil {
 			ok = true
@@ -84,7 +86,7 @@ func UndeleteIMSRecipeRecordCLI(recipeId string) bool {
 	return runCLICommand("deleted", "recipes", "update", recipeId, "--operation", "undelete") != nil
 }
 
-func HardDeleteIMSRecipeRecordCLI(recipeId string) bool {
+func PermanentDeleteIMSRecipeRecordCLI(recipeId string) bool {
 	common.Infof("Permanently deleting recipe record %s in IMS via CLI", recipeId)
 	return runCLICommand("deleted", "recipes", "delete", recipeId) != nil
 }
