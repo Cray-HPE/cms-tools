@@ -21,7 +21,11 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 package ims
 
-import "stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+import (
+	"net/http"
+
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+)
 
 /*
  * ims_public_key_test.go
@@ -58,7 +62,7 @@ func TestPublicKeyDelete(publicKeyId string) (passed bool) {
 	}
 
 	// Verify the public key is soft deleted
-	if _, success := GetDeletedIMSPublicKeyRecordAPI(publicKeyId); !success {
+	if _, success := GetDeletedIMSPublicKeyRecordAPI(publicKeyId, http.StatusNotFound); !success {
 		return false
 	}
 	common.Infof("Public key %s successfully soft deleted", publicKeyId)
@@ -71,7 +75,7 @@ func TestPublicKeyUndelete(publicKeyId string) (passed bool) {
 	}
 
 	// Verify the public key is not soft deleted
-	if _, success := GetIMSPublicKeyRecordAPI(publicKeyId); !success {
+	if _, success := GetIMSPublicKeyRecordAPI(publicKeyId, http.StatusOK); !success {
 		return false
 	}
 	common.Infof("Public key %s successfully restored", publicKeyId)
@@ -90,12 +94,12 @@ func TestPublicKeyPermanentDelete(publicKeyId string) (passed bool) {
 	}
 
 	// Verify the public key is hard deleted
-	if _, success := GetDeletedIMSPublicKeyRecordAPI(publicKeyId); success {
+	if _, success := GetDeletedIMSPublicKeyRecordAPI(publicKeyId, http.StatusNotFound); !success {
 		common.Errorf("Public key %s was not permanently deleted", publicKeyId)
 		return false
 	}
 	// Verify the public key is not in the list of public keys
-	if _, success := GetIMSPublicKeyRecordAPI(publicKeyId); success {
+	if _, success := GetIMSPublicKeyRecordAPI(publicKeyId, http.StatusNotFound); !success {
 		common.Errorf("Public key %s was not permanently deleted", publicKeyId)
 		return false
 	}
@@ -121,7 +125,7 @@ func TestPublicKeyCreate() (publicKeyRecord IMSPublicKeyRecord, passed bool) {
 	}
 
 	// Verify the public key is created
-	publicKeyRecord, success = GetIMSPublicKeyRecordAPI(publicKeyRecord.Id)
+	publicKeyRecord, success = GetIMSPublicKeyRecordAPI(publicKeyRecord.Id, http.StatusOK)
 	if !success || publicKeyRecord.Name != publicKeyName {
 		common.Errorf("Public key %s was not created", publicKeyName)
 		return IMSPublicKeyRecord{}, false

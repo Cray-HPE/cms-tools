@@ -176,7 +176,7 @@ func PermanentDeleteIMSImageRecordAPI(imageId string) (ok bool) {
 	return
 }
 
-func GetDeletedIMSImageRecordAPI(imageId string) (imageRecord IMSImageRecord, ok bool) {
+func GetDeletedIMSImageRecordAPI(imageId string, httpStatus int) (imageRecord IMSImageRecord, ok bool) {
 	common.Infof("Getting deleted image record %s in IMS via API", imageId)
 	params := test.GetAccessTokenParams()
 	if params == nil {
@@ -185,7 +185,7 @@ func GetDeletedIMSImageRecordAPI(imageId string) (imageRecord IMSImageRecord, ok
 	// getting the base uri needed for hard delete
 	uri := strings.Split(endpoints["ims"]["images"].Url, "/images")
 	url := common.BASEURL + uri[0] + "/deleted/images" + "/" + imageId
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
 	if err != nil {
 		common.Error(err)
 		return IMSImageRecord{}, false
@@ -202,14 +202,14 @@ func GetDeletedIMSImageRecordAPI(imageId string) (imageRecord IMSImageRecord, ok
 }
 
 // Return specific image record in IMS via API
-func GetIMSImageRecordAPI(imageId string) (imageRecord IMSImageRecord, ok bool) {
+func GetIMSImageRecordAPI(imageId string, httpStatus int) (imageRecord IMSImageRecord, ok bool) {
 	common.Infof("Getting image record %s in IMS via API", imageId)
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		return IMSImageRecord{}, false
 	}
 	url := common.BASEURL + endpoints["ims"]["images"].Url + "/" + imageId
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
 	if err != nil {
 		common.Error(err)
 		return IMSImageRecord{}, false

@@ -22,6 +22,8 @@
 package ims
 
 import (
+	"net/http"
+
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
 
@@ -72,12 +74,12 @@ func TestImagePermanentDelete(imageId string) (passed bool) {
 	}
 
 	// Verify the image is permanently deleted
-	if _, success := GetDeletedIMSImageRecordAPI(imageId); success {
+	if _, success := GetDeletedIMSImageRecordAPI(imageId, http.StatusNotFound); !success {
 		common.Errorf("Image %s was not permanently deleted", imageId)
 		return false
 	}
 	// Verify the image is not in the list of images
-	if _, success := GetIMSImageRecordAPI(imageId); success {
+	if _, success := GetIMSImageRecordAPI(imageId, http.StatusNotFound); !success {
 		common.Errorf("Image %s was not permanently deleted", imageId)
 		return false
 	}
@@ -91,7 +93,7 @@ func TestImageUndelete(imageId string) (passed bool) {
 	}
 
 	// Verify the image is undeleted
-	if _, success := GetIMSImageRecordAPI(imageId); !success {
+	if _, success := GetIMSImageRecordAPI(imageId, http.StatusOK); !success {
 		common.Errorf("Image %s was not restored", imageId)
 		return false
 	}
@@ -105,7 +107,7 @@ func TestImageDelete(imageId string) (passed bool) {
 	}
 
 	// Verify the image is deleted
-	if _, success := GetDeletedIMSImageRecordAPI(imageId); !success {
+	if _, success := GetDeletedIMSImageRecordAPI(imageId, http.StatusOK); !success {
 		common.Errorf("Image %s was not deleted", imageId)
 		return false
 	}
@@ -115,7 +117,7 @@ func TestImageDelete(imageId string) (passed bool) {
 
 func TestImageUpdate(imageId string) (passed bool) {
 	// getting the existing metedata info for the image and updating it as per the test
-	existingImageRecord, success := GetIMSImageRecordAPI(imageId)
+	existingImageRecord, success := GetIMSImageRecordAPI(imageId, http.StatusOK)
 	if !success {
 		common.Errorf("Unable to fetch Image %s ", imageId)
 		return false
@@ -164,7 +166,7 @@ func TestImageCreate() (imageRecord IMSImageRecord, passed bool) {
 	}
 
 	// Get the created image details
-	if imageRecord, success = GetIMSImageRecordAPI(imageRecord.Id); !success {
+	if imageRecord, success = GetIMSImageRecordAPI(imageRecord.Id, http.StatusOK); !success {
 		return IMSImageRecord{}, false
 	}
 	if imageRecord.Name != imageName {

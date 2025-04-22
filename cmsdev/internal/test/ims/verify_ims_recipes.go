@@ -22,6 +22,8 @@
 package ims
 
 import (
+	"net/http"
+
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
 
@@ -67,12 +69,12 @@ func TestRecipePermanentDelete(recipeId string) (passed bool) {
 		return false
 	}
 	// Verify the recipe is hard deleted
-	if _, success := GetDeletedIMSRecipeRecordAPI(recipeId); success {
+	if _, success := GetDeletedIMSRecipeRecordAPI(recipeId, http.StatusNotFound); !success {
 		common.Errorf("Recipe %s was not permanently deleted", recipeId)
 		return false
 	}
 	// Verify the recipe is not in the list of recipes
-	if _, success := GetIMSRecipeRecordAPI(recipeId); success {
+	if _, success := GetIMSRecipeRecordAPI(recipeId, http.StatusNotFound); success {
 		common.Errorf("Recipe %s was not permanently deleted", recipeId)
 		return false
 	}
@@ -99,7 +101,7 @@ func TestRecipeCreate() (recipeRecord IMSRecipeRecord, passed bool) {
 	}
 
 	// Verify the recipe is created
-	recipeRecord, success = GetIMSRecipeRecordAPI(recipeRecord.Id)
+	recipeRecord, success = GetIMSRecipeRecordAPI(recipeRecord.Id, http.StatusOK)
 	if !success ||
 		recipeRecord.Name != recipeName ||
 		!common.CompareSlicesOfMaps(recipeRecord.Template_dictionary, templatesDict) ||
@@ -125,7 +127,7 @@ func TestRecipeUpdate(recipeId string) (passed bool) {
 	}
 
 	// Verify the recipe is updated
-	recipeRecord, success := GetIMSRecipeRecordAPI(recipeId)
+	recipeRecord, success := GetIMSRecipeRecordAPI(recipeId, http.StatusOK)
 	if !success ||
 		recipeRecord.Arch != arch ||
 		!common.CompareSlicesOfMaps(recipeRecord.Template_dictionary, templatesDict) {
@@ -142,7 +144,7 @@ func TestRecipeDelete(recipeId string) (passed bool) {
 	}
 
 	// Verify the recipe is deleted
-	if _, success := GetDeletedIMSRecipeRecordAPI(recipeId); !success {
+	if _, success := GetDeletedIMSRecipeRecordAPI(recipeId, http.StatusOK); !success {
 		common.Errorf("Recipe %s was not deleted", recipeId)
 		return false
 	}
@@ -156,7 +158,7 @@ func TestRecipeUndelete(recipeId string) (passed bool) {
 	}
 
 	// Verify the recipe is undeleted
-	if _, success := GetIMSRecipeRecordAPI(recipeId); !success {
+	if _, success := GetIMSRecipeRecordAPI(recipeId, http.StatusOK); !success {
 		common.Errorf("Recipe %s was not restored", recipeId)
 		return false
 	}

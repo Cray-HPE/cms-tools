@@ -124,7 +124,7 @@ func DeleteIMSRecipeRecordAPI(recipeId string) (ok bool) {
 	return
 }
 
-func GetDeletedIMSRecipeRecordAPI(recipeId string) (recipeRecord IMSRecipeRecord, ok bool) {
+func GetDeletedIMSRecipeRecordAPI(recipeId string, httpStatus int) (recipeRecord IMSRecipeRecord, ok bool) {
 	common.Infof("Getting deleted recipe record %s in IMS via API", recipeId)
 	params := test.GetAccessTokenParams()
 	if params == nil {
@@ -132,7 +132,7 @@ func GetDeletedIMSRecipeRecordAPI(recipeId string) (recipeRecord IMSRecipeRecord
 	}
 	uri := strings.Split(endpoints["ims"]["recipes"].Url, "/recipes")
 	url := common.BASEURL + uri[0] + "/deleted/recipes" + "/" + recipeId
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
 	if err != nil {
 		common.Error(err)
 		return IMSRecipeRecord{}, false
@@ -194,7 +194,7 @@ func PermanentDeleteIMSRecipeRecordAPI(recipeId string) (ok bool) {
 }
 
 // Return a specific recipe record in IMS via API
-func GetIMSRecipeRecordAPI(recipeId string) (recipeRecord IMSRecipeRecord, ok bool) {
+func GetIMSRecipeRecordAPI(recipeId string, httpStatus int) (recipeRecord IMSRecipeRecord, ok bool) {
 	common.Infof("Getting recipe record %s in IMS via API", recipeId)
 	params := test.GetAccessTokenParams()
 	if params == nil {
@@ -202,7 +202,7 @@ func GetIMSRecipeRecordAPI(recipeId string) (recipeRecord IMSRecipeRecord, ok bo
 	}
 
 	url := common.BASEURL + endpoints["ims"]["recipes"].Url + "/" + recipeId
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
 	if err != nil {
 		return IMSRecipeRecord{}, false
 	}

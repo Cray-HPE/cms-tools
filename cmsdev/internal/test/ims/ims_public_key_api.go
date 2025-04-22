@@ -36,7 +36,7 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
-func GetDeletedIMSPublicKeyRecordAPI(publicKeyId string) (publicKeyRecord IMSPublicKeyRecord, ok bool) {
+func GetDeletedIMSPublicKeyRecordAPI(publicKeyId string, httpStatus int) (publicKeyRecord IMSPublicKeyRecord, ok bool) {
 	common.Infof("Getting public key record %s in IMS via API", publicKeyId)
 	params := test.GetAccessTokenParams()
 	if params == nil {
@@ -44,7 +44,7 @@ func GetDeletedIMSPublicKeyRecordAPI(publicKeyId string) (publicKeyRecord IMSPub
 	}
 	uri := strings.Split(endpoints["ims"]["public_keys"].Url, "/public-keys")
 	url := common.BASEURL + uri[0] + "/deleted/public-keys" + "/" + publicKeyId
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
 	if err != nil {
 		common.Error(err)
 		return IMSPublicKeyRecord{}, false
@@ -172,14 +172,14 @@ func CreateIMSPublicKeyRecordAPI(publicKeyName string) (publicKeyRecord IMSPubli
 }
 
 // Return specific public key record in IMS via API
-func GetIMSPublicKeyRecordAPI(pkeyId string) (pkeyRecord IMSPublicKeyRecord, ok bool) {
+func GetIMSPublicKeyRecordAPI(pkeyId string, httpStatus int) (pkeyRecord IMSPublicKeyRecord, ok bool) {
 	common.Infof("Getting public key record %s in IMS via API", pkeyId)
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		return IMSPublicKeyRecord{}, false
 	}
 	url := common.BASEURL + endpoints["ims"]["public_keys"].Url + "/" + pkeyId
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
 	if err != nil {
 		common.Error(err)
 		return IMSPublicKeyRecord{}, false

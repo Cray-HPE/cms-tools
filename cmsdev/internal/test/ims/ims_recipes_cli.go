@@ -51,7 +51,7 @@ func CreateIMSRecipeRecordCLI(recipeName string) (recipeRecord IMSRecipeRecord, 
 	if cmdOut := runCLICommand("recipes", "create", "--name",
 		recipeName, "--linux-distribution", "sles15",
 		"--recipe-type", "kiwi-ng", "--template-dictionary-key", "USS_VERSION,FULL_COS_BASE_VERSION",
-		"--template-dictionary-value", "1.1.2-1-cos-base,3.1.2-1-sle-15.5"); cmdOut != nil {
+		"--template-dictionary-value", "1.1.2-1-cos-base-3.1,3.1.2-1-sle-15.5"); cmdOut != nil {
 		common.Infof("Decoding JSON in command output")
 		if err := json.Unmarshal(cmdOut, &recipeRecord); err == nil {
 			ok = true
