@@ -74,7 +74,7 @@ func TestRecipePermanentDelete(recipeId string) (passed bool) {
 		return false
 	}
 	// Verify the recipe is not in the list of recipes
-	if _, success := GetIMSRecipeRecordAPI(recipeId, http.StatusNotFound); success {
+	if _, success := GetIMSRecipeRecordAPI(recipeId, http.StatusNotFound); !success {
 		common.Errorf("Recipe %s was not permanently deleted", recipeId)
 		return false
 	}

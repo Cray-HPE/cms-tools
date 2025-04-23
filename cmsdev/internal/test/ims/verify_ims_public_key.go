@@ -62,7 +62,7 @@ func TestPublicKeyDelete(publicKeyId string) (passed bool) {
 	}
 
 	// Verify the public key is soft deleted
-	if _, success := GetDeletedIMSPublicKeyRecordAPI(publicKeyId, http.StatusNotFound); !success {
+	if _, success := GetDeletedIMSPublicKeyRecordAPI(publicKeyId, http.StatusOK); !success {
 		return false
 	}
 	common.Infof("Public key %s successfully soft deleted", publicKeyId)
