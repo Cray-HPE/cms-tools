@@ -346,8 +346,9 @@ func GetEndpoints() map[string]map[string]*Endpoint {
 			"DELETE": newMethodEndpoint("", "Delete all image records", []int{204, 500}),
 			"GET":    newMethodEndpoint("", "Retrieve all image records", []int{200, 500}),
 			"POST":   newMethodEndpoint("", "Create an image record", []int{201, 400, 422, 500}),
+			"PATCH":  newMethodEndpoint("", "Update an image record", []int{200, 400, 404, 409, 422, 500}),
 		},
-		Url:     "/apis/ims/images",
+		Url:     "/apis/ims/v3/images",
 		Version: "v2",
 	}
 	endpoints["ims"]["jobs"] = &Endpoint{
@@ -365,7 +366,7 @@ func GetEndpoints() map[string]map[string]*Endpoint {
 			"GET":    newMethodEndpoint("", "Retrieve all public key records", []int{200, 500}),
 			"POST":   newMethodEndpoint("", "Create a public key record", []int{201, 400, 422, 500}),
 		},
-		Url:     "/apis/ims/public-keys",
+		Url:     "/apis/ims/v3/public-keys",
 		Version: "v2",
 	}
 	// The status codes for these recipes IMS endpoints don't match the IMS openapi spec currently,
@@ -375,8 +376,9 @@ func GetEndpoints() map[string]map[string]*Endpoint {
 			"DELETE": newMethodEndpoint("", "Delete all recipe records", []int{204, 500}),
 			"GET":    newMethodEndpoint("", "Retrieve all recipe records", []int{200, 500}),
 			"POST":   newMethodEndpoint("", "Create a recipe record", []int{201, 400, 422, 500}),
+			"PATCH":  newMethodEndpoint("", "Update a recipe record", []int{200, 400, 404, 409, 422, 500}),
 		},
-		Url:     "/apis/ims/recipes",
+		Url:     "/apis/ims/v3/recipes",
 		Version: "v2",
 	}
 	endpoints["ims"]["version"] = &Endpoint{
@@ -645,6 +647,64 @@ func DeleteTmpDir() {
 	Debugf("Successfully removed temporary directory: '%s'", TmpDir)
 	TmpDir = ""
 	return
+}
+
+func GetSSHPublicKey() (sshKey string, err error) {
+	// Get the public key from the local machine
+	// Get the home directory of the current user
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		Errorf("Error getting home directory: %v", err)
+		return
+	}
+	// Construct the path to the public key file
+	filePath := homeDir + "/.ssh/id_rsa.pub"
+	// Read the public key file
+	sshKeyBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+	// Convert the public key to a string
+	sshKey = string(sshKeyBytes)
+	return
+}
+
+func CompareSlicesOfMaps(a, b []map[string]string) bool {
+	// Check if lengths are different
+	Infof("Comparing slices of maps: %v and %v", a, b)
+	if len(a) != len(b) {
+		Errorf("Slices are different lengths: %v and %v", a, b)
+		return false
+	}
+
+	// Compare each map in the slices
+	for i := range a {
+		if !CompareMaps(a[i], b[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func CompareMaps(a, b map[string]string) bool {
+	Infof("Comparing maps: %v and %v", a, b)
+	// Check if lengths are different
+	if len(a) != len(b) {
+		Errorf("Maps are different lengths: %v and %v", a, b)
+		return false
+	}
+
+	// Compare each key-value pair
+	for key, value := range a {
+		if b[key] != value {
+			Errorf("Maps differ at key %s: %s != %s", key, value, b[key])
+			return false
+		}
+	}
+
+	return true
 }
 
 func init() {
