@@ -83,6 +83,29 @@ func TestImagePermanentDelete(imageId string) (passed bool) {
 		common.Errorf("Image %s was not permanently deleted", imageId)
 		return false
 	}
+
+	// Verify the image is not in the list of all images
+	imageRecords, success := GetIMSImageRecordsAPI()
+	if !success {
+		return false
+	}
+
+	if ImageRecordExists(imageId, imageRecords) {
+		common.Errorf("Image %s was not permanently deleted", imageId)
+		return false
+	}
+
+	// Verify the image is not in the list of deleted images
+	deletedImageRecords, success := GetDeletedIMSImageRecordsAPI()
+	if !success {
+		return false
+	}
+
+	if ImageRecordExists(imageId, deletedImageRecords) {
+		common.Errorf("Image %s was not permanently deleted", imageId)
+		return false
+	}
+
 	common.Infof("Image %s was permanently deleted", imageId)
 	return true
 }
@@ -108,9 +131,38 @@ func TestImageDelete(imageId string) (passed bool) {
 
 	// Verify the image is deleted
 	if _, success := GetDeletedIMSImageRecordAPI(imageId, http.StatusOK); !success {
-		common.Errorf("Image %s was not deleted", imageId)
+		common.Errorf("Image %s was not soft deleted", imageId)
 		return false
 	}
+
+	// Verify the image is not in the list of images
+	if _, success := GetIMSImageRecordAPI(imageId, http.StatusNotFound); !success {
+		common.Errorf("Image %s was not soft deleted", imageId)
+		return false
+	}
+
+	// Verify the image is not in the list of all images
+	imageRecords, success := GetIMSImageRecordsAPI()
+	if !success {
+		return false
+	}
+
+	if ImageRecordExists(imageId, imageRecords) {
+		common.Errorf("Image %s was not soft deleted", imageId)
+		return false
+	}
+
+	// Verify the image is not in the list of deleted images
+	deletedImageRecords, success := GetDeletedIMSImageRecordsAPI()
+	if !success {
+		return false
+	}
+
+	if !ImageRecordExists(imageId, deletedImageRecords) {
+		common.Errorf("Image %s was not found in the list of deleted images", imageId)
+		return false
+	}
+
 	common.Infof("Image %s was deleted", imageId)
 	return true
 }

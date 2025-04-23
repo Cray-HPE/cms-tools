@@ -46,6 +46,19 @@ func GetDeletedIMSImageRecordCLI(imageId string) (imageRecord IMSImageRecord, ok
 	return
 }
 
+func GetDeletedIMSImageRecordsCLI() (imageRecords []IMSImageRecord, ok bool) {
+	common.Infof("Getting all deleted image records in IMS via CLI")
+	if cmdOut := runCLICommand("deleted", "images", "list"); cmdOut != nil {
+		common.Infof("Decoding JSON in command output")
+		if err := json.Unmarshal(cmdOut, &imageRecords); err == nil {
+			ok = true
+		} else {
+			common.Error(err)
+		}
+	}
+	return
+}
+
 func CreateIMSImageRecordCLI(imageName string) (imageRecord IMSImageRecord, ok bool) {
 	common.Infof("Creating image %s in IMS via CLI", imageName)
 	if cmdOut := runCLICommand("images", "create", "--name", imageName,

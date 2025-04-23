@@ -61,6 +61,31 @@ func GetDeletedIMSPublicKeyRecordAPI(publicKeyId string, httpStatus int) (public
 	return
 }
 
+func GetDeletedIMSPublicKeyRecordsAPI() (recordList []IMSPublicKeyRecord, ok bool) {
+	common.Infof("Getting list of all deleted public key records in IMS via API")
+	params := test.GetAccessTokenParams()
+	if params == nil {
+		return
+	}
+	uri := strings.Split(endpoints["ims"]["public_keys"].Url, "/public-keys")
+	url := common.BASEURL + uri[0] + "/deleted/public-keys"
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	if err != nil {
+		common.Error(err)
+		return
+	}
+
+	// Extract list of public key records from response
+	common.Infof("Decoding JSON in response body")
+	if err := json.Unmarshal(resp.Body(), &recordList); err != nil {
+		common.Error(err)
+		return
+	}
+	ok = true
+
+	return
+}
+
 func DeleteIMSPublicKeyRecordAPI(publicKeyId string) (ok bool) {
 	common.Infof("Soft deleting public key record %s in IMS via API", publicKeyId)
 	params := test.GetAccessTokenParams()
@@ -219,4 +244,14 @@ func GetIMSPublicKeyRecordsAPI() (recordList []IMSPublicKeyRecord, ok bool) {
 	ok = true
 
 	return
+}
+
+func PublicKeyRecordExists(publicKeyId string, publicKeyRecords []IMSPublicKeyRecord) (exists bool) {
+	for _, publicKeyRecord := range publicKeyRecords {
+		if publicKeyRecord.Id == publicKeyId {
+			return true
+		}
+	}
+	common.Infof("Public Key %s was not found in the list of public keys", publicKeyId)
+	return false
 }

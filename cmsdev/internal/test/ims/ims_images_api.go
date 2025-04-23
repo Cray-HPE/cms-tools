@@ -201,6 +201,31 @@ func GetDeletedIMSImageRecordAPI(imageId string, httpStatus int) (imageRecord IM
 	return
 }
 
+func GetDeletedIMSImageRecordsAPI() (recordList []IMSImageRecord, ok bool) {
+	common.Infof("Getting list of all deleted image records in IMS via API")
+	params := test.GetAccessTokenParams()
+	if params == nil {
+		return []IMSImageRecord{}, false
+	}
+	// getting the base uri needed for hard delete
+	uri := strings.Split(endpoints["ims"]["images"].Url, "/images")
+	url := common.BASEURL + uri[0] + "/deleted/images"
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	if err != nil {
+		common.Error(err)
+		return []IMSImageRecord{}, false
+	}
+	// Extract list of image records from response
+	common.Infof("Decoding JSON in response body")
+	if err := json.Unmarshal(resp.Body(), &recordList); err != nil {
+		common.Error(err)
+		return []IMSImageRecord{}, false
+	}
+	ok = true
+
+	return
+}
+
 // Return specific image record in IMS via API
 func GetIMSImageRecordAPI(imageId string, httpStatus int) (imageRecord IMSImageRecord, ok bool) {
 	common.Infof("Getting image record %s in IMS via API", imageId)
@@ -249,4 +274,14 @@ func GetIMSImageRecordsAPI() (recordList []IMSImageRecord, ok bool) {
 	ok = true
 
 	return
+}
+
+func ImageRecordExists(imageId string, recordList []IMSImageRecord) (ok bool) {
+	for _, imageRecord := range recordList {
+		if imageRecord.Id == imageId {
+			return true
+		}
+	}
+	common.Infof("Image %s was not found in the list of images", imageId)
+	return false
 }
