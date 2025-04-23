@@ -68,6 +68,19 @@ func GetDeletedIMSPublicKeyRecordCLI(publicKeyId string) (publicKeyRecord IMSPub
 	return
 }
 
+func GetDeletedIMSPublicKeyRecordCLIs() (publicKeyRecords []IMSPublicKeyRecord, ok bool) {
+	common.Infof("Getting list of all deleted public key records in IMS via CLI")
+	if cmdOut := runCLICommand("deleted", "public-keys", "list"); cmdOut != nil {
+		common.Infof("Decoding JSON in command output")
+		if err := json.Unmarshal(cmdOut, &publicKeyRecords); err == nil {
+			ok = true
+		} else {
+			common.Error(err)
+		}
+	}
+	return
+}
+
 func DeleteIMSPublicKeyRecordCLI(publicKeyId string) (ok bool) {
 	common.Infof("Deleting public key %s in IMS via CLI", publicKeyId)
 	return runCLICommand("public-keys", "delete", publicKeyId) != nil

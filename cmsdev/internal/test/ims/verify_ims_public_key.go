@@ -65,6 +65,35 @@ func TestPublicKeyDelete(publicKeyId string) (passed bool) {
 	if _, success := GetDeletedIMSPublicKeyRecordAPI(publicKeyId, http.StatusOK); !success {
 		return false
 	}
+
+	// Verify the public key is not in the list of public keys
+	if _, success := GetIMSPublicKeyRecordAPI(publicKeyId, http.StatusNotFound); !success {
+		common.Errorf("Public key %s was not soft deleted", publicKeyId)
+		return false
+	}
+
+	// Verify the public key is in the list of all deleted public keys
+	deletedPublicKeyRecords, success := GetDeletedIMSPublicKeyRecordsAPI()
+	if !success {
+		return false
+	}
+
+	if !PublicKeyRecordExists(publicKeyId, deletedPublicKeyRecords) {
+		common.Errorf("Public key %s was not deleted", publicKeyId)
+		return false
+	}
+
+	// Verify the public key is not in the list of all public keys
+	publicKeyRecords, success := GetIMSPublicKeyRecordsAPI()
+	if !success {
+		return false
+	}
+
+	if PublicKeyRecordExists(publicKeyId, publicKeyRecords) {
+		common.Errorf("Public key %s was not deleted", publicKeyId)
+		return false
+	}
+
 	common.Infof("Public key %s successfully soft deleted", publicKeyId)
 	return true
 }
@@ -103,6 +132,29 @@ func TestPublicKeyPermanentDelete(publicKeyId string) (passed bool) {
 		common.Errorf("Public key %s was not permanently deleted", publicKeyId)
 		return false
 	}
+
+	// Verify the public key is not in the list of all deleted public keys
+	deletedPublicKeyRecords, success := GetDeletedIMSPublicKeyRecordsAPI()
+	if !success {
+		return false
+	}
+
+	if PublicKeyRecordExists(publicKeyId, deletedPublicKeyRecords) {
+		common.Errorf("Public key %s was not deleted", publicKeyId)
+		return false
+	}
+
+	// Verify the public key is not in the list of all public keys
+	publicKeyRecords, success := GetIMSPublicKeyRecordsAPI()
+	if !success {
+		return false
+	}
+
+	if PublicKeyRecordExists(publicKeyId, publicKeyRecords) {
+		common.Errorf("Public key %s was not deleted", publicKeyId)
+		return false
+	}
+
 	common.Infof("Public key %s was permanently deleted", publicKeyId)
 	return true
 }

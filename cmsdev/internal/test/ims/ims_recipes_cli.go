@@ -46,6 +46,19 @@ func GetDeletedIMSRecipeRecordCLI(recipeId string) (recipeRecord IMSRecipeRecord
 	return
 }
 
+func GetDeletedIMSRecipeRecordsCLI() (recipeRecords []IMSRecipeRecord, ok bool) {
+	common.Infof("Getting all deleted recipe records in IMS via CLI")
+	if cmdOut := runCLICommand("deleted", "recipes", "list"); cmdOut != nil {
+		common.Infof("Decoding JSON in command output")
+		if err := json.Unmarshal(cmdOut, &recipeRecords); err == nil {
+			ok = true
+		} else {
+			common.Error(err)
+		}
+	}
+	return
+}
+
 func CreateIMSRecipeRecordCLI(recipeName string) (recipeRecord IMSRecipeRecord, ok bool) {
 	common.Infof("Creating recipe %s in IMS via CLI", recipeName)
 	if cmdOut := runCLICommand("recipes", "create", "--name",

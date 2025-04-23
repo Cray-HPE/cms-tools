@@ -147,6 +147,29 @@ func GetDeletedIMSRecipeRecordAPI(recipeId string, httpStatus int) (recipeRecord
 	return
 }
 
+func GetDeletedIMSRecipeRecordsAPI() (recordList []IMSRecipeRecord, ok bool) {
+	common.Infof("Getting list of all deleted recipe records in IMS via API")
+	params := test.GetAccessTokenParams()
+	if params == nil {
+		return
+	}
+	uri := strings.Split(endpoints["ims"]["recipes"].Url, "/recipes")
+	url := common.BASEURL + uri[0] + "/deleted/recipes"
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	if err != nil {
+		common.Error(err)
+		return
+	}
+	// Extract list of recipe records from response
+	common.Infof("Decoding JSON in response body")
+	if err := json.Unmarshal(resp.Body(), &recordList); err != nil {
+		common.Error(err)
+		return
+	}
+	ok = true
+	return
+}
+
 func UndeleteIMSRecipeRecordAPI(recipeId string) (ok bool) {
 	common.Infof("Restoring recipe %s", recipeId)
 	params := test.GetAccessTokenParams()
@@ -240,4 +263,14 @@ func GetIMSRecipeRecordsAPI() (recordList []IMSRecipeRecord, ok bool) {
 	ok = true
 
 	return
+}
+
+func RecipeRecordExists(recipeId string, recipeRecords []IMSRecipeRecord) (exists bool) {
+	for _, recipeRecord := range recipeRecords {
+		if recipeRecord.Id == recipeId {
+			return true
+		}
+	}
+	common.Infof("Recipe %s was not found in the list of recipes", recipeId)
+	return false
 }

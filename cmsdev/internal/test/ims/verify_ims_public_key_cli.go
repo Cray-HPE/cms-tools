@@ -76,6 +76,34 @@ func TestCLIPublicKeyDelete(publicKeyId string) (passed bool) {
 	if _, success := GetDeletedIMSPublicKeyRecordCLI(publicKeyId); !success {
 		return false
 	}
+
+	// verify the public key is not in the list of public keys
+	if _, success := getIMSPublicKeyRecordCLI(publicKeyId); success {
+		return false
+	}
+
+	// verify the public key is not in the list of all public keys
+	publickeyRecords, success := getIMSPublicKeyRecordsCLI()
+	if !success {
+		return false
+	}
+
+	if PublicKeyRecordExists(publicKeyId, publickeyRecords) {
+		common.Errorf("Public key %s was not soft deleted", publicKeyId)
+		return false
+	}
+
+	// verify the public key is in the list of all deleted public keys
+	deletedpublicKeyRecords, success := GetDeletedIMSPublicKeyRecordCLIs()
+	if !success {
+		return false
+	}
+
+	if !PublicKeyRecordExists(publicKeyId, deletedpublicKeyRecords) {
+		common.Errorf("Public key %s was not found in the list of deleted public keys", publicKeyId)
+		return false
+	}
+
 	common.Infof("Public key %s successfully soft deleted", publicKeyId)
 	return true
 }
@@ -108,8 +136,33 @@ func TestCLIPublicKeyPermanentDelete(publicKeyId string) (passed bool) {
 	}
 	// Verify the public key is not in the list of public keys
 	if _, success := getIMSPublicKeyRecordCLI(publicKeyId); success {
+		common.Errorf("Public key %s was not permanently deleted", publicKeyId)
 		return false
 	}
+
+	// verify the public key is not in the list of all public keys
+	publickeyRecords, success := getIMSPublicKeyRecordsCLI()
+	if !success {
+		common.Errorf("Public key %s was not permanently deleted", publicKeyId)
+		return false
+	}
+
+	if PublicKeyRecordExists(publicKeyId, publickeyRecords) {
+		common.Errorf("Public key %s was not permanently deleted", publicKeyId)
+		return false
+	}
+
+	// verify the public key is not in the list of all deleted public keys
+	deletedpublicKeyRecords, success := GetDeletedIMSPublicKeyRecordCLIs()
+	if !success {
+		return false
+	}
+
+	if PublicKeyRecordExists(publicKeyId, deletedpublicKeyRecords) {
+		common.Errorf("Public key %s was not permanently deleted", publicKeyId)
+		return false
+	}
+
 	common.Infof("Public key %s successfully hard deleted", publicKeyId)
 	return true
 }

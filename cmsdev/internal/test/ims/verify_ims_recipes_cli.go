@@ -128,6 +128,35 @@ func TestCLIRecipeDelete(recipeId string) (passed bool) {
 		common.Errorf("Recipe %s was not soft deleted", recipeId)
 		return false
 	}
+
+	// Verify the recipe is not in the list of recipes
+	if _, success := getIMSRecipeRecordCLI(recipeId); success {
+		common.Errorf("Recipe %s was not soft deleted", recipeId)
+		return false
+	}
+
+	// Verify the recipe is not in the list of all recipes
+	recipeRecords, success := getIMSRecipeRecordsCLI()
+	if !success {
+		return false
+	}
+
+	if RecipeRecordExists(recipeId, recipeRecords) {
+		common.Errorf("Recipe %s was not soft deleted", recipeId)
+		return false
+	}
+
+	// verify the recipe is in the list of all deleted recipes
+	deletedRecipeRecords, success := GetDeletedIMSRecipeRecordsCLI()
+	if !success {
+		return false
+	}
+
+	if !RecipeRecordExists(recipeId, deletedRecipeRecords) {
+		common.Errorf("Recipe %s was not found in the list of deleted recipes", recipeId)
+		return false
+	}
+
 	common.Infof("Soft deleted recipe ID %s", recipeId)
 	return true
 }
@@ -156,14 +185,37 @@ func TestCLIRecipePermanentDelete(recipeId string) (passed bool) {
 	}
 	// Verify the recipe is hard deleted
 	if _, success := GetDeletedIMSRecipeRecordCLI(recipeId); success {
-		common.Errorf("Recipe %s was not hard deleted", recipeId)
+		common.Errorf("Recipe %s was not permanently deleted", recipeId)
 		return false
 	}
 	// Verify the recipe is not in the list of recipes
 	if _, success := getIMSRecipeRecordCLI(recipeId); success {
-		common.Errorf("Recipe %s was not hard deleted", recipeId)
+		common.Errorf("Recipe %s was not permanently deleted", recipeId)
 		return false
 	}
+
+	// Verify the recipe is not in the list of all recipes
+	recipeRecords, success := getIMSRecipeRecordsCLI()
+	if !success {
+		return false
+	}
+
+	if RecipeRecordExists(recipeId, recipeRecords) {
+		common.Errorf("Recipe %s was not permanently deleted", recipeId)
+		return false
+	}
+
+	// verify the recipe is in the list of all deleted recipes
+	deletedRecipeRecords, success := GetDeletedIMSRecipeRecordsCLI()
+	if !success {
+		return false
+	}
+
+	if RecipeRecordExists(recipeId, deletedRecipeRecords) {
+		common.Errorf("Recipe %s was not permanently deleted", recipeId)
+		return false
+	}
+
 	common.Infof("Permanently deleted recipe ID %s", recipeId)
 	return true
 }
