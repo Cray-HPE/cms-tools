@@ -689,6 +689,7 @@ func CompareSlicesOfMaps(a, b []map[string]string) bool {
 }
 
 func CompareMaps(a, b map[string]string) bool {
+	Infof("Comparing maps: %v and %v", a, b)
 	// Check if lengths are different
 	if len(a) != len(b) {
 		Errorf("Maps are different lengths: %v and %v", a, b)

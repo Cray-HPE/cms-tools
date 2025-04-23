@@ -37,7 +37,7 @@ import (
 )
 
 func CreateIMSImageRecordAPI(imageName string, metadata map[string]string) (imageRecord IMSImageRecord, ok bool) {
-	common.Infof("Creating image %s in IMS via API", imageName)
+	common.Infof("Creating image %s in IMS via API with metadata %v", imageName, metadata)
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		return
@@ -73,7 +73,7 @@ func CreateIMSImageRecordAPI(imageName string, metadata map[string]string) (imag
 }
 
 func UpdateIMSImageRecordAPI(imageId string, arch string, metadata map[string]string) (imageRecord IMSImageRecord, ok bool) {
-	common.Infof("Updating image %s with arch %s", imageId, arch)
+	common.Infof("Updating image %s with arch %s and metadata %v", imageId, arch, metadata)
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		return

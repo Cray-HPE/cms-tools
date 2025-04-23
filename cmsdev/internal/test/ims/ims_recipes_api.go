@@ -37,7 +37,7 @@ import (
 )
 
 func CreateIMSRecipeRecordAPI(recipeName string, templateDict []map[string]string, requireDKMS bool) (recipeRecord IMSRecipeRecord, ok bool) {
-	common.Infof("Creating recipe %s in IMS via API", recipeName)
+	common.Infof("Creating recipe %s with templates %v in IMS via API", recipeName, templateDict)
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		return
@@ -74,7 +74,7 @@ func CreateIMSRecipeRecordAPI(recipeName string, templateDict []map[string]strin
 }
 
 func UpdateIMSRecipeRecordAPI(recipeId string, arch string, templateDict []map[string]string) (recipeRecord IMSRecipeRecord, ok bool) {
-	common.Infof("Updating recipe %s with arch %s", recipeId, arch)
+	common.Infof("Updating recipe %s with arch %s and templates %v", recipeId, arch, templateDict)
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		return
