@@ -133,6 +133,18 @@ func TestRecipeCreate() (recipeRecord IMSRecipeRecord, passed bool) {
 		common.Errorf("Recipe %s was not created", recipeName)
 		return IMSRecipeRecord{}, false
 	}
+
+	// Verify the recipe is in the list of recipes
+	recipeRecords, success := GetIMSRecipeRecordsAPI()
+	if !success {
+		return IMSRecipeRecord{}, false
+	}
+
+	if !RecipeRecordExists(recipeRecord.Id, recipeRecords) {
+		common.Errorf("Recipe %s was not found in the list of recipes", recipeRecord.Id)
+		return IMSRecipeRecord{}, false
+	}
+
 	common.Infof("Recipe %s was created with id %s", recipeName, recipeRecord.Id)
 	return recipeRecord, true
 }

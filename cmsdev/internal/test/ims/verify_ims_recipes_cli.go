@@ -88,6 +88,18 @@ func TestCLIRecipeCreate() (recipeRecord IMSRecipeRecord, passed bool) {
 		common.Errorf("Expected template dictionary %v, got %v", expectedTemplatesDict, recipeRecord.Template_dictionary)
 		return IMSRecipeRecord{}, false
 	}
+
+	// Verfy the recipe is in the list of recipes
+	recipeRecords, success := getIMSRecipeRecordsCLI()
+	if !success {
+		return IMSRecipeRecord{}, false
+	}
+
+	if !RecipeRecordExists(recipeRecord.Id, recipeRecords) {
+		common.Errorf("Recipe %s was not found in the list of recipes", recipeRecord.Id)
+		return IMSRecipeRecord{}, false
+	}
+
 	common.Infof("Created recipe ID %s with name %s", recipeRecord.Id, recipeName)
 	return recipeRecord, true
 }
