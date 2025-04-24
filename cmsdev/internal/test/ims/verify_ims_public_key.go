@@ -182,6 +182,18 @@ func TestPublicKeyCreate() (publicKeyRecord IMSPublicKeyRecord, passed bool) {
 		common.Errorf("Public key %s was not created", publicKeyName)
 		return IMSPublicKeyRecord{}, false
 	}
+
+	// Verify the public key is in the list of public keys
+	publicKeyRecords, success := GetIMSPublicKeyRecordsAPI()
+	if !success {
+		return IMSPublicKeyRecord{}, false
+	}
+
+	if !PublicKeyRecordExists(publicKeyRecord.Id, publicKeyRecords) {
+		common.Errorf("Public key %s was not found in the list of public keys", publicKeyRecord.Id)
+		return IMSPublicKeyRecord{}, false
+	}
+
 	common.Infof("Public key %s was created with id %s", publicKeyName, publicKeyRecord.Id)
 	return publicKeyRecord, true
 }

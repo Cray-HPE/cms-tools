@@ -83,6 +83,17 @@ func TestCLIImageCreate() (imageRecord IMSImageRecord, passed bool) {
 		return IMSImageRecord{}, false
 	}
 
+	// Verify the image is in the list of images
+	imageRecords, success := getIMSImageRecordsCLI()
+	if !success {
+		return IMSImageRecord{}, false
+	}
+
+	if !ImageRecordExists(imageRecord.Id, imageRecords) {
+		common.Errorf("Image %s was not found in the list of images", imageRecord.Id)
+		return IMSImageRecord{}, false
+	}
+
 	common.Infof("Created image %s with ID %s", imageName, imageRecord.Id)
 	return imageRecord, true
 }

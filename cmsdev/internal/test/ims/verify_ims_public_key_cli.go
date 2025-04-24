@@ -65,6 +65,17 @@ func TestCLIPublicKeyCreate() (publicKeyRecord IMSPublicKeyRecord, passed bool) 
 		return IMSPublicKeyRecord{}, false
 	}
 
+	// Verify the public key exists in the list of public keys
+	publickeyRecords, success := getIMSPublicKeyRecordsCLI()
+	if !success {
+		return IMSPublicKeyRecord{}, false
+	}
+
+	if !PublicKeyRecordExists(publicKeyRecord.Id, publickeyRecords) {
+		common.Errorf("Public key %s was not found in the list of public keys", publicKeyRecord.Id)
+		return IMSPublicKeyRecord{}, false
+	}
+
 	return publicKeyRecord, true
 }
 
