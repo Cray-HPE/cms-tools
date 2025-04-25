@@ -205,7 +205,7 @@ func IsIMSRunning() (passed bool) {
 		passed = false
 	}
 
-	if TestImageCRUDOperationUsingCLI() {
+	if !TestImageCRUDOperationUsingCLI() {
 		passed = false
 	}
 
