@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- CASMCMS-8135: IMS: cmsdev failed during post-install health check
+
 ## [1.29.0] - 2025-04-24
 
 ### Added
