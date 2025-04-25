@@ -39,6 +39,7 @@ import (
 func CreateIMSImageRecordAPI(imageName string, metadata map[string]string) (imageRecord IMSImageRecord, ok bool) {
 	common.Infof("Creating image %s in IMS via API with metadata %v", imageName, metadata)
 	params := test.GetAccessTokenParams()
+	var url string
 	if params == nil {
 		return
 	}
@@ -55,7 +56,8 @@ func CreateIMSImageRecordAPI(imageName string, metadata map[string]string) (imag
 	}
 
 	params.JsonStr = string(jsonPayload)
-	url := common.BASEURL + endpoints["ims"]["images"].Url
+	apiversion := common.GetIMSAPIVersion()
+	url = constructIMSURL("images", apiversion)
 	resp, err := test.RestfulVerifyStatus("POST", url, *params, http.StatusCreated)
 	if err != nil {
 		common.Error(err)
@@ -92,7 +94,8 @@ func UpdateIMSImageRecordAPI(imageId string, arch string, metadata map[string]st
 	}
 
 	params.JsonStrArray = jsonPayload
-	url := common.BASEURL + endpoints["ims"]["images"].Url + "/" + imageId
+	apiversion := common.GetIMSAPIVersion()
+	url := constructIMSURL("images", apiversion) + "/" + imageId
 	resp, err := test.RestfulVerifyStatus("PATCH", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
@@ -115,7 +118,10 @@ func DeleteIMSImageRecordAPI(imageId string) (ok bool) {
 	if params == nil {
 		return
 	}
-	url := common.BASEURL + endpoints["ims"]["images"].Url + "/" + imageId
+
+	apiversion := common.GetIMSAPIVersion()
+	url := constructIMSURL("images", apiversion) + "/" + imageId
+	// setting the payload
 	_, err := test.RestfulVerifyStatus("DELETE", url, *params, http.StatusNoContent)
 	if err != nil {
 		common.Error(err)
@@ -144,9 +150,11 @@ func UndeleteIMSImageRecordAPI(imageId string) (ok bool) {
 	}
 	params.JsonStrArray = jsonPayload
 
+	apiversion := common.GetIMSAPIVersion()
+	baseURL := constructIMSURL("images", apiversion)
 	// getting the base uri needed for undelete
-	uri := strings.Split(endpoints["ims"]["images"].Url, "/images")
-	url := common.BASEURL + uri[0] + "/deleted/images" + "/" + imageId
+	uri := strings.Split(baseURL, "/images")
+	url := uri[0] + "/deleted/images" + "/" + imageId
 	_, err = test.RestfulVerifyStatus("PATCH", url, *params, http.StatusNoContent)
 	if err != nil {
 		common.Error(err)
@@ -163,9 +171,12 @@ func PermanentDeleteIMSImageRecordAPI(imageId string) (ok bool) {
 	if params == nil {
 		return
 	}
-	// getting the base uri needed for permanent delete
-	uri := strings.Split(endpoints["ims"]["images"].Url, "/images")
-	url := common.BASEURL + uri[0] + "/deleted/images" + "/" + imageId
+
+	apiversion := common.GetIMSAPIVersion()
+	baseURL := constructIMSURL("images", apiversion)
+	// getting the base uri needed for Permanent delete
+	uri := strings.Split(baseURL, "/images")
+	url := uri[0] + "/deleted/images" + "/" + imageId
 	_, err := test.RestfulVerifyStatus("DELETE", url, *params, http.StatusNoContent)
 	if err != nil {
 		common.Error(err)
@@ -182,9 +193,12 @@ func GetDeletedIMSImageRecordAPI(imageId string, httpStatus int) (imageRecord IM
 	if params == nil {
 		return IMSImageRecord{}, false
 	}
-	// getting the base uri needed for hard delete
-	uri := strings.Split(endpoints["ims"]["images"].Url, "/images")
-	url := common.BASEURL + uri[0] + "/deleted/images" + "/" + imageId
+
+	apiversion := common.GetIMSAPIVersion()
+	baseURL := constructIMSURL("images", apiversion)
+	// getting the base uri needed for getting deleted image record
+	uri := strings.Split(baseURL, "/images")
+	url := uri[0] + "/deleted/images" + "/" + imageId
 	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
 	if err != nil {
 		common.Error(err)
@@ -207,9 +221,12 @@ func GetDeletedIMSImageRecordsAPI() (recordList []IMSImageRecord, ok bool) {
 	if params == nil {
 		return []IMSImageRecord{}, false
 	}
-	// getting the base uri needed for hard delete
-	uri := strings.Split(endpoints["ims"]["images"].Url, "/images")
-	url := common.BASEURL + uri[0] + "/deleted/images"
+
+	apiversion := common.GetIMSAPIVersion()
+	baseURL := constructIMSURL("images", apiversion)
+	// getting the base uri needed for getting deleted image records
+	uri := strings.Split(baseURL, "/images")
+	url := uri[0] + "/deleted/images"
 	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
@@ -233,7 +250,9 @@ func GetIMSImageRecordAPI(imageId string, httpStatus int) (imageRecord IMSImageR
 	if params == nil {
 		return IMSImageRecord{}, false
 	}
-	url := common.BASEURL + endpoints["ims"]["images"].Url + "/" + imageId
+
+	apiversion := common.GetIMSAPIVersion()
+	url := constructIMSURL("images", apiversion) + "/" + imageId
 	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
 	if err != nil {
 		common.Error(err)
@@ -258,7 +277,9 @@ func GetIMSImageRecordsAPI() (recordList []IMSImageRecord, ok bool) {
 	if params == nil {
 		return []IMSImageRecord{}, false
 	}
-	url := common.BASEURL + endpoints["ims"]["images"].Url
+
+	apiversion := common.GetIMSAPIVersion()
+	url := constructIMSURL("images", apiversion)
 	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
@@ -284,4 +305,12 @@ func ImageRecordExists(imageId string, recordList []IMSImageRecord) (ok bool) {
 	}
 	common.Infof("Image %s was not found in the list of images", imageId)
 	return false
+}
+
+func constructIMSURL(endpoint, apiVersion string) string {
+	base := common.BASEURL + endpoints["ims"][endpoint].Url
+	if apiVersion != "" {
+		return base + "/" + apiVersion + endpoints["ims"][endpoint].Uri
+	}
+	return base + "/" + endpoints["ims"][endpoint].Uri
 }

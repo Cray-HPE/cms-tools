@@ -181,7 +181,7 @@ func IsIMSRunning() (passed bool) {
 	}
 
 	// Verify that we can perform CRUD operation on image via API
-	if !TestImageCRUDOperation() {
+	if !TestImageCRUDOperationUsingAPIVersions() {
 		passed = false
 	}
 

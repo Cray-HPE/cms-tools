@@ -34,32 +34,59 @@ import (
  *
  */
 
-func testPackage() {
-	common.Infof("Testing package")
+// Test image CRUD operations using all supported API versions
+func TestImageCRUDOperationUsingAPIVersions() (passed bool) {
+	passed = true
+
+	for _, version := range common.IMSAPIVERSIONS {
+		common.Infof("Testing image CRUD operations using API version: %s", version)
+		common.SetIMSAPIVersion(version)
+		passed = passed && TestImageCRUDOperation(version)
+	}
+
+	// default API version
+	common.SetIMSAPIVersion("")
+	passed = passed && TestImageCRUDOperation(common.GetIMSAPIVersion())
+	return passed
 }
 
-func TestImageCRUDOperation() (passed bool) {
+func TestImageCRUDOperation(apiVersion string) (passed bool) {
 	// Test creating an image
 	imageRecord, success := TestImageCreate()
 	if !success {
 		return false
 	}
-	// Test updating the image
-	updated := TestImageUpdate(imageRecord.Id)
 
-	// Test soft deleting the image
-	deleted := TestImageDelete(imageRecord.Id)
+	if apiVersion == "v2" {
 
-	// Test undeleting the image
-	undeleted := TestImageUndelete(imageRecord.Id)
+		// Test updating the image
+		updated := TestImageUpdate(imageRecord.Id)
 
-	// Test hard deleting the image
-	permDeleted := TestImagePermanentDelete(imageRecord.Id)
+		// Test deleting the image
+		deleted := TestImageDeleteV2(imageRecord.Id)
 
-	// Test get all images
-	getAll := TestGetAllImages()
+		getAll := TestGetAllImages()
 
-	return updated && deleted && undeleted && permDeleted && getAll
+		return updated && deleted && getAll
+
+	} else {
+		// Test updating the image
+		updated := TestImageUpdate(imageRecord.Id)
+
+		// Test soft deleting the image
+		deleted := TestImageDelete(imageRecord.Id)
+
+		// Test undeleting the image
+		undeleted := TestImageUndelete(imageRecord.Id)
+
+		// Test hard deleting the image
+		permDeleted := TestImagePermanentDelete(imageRecord.Id)
+
+		// Test get all images
+		getAll := TestGetAllImages()
+
+		return updated && deleted && undeleted && permDeleted && getAll
+	}
 }
 
 func TestImagePermanentDelete(imageId string) (passed bool) {
@@ -251,5 +278,31 @@ func TestGetAllImages() (passed bool) {
 		return false
 	}
 	common.Infof("All images were retrieved successfully")
+	return true
+}
+
+func TestImageDeleteV2(imageId string) (passed bool) {
+	if success := DeleteIMSImageRecordAPI(imageId); !success {
+		return false
+	}
+
+	// Verify the image is not in the list of images
+	if _, success := GetIMSImageRecordAPI(imageId, http.StatusNotFound); !success {
+		common.Errorf("Image %s was not deleted", imageId)
+		return false
+	}
+
+	// Verify the image is not in the list of all images
+	imageRecords, success := GetIMSImageRecordsAPI()
+	if !success {
+		return false
+	}
+
+	if ImageRecordExists(imageId, imageRecords) {
+		common.Errorf("Image %s was not deleted", imageId)
+		return false
+	}
+
+	common.Infof("Image %s was deleted", imageId)
 	return true
 }
