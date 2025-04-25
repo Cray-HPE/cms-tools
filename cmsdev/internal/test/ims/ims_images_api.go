@@ -314,3 +314,17 @@ func constructIMSURL(endpoint, apiVersion string) string {
 	}
 	return base + "/" + endpoints["ims"][endpoint].Uri
 }
+
+func GetCreateImageExpectedMetadata(metadata map[string]string) map[string]string {
+	// Create expected metadata for the image
+	apiVersion := common.GetIMSAPIVersion()
+
+	if apiVersion == "v2" {
+		return metadata
+	} else {
+		expectedMetadata := map[string]string{
+			metadata["key"]: metadata["value"],
+		}
+		return expectedMetadata
+	}
+}

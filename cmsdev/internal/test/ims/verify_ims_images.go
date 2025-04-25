@@ -235,9 +235,7 @@ func TestImageCreate() (imageRecord IMSImageRecord, passed bool) {
 		"key":   "name",
 		"value": imageName,
 	}
-	expectedMetadata := map[string]string{
-		"name": imageName,
-	}
+	expectedMetadata := GetCreateImageExpectedMetadata(metadata)
 
 	imageRecord, success := CreateIMSImageRecordAPI(imageName, metadata)
 	if !success || imageRecord.Id == "" {
