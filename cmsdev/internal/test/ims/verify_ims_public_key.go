@@ -34,26 +34,54 @@ import (
  *
  */
 
-func TestPublicKeyCRUDOperation() (passed bool) {
+func TestPublicKeyCRUDOperationUsingAPIVersions() (passed bool) {
+	passed = true
+
+	for _, apiVersion := range common.IMSAPIVERSIONS {
+		common.Infof("Testing IMS Public Key CRUD operations using API version: %s", apiVersion)
+		common.SetIMSAPIVersion(apiVersion)
+		passed = passed && TestPublicKeyCRUDOperation(apiVersion)
+	}
+
+	// Test the default API version
+	common.Infof("Testing IMS Public Key CRUD operations using default API version.")
+	common.SetIMSAPIVersion("")
+	passed = passed && TestPublicKeyCRUDOperation(common.GetIMSAPIVersion())
+
+	return passed
+}
+
+func TestPublicKeyCRUDOperation(apiVersion string) (passed bool) {
 	// Test creating a public key
 	publicKeyRecord, success := TestPublicKeyCreate()
 	if !success {
 		return false
 	}
 
-	// Test soft deleting the public key
-	deleted := TestPublicKeyDelete(publicKeyRecord.Id)
+	if apiVersion == "v2" {
+		// Test deleting the public key
+		deleted := TestPublicKeyDeleteV2(publicKeyRecord.Id)
 
-	// Test undeleting the public key
-	undeleted := TestPublicKeyUndelete(publicKeyRecord.Id)
+		// Test get all public keys
+		getAll := TestGetAllPublicKeys()
 
-	// Test permanent deleting the public key
-	permDeleted := TestPublicKeyPermanentDelete(publicKeyRecord.Id)
+		return deleted && getAll
+	} else {
 
-	// Test get all public keys
-	getAll := TestGetAllPublicKeys()
+		// Test soft deleting the public key
+		deleted := TestPublicKeyDelete(publicKeyRecord.Id)
 
-	return deleted && undeleted && permDeleted && getAll
+		// Test undeleting the public key
+		undeleted := TestPublicKeyUndelete(publicKeyRecord.Id)
+
+		// Test permanent deleting the public key
+		permDeleted := TestPublicKeyPermanentDelete(publicKeyRecord.Id)
+
+		// Test get all public keys
+		getAll := TestGetAllPublicKeys()
+
+		return deleted && undeleted && permDeleted && getAll
+	}
 }
 
 func TestPublicKeyDelete(publicKeyId string) (passed bool) {
@@ -196,4 +224,30 @@ func TestPublicKeyCreate() (publicKeyRecord IMSPublicKeyRecord, passed bool) {
 
 	common.Infof("Public key %s was created with id %s", publicKeyName, publicKeyRecord.Id)
 	return publicKeyRecord, true
+}
+
+func TestPublicKeyDeleteV2(publicKeyId string) (passed bool) {
+	if success := DeleteIMSPublicKeyRecordAPI(publicKeyId); !success {
+		return false
+	}
+
+	// Verify the public key is not in the list of public keys
+	if _, success := GetIMSPublicKeyRecordAPI(publicKeyId, http.StatusNotFound); !success {
+		common.Errorf("Public key %s was not deleted", publicKeyId)
+		return false
+	}
+
+	// Verify the public key is not in the list of all public keys
+	publicKeyRecords, success := GetIMSPublicKeyRecordsAPI()
+	if !success {
+		return false
+	}
+
+	if PublicKeyRecordExists(publicKeyId, publicKeyRecords) {
+		common.Errorf("Public key %s was not deleted", publicKeyId)
+		return false
+	}
+
+	common.Infof("Public key %s successfully deleted", publicKeyId)
+	return true
 }

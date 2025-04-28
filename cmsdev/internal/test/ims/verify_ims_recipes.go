@@ -34,28 +34,58 @@ import (
  *
  */
 
-func TestRecipeCRUDOperation() (passed bool) {
+func TestRecipeCRUDOperationUsingAPIVersions() (passed bool) {
+	passed = true
+	for _, apiVersion := range common.IMSAPIVERSIONS {
+		common.SetIMSAPIVersion(apiVersion)
+		common.Infof("Testing recipe CRUD operations using IMS API version: %s", apiVersion)
+		passed = passed && TestRecipeCRUDOperation(apiVersion)
+	}
+
+	// Reset the IMS API version to the default value
+	common.SetIMSAPIVersion("")
+	common.Infof("Testing recipe CRUD operations using default API version")
+	passed = passed && TestRecipeCRUDOperation(common.GetIMSAPIVersion())
+	return passed
+}
+
+func TestRecipeCRUDOperation(apiVersion string) (passed bool) {
 	// Test creating a recipe
 	recipeRecord, success := TestRecipeCreate()
 	if !success {
 		return false
 	}
-	// Test updating the recipe
-	updated := TestRecipeUpdate(recipeRecord.Id)
 
-	// Test soft deleting the recipe
-	deleted := TestRecipeDelete(recipeRecord.Id)
+	if apiVersion == "v2" {
+		// Test updating the recipe
+		updated := TestRecipeUpdate(recipeRecord.Id)
 
-	// Test undeleting the recipe
-	undeleted := TestRecipeUndelete(recipeRecord.Id)
+		// Test deleting the recipe
+		deleted := TestRecipeDeleteV2(recipeRecord.Id)
 
-	// Test hard deleting the recipe
-	permDeleted := TestRecipePermanentDelete(recipeRecord.Id)
+		//Test get all recipes
+		getAll := TestGetAllRecipes()
 
-	// Test get all recipes
-	getAll := TestGetAllRecipes()
+		return updated && deleted && getAll
 
-	return updated && deleted && undeleted && permDeleted && getAll
+	} else {
+		// Test updating the recipe
+		updated := TestRecipeUpdate(recipeRecord.Id)
+
+		// Test soft deleting the recipe
+		deleted := TestRecipeDelete(recipeRecord.Id)
+
+		// Test undeleting the recipe
+		undeleted := TestRecipeUndelete(recipeRecord.Id)
+
+		// Test hard deleting the recipe
+		permDeleted := TestRecipePermanentDelete(recipeRecord.Id)
+
+		// Test get all recipes
+		getAll := TestGetAllRecipes()
+
+		return updated && deleted && undeleted && permDeleted && getAll
+	}
 }
 
 func TestRecipePermanentDelete(recipeId string) (passed bool) {
@@ -174,13 +204,27 @@ func TestRecipeUpdate(recipeId string) (passed bool) {
 }
 
 func TestRecipeDelete(recipeId string) (passed bool) {
+	// Get the recipe record before deleting it
+	existingRecipeRecord, success := GetIMSRecipeRecordAPI(recipeId, http.StatusOK)
+	if !success {
+		common.Errorf("Recipe %s was not found", recipeId)
+		return false
+	}
+
 	if success := DeleteIMSRecipeRecordAPI(recipeId); !success {
 		return false
 	}
 
 	// Verify the recipe is deleted
-	if _, success := GetDeletedIMSRecipeRecordAPI(recipeId, http.StatusOK); !success {
+	recipeRecord, success := GetDeletedIMSRecipeRecordAPI(recipeId, http.StatusOK)
+	if !success {
 		common.Errorf("Recipe %s was not deleted", recipeId)
+		return false
+	}
+
+	// Verify the recipe record is the same as the one before deleting it
+	if !VerifyIMSRecipeRecord(recipeRecord, existingRecipeRecord) {
+		common.Errorf("Recipe %s details do not match after soft delete", recipeId)
 		return false
 	}
 
@@ -217,15 +261,29 @@ func TestRecipeDelete(recipeId string) (passed bool) {
 }
 
 func TestRecipeUndelete(recipeId string) (passed bool) {
+	// Get the recipe record before restoring it
+	existingRecipeRecord, success := GetDeletedIMSRecipeRecordAPI(recipeId, http.StatusOK)
+	if !success {
+		common.Errorf("Recipe %s was not found", recipeId)
+		return false
+	}
+
 	if success := UndeleteIMSRecipeRecordAPI(recipeId); !success {
 		return false
 	}
 
-	// Verify the recipe is undeleted
-	if _, success := GetIMSRecipeRecordAPI(recipeId, http.StatusOK); !success {
+	// Verify the recipe is
+	recipeRecord, success := GetIMSRecipeRecordAPI(recipeId, http.StatusOK)
+	if !success {
 		common.Errorf("Recipe %s was not restored", recipeId)
 		return false
 	}
+
+	if !VerifyIMSRecipeRecord(recipeRecord, existingRecipeRecord) {
+		common.Errorf("Recipe %s details do not match after restore", recipeId)
+		return false
+	}
+
 	common.Infof("Recipe %s was restored", recipeId)
 	return true
 }
@@ -235,5 +293,31 @@ func TestGetAllRecipes() (passed bool) {
 		return false
 	}
 	common.Infof("All recipes were retrieved")
+	return true
+}
+
+func TestRecipeDeleteV2(recipeId string) (passed bool) {
+	if success := DeleteIMSRecipeRecordAPI(recipeId); !success {
+		return false
+	}
+
+	// Verify the recipe is not in the list of recipes
+	if _, success := GetIMSRecipeRecordAPI(recipeId, http.StatusNotFound); !success {
+		common.Errorf("Recipe %s was not deleted", recipeId)
+		return false
+	}
+
+	// Verify the recipe is not in the list of all recipes
+	recipeRecords, success := GetIMSRecipeRecordsAPI()
+	if !success {
+		return false
+	}
+
+	if RecipeRecordExists(recipeId, recipeRecords) {
+		common.Errorf("Recipe %s was not deleted", recipeId)
+		return false
+	}
+
+	common.Infof("Recipe %s was deleted", recipeId)
 	return true
 }

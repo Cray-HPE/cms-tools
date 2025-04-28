@@ -46,6 +46,7 @@ func TestImageCRUDOperationUsingAPIVersions() (passed bool) {
 
 	// default API version
 	common.SetIMSAPIVersion("")
+	common.Infof("Testing image CRUD operations using default API version")
 	passed = passed && TestImageCRUDOperation(common.GetIMSAPIVersion())
 	return passed
 }
@@ -138,27 +139,56 @@ func TestImagePermanentDelete(imageId string) (passed bool) {
 }
 
 func TestImageUndelete(imageId string) (passed bool) {
+	// Get the image details before restoration
+	existingImageRecord, success := GetDeletedIMSImageRecordAPI(imageId, http.StatusOK)
+	if !success {
+		common.Errorf("Unable to fetch Image %s ", imageId)
+		return false
+	}
+
 	if success := UndeleteIMSImageRecordAPI(imageId); !success {
 		return false
 	}
 
 	// Verify the image is undeleted
-	if _, success := GetIMSImageRecordAPI(imageId, http.StatusOK); !success {
+	imageRecord, success := GetIMSImageRecordAPI(imageId, http.StatusOK)
+	if !success {
 		common.Errorf("Image %s was not restored", imageId)
 		return false
 	}
+
+	// Verify the image details are the same after restoration
+	if !VerifyIMSImageRecord(imageRecord, existingImageRecord) {
+		common.Errorf("Image %s details do not match after restore", imageId)
+		return false
+	}
+
 	common.Infof("Image %s was restored", imageId)
 	return true
 }
 
 func TestImageDelete(imageId string) (passed bool) {
+	// Get the image details before deletion
+	existingImageRecord, success := GetIMSImageRecordAPI(imageId, http.StatusOK)
+	if !success {
+		common.Errorf("Unable to fetch Image %s ", imageId)
+		return false
+	}
+
 	if success := DeleteIMSImageRecordAPI(imageId); !success {
 		return false
 	}
 
 	// Verify the image is deleted
-	if _, success := GetDeletedIMSImageRecordAPI(imageId, http.StatusOK); !success {
+	deletedImageRecord, success := GetDeletedIMSImageRecordAPI(imageId, http.StatusOK)
+	if !success {
 		common.Errorf("Image %s was not soft deleted", imageId)
+		return false
+	}
+
+	// Verify the image details are the same as before deletion
+	if !VerifyIMSImageRecord(deletedImageRecord, existingImageRecord) {
+		common.Errorf("Image %s details do not match after soft delete", imageId)
 		return false
 	}
 
