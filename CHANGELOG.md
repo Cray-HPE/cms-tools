@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.29.1] - 2025-04-29
+
 ### Added
 - CASMCMS-9379: TESTS: IMS: cmsdev: Test v2 API and default version API
 
