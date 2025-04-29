@@ -200,7 +200,7 @@ func GetPackageVersion(packageName string) string {
 	cmd := exec.Command("rpm", "-q", packageName)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		Errorf("Error getting %s version: %v\n", packageName, err)
+		Warnf("Package %s not installed", packageName)
 		return ""
 	}
 	installedPkg := strings.TrimSpace(string(output))
