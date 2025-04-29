@@ -312,7 +312,7 @@ func constructIMSURL(endpoint, apiVersion string) string {
 	if apiVersion != "" {
 		return base + "/" + apiVersion + endpoints["ims"][endpoint].Uri
 	}
-	return base + "/" + endpoints["ims"][endpoint].Uri
+	return base + endpoints["ims"][endpoint].Uri
 }
 
 func VerifyIMSImageRecord(imageRecord IMSImageRecord, expectedImageRecord IMSImageRecord) (ok bool) {

@@ -22,6 +22,7 @@
 package ims
 
 import (
+	"fmt"
 	"net/http"
 
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
@@ -39,14 +40,14 @@ func TestImageCRUDOperationUsingAPIVersions() (passed bool) {
 	passed = true
 
 	for _, version := range common.IMSAPIVERSIONS {
-		common.Infof("Testing image CRUD operations using API version: %s", version)
+		common.PrintLog(fmt.Sprintf("Testing image CRUD operations using API version: %s", version))
 		common.SetIMSAPIVersion(version)
 		passed = passed && TestImageCRUDOperation(version)
 	}
 
 	// default API version
 	common.SetIMSAPIVersion("")
-	common.Infof("Testing image CRUD operations using default API version")
+	common.PrintLog("Testing image CRUD operations using default API version")
 	passed = passed && TestImageCRUDOperation(common.GetIMSAPIVersion())
 	return passed
 }
@@ -58,19 +59,7 @@ func TestImageCRUDOperation(apiVersion string) (passed bool) {
 		return false
 	}
 
-	if apiVersion == "v2" {
-
-		// Test updating the image
-		updated := TestImageUpdate(imageRecord.Id)
-
-		// Test deleting the image
-		deleted := TestImageDeleteV2(imageRecord.Id)
-
-		getAll := TestGetAllImages()
-
-		return updated && deleted && getAll
-
-	} else {
+	if apiVersion == "v3" {
 		// Test updating the image
 		updated := TestImageUpdate(imageRecord.Id)
 
@@ -87,6 +76,16 @@ func TestImageCRUDOperation(apiVersion string) (passed bool) {
 		getAll := TestGetAllImages()
 
 		return updated && deleted && undeleted && permDeleted && getAll
+	} else {
+		// Test updating the image
+		updated := TestImageUpdate(imageRecord.Id)
+
+		// Test deleting the image
+		deleted := TestImageDeleteV2(imageRecord.Id)
+
+		getAll := TestGetAllImages()
+
+		return updated && deleted && getAll
 	}
 }
 

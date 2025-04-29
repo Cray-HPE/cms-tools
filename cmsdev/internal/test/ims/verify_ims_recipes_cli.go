@@ -33,6 +33,7 @@ import (
  */
 
 func TestRecipeCRUDOperationUsingCLI() (passed bool) {
+	common.PrintLog("Testing recipe CRUD operations using CLI")
 	// Test creating a recipe
 	recipeRecord, success := TestCLIRecipeCreate()
 	if !success {

@@ -729,6 +729,13 @@ func CompareMaps(a, b map[string]string) bool {
 	return true
 }
 
+func PrintLog(msg string) {
+	msglen := len(msg)
+	Infof("%s", strings.Repeat("*", msglen+4))
+	Infof("* %s *", msg)
+	Infof("%s", strings.Repeat("*", msglen+4))
+}
+
 func init() {
 	// Set default values
 	runStartTimes = append(runStartTimes, time.Now())

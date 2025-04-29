@@ -22,6 +22,7 @@
 package ims
 
 import (
+	"fmt"
 	"net/http"
 
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
@@ -38,13 +39,13 @@ func TestPublicKeyCRUDOperationUsingAPIVersions() (passed bool) {
 	passed = true
 
 	for _, apiVersion := range common.IMSAPIVERSIONS {
-		common.Infof("Testing IMS Public Key CRUD operations using API version: %s", apiVersion)
+		common.PrintLog(fmt.Sprintf("Testing IMS Public Key CRUD operations using API version: %s", apiVersion))
 		common.SetIMSAPIVersion(apiVersion)
 		passed = passed && TestPublicKeyCRUDOperation(apiVersion)
 	}
 
 	// Test the default API version
-	common.Infof("Testing IMS Public Key CRUD operations using default API version.")
+	common.PrintLog("Testing IMS Public Key CRUD operations using default API version.")
 	common.SetIMSAPIVersion("")
 	passed = passed && TestPublicKeyCRUDOperation(common.GetIMSAPIVersion())
 
@@ -58,16 +59,7 @@ func TestPublicKeyCRUDOperation(apiVersion string) (passed bool) {
 		return false
 	}
 
-	if apiVersion == "v2" {
-		// Test deleting the public key
-		deleted := TestPublicKeyDeleteV2(publicKeyRecord.Id)
-
-		// Test get all public keys
-		getAll := TestGetAllPublicKeys()
-
-		return deleted && getAll
-	} else {
-
+	if apiVersion == "v3" {
 		// Test soft deleting the public key
 		deleted := TestPublicKeyDelete(publicKeyRecord.Id)
 
@@ -81,6 +73,14 @@ func TestPublicKeyCRUDOperation(apiVersion string) (passed bool) {
 		getAll := TestGetAllPublicKeys()
 
 		return deleted && undeleted && permDeleted && getAll
+	} else {
+		// Test deleting the public key
+		deleted := TestPublicKeyDeleteV2(publicKeyRecord.Id)
+
+		// Test get all public keys
+		getAll := TestGetAllPublicKeys()
+
+		return deleted && getAll
 	}
 }
 

@@ -22,6 +22,7 @@
 package ims
 
 import (
+	"fmt"
 	"net/http"
 
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
@@ -37,14 +38,14 @@ import (
 func TestRecipeCRUDOperationUsingAPIVersions() (passed bool) {
 	passed = true
 	for _, apiVersion := range common.IMSAPIVERSIONS {
+		common.PrintLog(fmt.Sprintf("Testing recipe CRUD operations using IMS API version: %s", apiVersion))
 		common.SetIMSAPIVersion(apiVersion)
-		common.Infof("Testing recipe CRUD operations using IMS API version: %s", apiVersion)
 		passed = passed && TestRecipeCRUDOperation(apiVersion)
 	}
 
 	// Reset the IMS API version to the default value
 	common.SetIMSAPIVersion("")
-	common.Infof("Testing recipe CRUD operations using default API version")
+	common.PrintLog("Testing recipe CRUD operations using default API version")
 	passed = passed && TestRecipeCRUDOperation(common.GetIMSAPIVersion())
 	return passed
 }
@@ -56,19 +57,7 @@ func TestRecipeCRUDOperation(apiVersion string) (passed bool) {
 		return false
 	}
 
-	if apiVersion == "v2" {
-		// Test updating the recipe
-		updated := TestRecipeUpdate(recipeRecord.Id)
-
-		// Test deleting the recipe
-		deleted := TestRecipeDeleteV2(recipeRecord.Id)
-
-		//Test get all recipes
-		getAll := TestGetAllRecipes()
-
-		return updated && deleted && getAll
-
-	} else {
+	if apiVersion == "v3" {
 		// Test updating the recipe
 		updated := TestRecipeUpdate(recipeRecord.Id)
 
@@ -85,6 +74,17 @@ func TestRecipeCRUDOperation(apiVersion string) (passed bool) {
 		getAll := TestGetAllRecipes()
 
 		return updated && deleted && undeleted && permDeleted && getAll
+	} else {
+		// Test updating the recipe
+		updated := TestRecipeUpdate(recipeRecord.Id)
+
+		// Test deleting the recipe
+		deleted := TestRecipeDeleteV2(recipeRecord.Id)
+
+		//Test get all recipes
+		getAll := TestGetAllRecipes()
+
+		return updated && deleted && getAll
 	}
 }
 
