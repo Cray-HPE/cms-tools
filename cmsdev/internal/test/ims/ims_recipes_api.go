@@ -57,7 +57,9 @@ func CreateIMSRecipeRecordAPI(recipeName string, templateDict []map[string]strin
 	}
 	// setting the payload
 	params.JsonStr = string(jsonPayload)
-	url := common.BASEURL + endpoints["ims"]["recipes"].Url
+
+	apiVersion := common.GetIMSAPIVersion()
+	url := constructIMSURL("recipes", apiVersion)
 	resp, err := test.RestfulVerifyStatus("POST", url, *params, http.StatusCreated)
 	if err != nil {
 		common.Error(err)
@@ -92,7 +94,9 @@ func UpdateIMSRecipeRecordAPI(recipeId string, arch string, templateDict []map[s
 
 	params.JsonStrArray = jsonPayload
 
-	url := common.BASEURL + endpoints["ims"]["recipes"].Url + "/" + recipeId
+	apiVersion := common.GetIMSAPIVersion()
+	url := constructIMSURL("recipes", apiVersion) + "/" + recipeId
+
 	resp, err := test.RestfulVerifyStatus("PATCH", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
@@ -114,7 +118,10 @@ func DeleteIMSRecipeRecordAPI(recipeId string) (ok bool) {
 	if params == nil {
 		return
 	}
-	url := common.BASEURL + endpoints["ims"]["recipes"].Url + "/" + recipeId
+
+	apiVersion := common.GetIMSAPIVersion()
+	url := constructIMSURL("recipes", apiVersion) + "/" + recipeId
+
 	_, err := test.RestfulVerifyStatus("DELETE", url, *params, http.StatusNoContent)
 	if err != nil {
 		common.Error(err)
@@ -130,8 +137,13 @@ func GetDeletedIMSRecipeRecordAPI(recipeId string, httpStatus int) (recipeRecord
 	if params == nil {
 		return IMSRecipeRecord{}, false
 	}
-	uri := strings.Split(endpoints["ims"]["recipes"].Url, "/recipes")
-	url := common.BASEURL + uri[0] + "/deleted/recipes" + "/" + recipeId
+
+	apiVersion := common.GetIMSAPIVersion()
+	baseURL := constructIMSURL("recipes", apiVersion)
+	// getting the base uri needed for getting deleted recipe record
+	uri := strings.Split(baseURL, "/recipes")
+	url := uri[0] + "/deleted/recipes" + "/" + recipeId
+
 	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
 	if err != nil {
 		common.Error(err)
@@ -153,8 +165,13 @@ func GetDeletedIMSRecipeRecordsAPI() (recordList []IMSRecipeRecord, ok bool) {
 	if params == nil {
 		return
 	}
-	uri := strings.Split(endpoints["ims"]["recipes"].Url, "/recipes")
-	url := common.BASEURL + uri[0] + "/deleted/recipes"
+
+	apiVersion := common.GetIMSAPIVersion()
+	baseURL := constructIMSURL("recipes", apiVersion)
+	// getting the base uri needed for getting all deleted recipe record
+	uri := strings.Split(baseURL, "/recipes")
+	url := uri[0] + "/deleted/recipes"
+
 	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
@@ -186,9 +203,13 @@ func UndeleteIMSRecipeRecordAPI(recipeId string) (ok bool) {
 		return
 	}
 	params.JsonStrArray = jsonPayload
-	// getting the base uri needed for undelete
-	uri := strings.Split(endpoints["ims"]["recipes"].Url, "/recipes")
-	url := common.BASEURL + uri[0] + "/deleted/recipes" + "/" + recipeId
+
+	apiVersion := common.GetIMSAPIVersion()
+	baseURL := constructIMSURL("recipes", apiVersion)
+	// getting the base uri needed for restoring deleted recipe record
+	uri := strings.Split(baseURL, "/recipes")
+	url := uri[0] + "/deleted/recipes" + "/" + recipeId
+
 	_, err = test.RestfulVerifyStatus("PATCH", url, *params, http.StatusNoContent)
 	if err != nil {
 		common.Error(err)
@@ -204,9 +225,13 @@ func PermanentDeleteIMSRecipeRecordAPI(recipeId string) (ok bool) {
 	if params == nil {
 		return
 	}
-	// getting the base uri needed for hard delete
-	uri := strings.Split(endpoints["ims"]["recipes"].Url, "/recipes")
-	url := common.BASEURL + uri[0] + "/deleted/recipes" + "/" + recipeId
+
+	apiVersion := common.GetIMSAPIVersion()
+	baseURL := constructIMSURL("recipes", apiVersion)
+	// getting the base uri needed for getting deleted recipe record
+	uri := strings.Split(baseURL, "/recipes")
+	url := uri[0] + "/deleted/recipes" + "/" + recipeId
+
 	_, err := test.RestfulVerifyStatus("DELETE", url, *params, http.StatusNoContent)
 	if err != nil {
 		common.Error(err)
@@ -224,7 +249,9 @@ func GetIMSRecipeRecordAPI(recipeId string, httpStatus int) (recipeRecord IMSRec
 		return IMSRecipeRecord{}, false
 	}
 
-	url := common.BASEURL + endpoints["ims"]["recipes"].Url + "/" + recipeId
+	apiVersion := common.GetIMSAPIVersion()
+	url := constructIMSURL("recipes", apiVersion) + "/" + recipeId
+
 	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
 	if err != nil {
 		return IMSRecipeRecord{}, false
@@ -247,7 +274,10 @@ func GetIMSRecipeRecordsAPI() (recordList []IMSRecipeRecord, ok bool) {
 	if params == nil {
 		return
 	}
-	url := common.BASEURL + endpoints["ims"]["recipes"].Url
+
+	apiVersion := common.GetIMSAPIVersion()
+	url := constructIMSURL("recipes", apiVersion)
+
 	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
@@ -273,4 +303,40 @@ func RecipeRecordExists(recipeId string, recipeRecords []IMSRecipeRecord) (exist
 	}
 	common.Infof("Recipe %s was not found in the list of recipes", recipeId)
 	return false
+}
+
+func VerifyIMSRecipeRecord(recipeRecord IMSRecipeRecord, existingRecipeRecord IMSRecipeRecord) (ok bool) {
+	ok = true
+	if recipeRecord.Name != existingRecipeRecord.Name {
+		common.Errorf("Recipe name %s does not match expected name %s", recipeRecord.Name, existingRecipeRecord.Name)
+		ok = false
+	}
+
+	if recipeRecord.Linux_distribution != existingRecipeRecord.Linux_distribution {
+		common.Errorf("Recipe linux distribution %s does not match expected linux distribution %s", recipeRecord.Linux_distribution, existingRecipeRecord.Linux_distribution)
+		ok = false
+	}
+
+	if recipeRecord.Arch != existingRecipeRecord.Arch {
+		common.Errorf("Recipe arch %s does not match expected arch %s", recipeRecord.Arch, existingRecipeRecord.Arch)
+		ok = false
+	}
+
+	if recipeRecord.Recipe_type != existingRecipeRecord.Recipe_type {
+		common.Errorf("Recipe type %s does not match expected recipe type %s", recipeRecord.Recipe_type, existingRecipeRecord.Recipe_type)
+		ok = false
+	}
+
+	if recipeRecord.Require_dkms != existingRecipeRecord.Require_dkms {
+		common.Errorf("Recipe require_dkms %t does not match expected require_dkms %t", recipeRecord.Require_dkms, existingRecipeRecord.Require_dkms)
+		ok = false
+	}
+
+	if !common.CompareSlicesOfMaps(recipeRecord.Template_dictionary, existingRecipeRecord.Template_dictionary) {
+		common.Errorf("Template dictionary %v does not match expected template dictionary %v", recipeRecord.Template_dictionary, existingRecipeRecord.Template_dictionary)
+		ok = false
+	}
+
+	ok = true
+	return
 }

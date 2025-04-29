@@ -42,8 +42,13 @@ func GetDeletedIMSPublicKeyRecordAPI(publicKeyId string, httpStatus int) (public
 	if params == nil {
 		return
 	}
-	uri := strings.Split(endpoints["ims"]["public_keys"].Url, "/public-keys")
-	url := common.BASEURL + uri[0] + "/deleted/public-keys" + "/" + publicKeyId
+
+	apiVersion := common.GetIMSAPIVersion()
+	baseURL := constructIMSURL("public_keys", apiVersion)
+	// getting the base uri needed for getting all deleted public key records
+	uri := strings.Split(baseURL, "/public-keys")
+	url := uri[0] + "/deleted/public-keys" + "/" + publicKeyId
+
 	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
 	if err != nil {
 		common.Error(err)
@@ -67,8 +72,13 @@ func GetDeletedIMSPublicKeyRecordsAPI() (recordList []IMSPublicKeyRecord, ok boo
 	if params == nil {
 		return
 	}
-	uri := strings.Split(endpoints["ims"]["public_keys"].Url, "/public-keys")
-	url := common.BASEURL + uri[0] + "/deleted/public-keys"
+
+	apiVersion := common.GetIMSAPIVersion()
+	baseURL := constructIMSURL("public_keys", apiVersion)
+	// getting the base uri needed for getting all deleted public key records
+	uri := strings.Split(baseURL, "/public-keys")
+	url := uri[0] + "/deleted/public-keys"
+
 	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
@@ -92,7 +102,10 @@ func DeleteIMSPublicKeyRecordAPI(publicKeyId string) (ok bool) {
 	if params == nil {
 		return
 	}
-	url := common.BASEURL + endpoints["ims"]["public_keys"].Url + "/" + publicKeyId
+
+	apiVersion := common.GetIMSAPIVersion()
+	url := constructIMSURL("public_keys", apiVersion) + "/" + publicKeyId
+
 	_, err := test.RestfulVerifyStatus("DELETE", url, *params, http.StatusNoContent)
 	if err != nil {
 		common.Error(err)
@@ -122,8 +135,12 @@ func UndeleteIMSPublicKeyRecordAPI(publicKeyId string) (ok bool) {
 	}
 	params.JsonStrArray = jsonPayload
 
-	uri := strings.Split(endpoints["ims"]["public_keys"].Url, "/public-keys")
-	url := common.BASEURL + uri[0] + "/deleted/public-keys" + "/" + publicKeyId
+	apiVersion := common.GetIMSAPIVersion()
+	baseURL := constructIMSURL("public_keys", apiVersion)
+	// getting the base uri needed for restoring deleted public key records
+	uri := strings.Split(baseURL, "/public-keys")
+	url := uri[0] + "/deleted/public-keys" + "/" + publicKeyId
+
 	_, err = test.RestfulVerifyStatus("PATCH", url, *params, http.StatusNoContent)
 	if err != nil {
 		common.Error(err)
@@ -140,8 +157,13 @@ func PermanentDeleteIMSPublicKeyRecordAPI(publicKeyId string) (ok bool) {
 	if params == nil {
 		return
 	}
-	uri := strings.Split(endpoints["ims"]["public_keys"].Url, "/public-keys")
-	url := common.BASEURL + uri[0] + "/deleted/public-keys" + "/" + publicKeyId
+
+	apiVersion := common.GetIMSAPIVersion()
+	baseURL := constructIMSURL("public_keys", apiVersion)
+	// getting the base uri needed for getting all deleted public key records
+	uri := strings.Split(baseURL, "/public-keys")
+	url := uri[0] + "/deleted/public-keys" + "/" + publicKeyId
+
 	_, err := test.RestfulVerifyStatus("DELETE", url, *params, http.StatusNoContent)
 	if err != nil {
 		common.Error(err)
@@ -178,7 +200,10 @@ func CreateIMSPublicKeyRecordAPI(publicKeyName string) (publicKeyRecord IMSPubli
 	}
 
 	params.JsonStr = string(jsonPayload)
-	url := common.BASEURL + endpoints["ims"]["public_keys"].Url
+
+	apiVersion := common.GetIMSAPIVersion()
+	url := constructIMSURL("public_keys", apiVersion)
+
 	resp, err := test.RestfulVerifyStatus("POST", url, *params, http.StatusCreated)
 	if err != nil {
 		common.Error(err)
@@ -203,7 +228,10 @@ func GetIMSPublicKeyRecordAPI(pkeyId string, httpStatus int) (pkeyRecord IMSPubl
 	if params == nil {
 		return IMSPublicKeyRecord{}, false
 	}
-	url := common.BASEURL + endpoints["ims"]["public_keys"].Url + "/" + pkeyId
+
+	apiVersion := common.GetIMSAPIVersion()
+	url := constructIMSURL("public_keys", apiVersion) + "/" + pkeyId
+
 	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
 	if err != nil {
 		common.Error(err)
@@ -228,7 +256,10 @@ func GetIMSPublicKeyRecordsAPI() (recordList []IMSPublicKeyRecord, ok bool) {
 	if params == nil {
 		return
 	}
-	url := common.BASEURL + endpoints["ims"]["public_keys"].Url
+
+	apiVersion := common.GetIMSAPIVersion()
+	url := constructIMSURL("public_keys", apiVersion)
+
 	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)

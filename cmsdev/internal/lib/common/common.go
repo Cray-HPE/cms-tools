@@ -48,6 +48,15 @@ const BASEURL = "https://" + BASEHOST
 const LOCALHOST = "http://localhost:5000"
 const NAMESPACE string = "services"
 
+// List of API versions supported by the IMS service
+var IMSAPIVERSIONS = []string{
+	"v2",
+	"v3",
+}
+
+// variable to dynamically set the API version to be used in the tests
+var imsAPIVersions string = ""
+
 // List of RPMs version captured at the start of the test. In case of failure, rpm -qa will be captured.
 var RPMLIST = []string{
 	"craycli",
@@ -67,6 +76,7 @@ type endpointMethod struct {
 type Endpoint struct {
 	Methods map[string]*endpointMethod // endpoint METHOD data
 	Url     string                     // url string appended to base to reach endpoint
+	Uri     string                     // uri string appended to base to reach endpoint
 	Version string                     `default:"v1"` // endpoint version
 }
 
@@ -149,6 +159,15 @@ var runStartTimes []time.Time
 var artifactDirectory, artifactFilePrefix string
 var artifactDirectoryCreated, artifactsLogged bool
 
+func SetIMSAPIVersion(version string) {
+	// Set the API version to be used in the tests
+	imsAPIVersions = version
+}
+func GetIMSAPIVersion() string {
+	// Get the API version to be used in the tests
+	return imsAPIVersions
+}
+
 // Set and unset the run sub-tag
 func SetRunSubTag(tag string) {
 	if len(runTags) < 1 {
@@ -181,7 +200,7 @@ func GetPackageVersion(packageName string) string {
 	cmd := exec.Command("rpm", "-q", packageName)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		Errorf("Error getting %s version: %v\n", packageName, err)
+		Warnf("Package %s not installed", packageName)
 		return ""
 	}
 	installedPkg := strings.TrimSpace(string(output))
@@ -348,7 +367,8 @@ func GetEndpoints() map[string]map[string]*Endpoint {
 			"POST":   newMethodEndpoint("", "Create an image record", []int{201, 400, 422, 500}),
 			"PATCH":  newMethodEndpoint("", "Update an image record", []int{200, 400, 404, 409, 422, 500}),
 		},
-		Url:     "/apis/ims/v3/images",
+		Url:     "/apis/ims",
+		Uri:     "/images",
 		Version: "v2",
 	}
 	endpoints["ims"]["jobs"] = &Endpoint{
@@ -366,7 +386,8 @@ func GetEndpoints() map[string]map[string]*Endpoint {
 			"GET":    newMethodEndpoint("", "Retrieve all public key records", []int{200, 500}),
 			"POST":   newMethodEndpoint("", "Create a public key record", []int{201, 400, 422, 500}),
 		},
-		Url:     "/apis/ims/v3/public-keys",
+		Url:     "/apis/ims",
+		Uri:     "/public-keys",
 		Version: "v2",
 	}
 	// The status codes for these recipes IMS endpoints don't match the IMS openapi spec currently,
@@ -378,7 +399,8 @@ func GetEndpoints() map[string]map[string]*Endpoint {
 			"POST":   newMethodEndpoint("", "Create a recipe record", []int{201, 400, 422, 500}),
 			"PATCH":  newMethodEndpoint("", "Update a recipe record", []int{200, 400, 404, 409, 422, 500}),
 		},
-		Url:     "/apis/ims/v3/recipes",
+		Url:     "/apis/ims",
+		Uri:     "/recipes",
 		Version: "v2",
 	}
 	endpoints["ims"]["version"] = &Endpoint{
@@ -705,6 +727,13 @@ func CompareMaps(a, b map[string]string) bool {
 	}
 
 	return true
+}
+
+func PrintLog(msg string) {
+	msglen := len(msg)
+	Infof("%s", strings.Repeat("*", msglen+4))
+	Infof("* %s *", msg)
+	Infof("%s", strings.Repeat("*", msglen+4))
 }
 
 func init() {

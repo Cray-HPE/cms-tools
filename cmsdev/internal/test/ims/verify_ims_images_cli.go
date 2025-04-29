@@ -32,6 +32,7 @@ import (
 )
 
 func TestImageCRUDOperationUsingCLI() (passed bool) {
+	common.PrintLog("Testing image CRUD operations using CLI")
 	// Test creating an image
 	imageRecord, success := TestCLIImageCreate()
 	if !success {

@@ -162,7 +162,7 @@ func IsIMSRunning() (passed bool) {
 	}
 
 	// Verify recipe CRUD operations via API
-	if !TestRecipeCRUDOperation() {
+	if !TestRecipeCRUDOperationUsingAPIVersions() {
 		passed = false
 	}
 
@@ -181,7 +181,7 @@ func IsIMSRunning() (passed bool) {
 	}
 
 	// Verify that we can perform CRUD operation on image via API
-	if !TestImageCRUDOperation() {
+	if !TestImageCRUDOperationUsingAPIVersions() {
 		passed = false
 	}
 
@@ -201,7 +201,7 @@ func IsIMSRunning() (passed bool) {
 	}
 
 	// Verify that we can perform CRUD operation on public key via API
-	if !TestPublicKeyCRUDOperation() {
+	if !TestPublicKeyCRUDOperationUsingAPIVersions() {
 		passed = false
 	}
 

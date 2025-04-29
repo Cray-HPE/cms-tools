@@ -31,6 +31,7 @@ import "stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
  */
 
 func TestPublicKeyCRUDOperationUsingCLI() (passed bool) {
+	common.PrintLog("Testing Public Key CRUD operations using CLI")
 	// Test creating a public key
 	publicKeyRecord, success := TestCLIPublicKeyCreate()
 	if !success {
