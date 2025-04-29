@@ -59,9 +59,13 @@ func TestImageCRUDOperation(apiVersion string) (passed bool) {
 		return false
 	}
 
+	// Test updating the image
+	updated := TestImageUpdate(imageRecord.Id)
+
+	// Test get all images
+	getAll := TestGetAllImages()
+
 	if apiVersion == "v3" {
-		// Test updating the image
-		updated := TestImageUpdate(imageRecord.Id)
 
 		// Test soft deleting the image
 		deleted := TestImageDelete(imageRecord.Id)
@@ -72,21 +76,13 @@ func TestImageCRUDOperation(apiVersion string) (passed bool) {
 		// Test hard deleting the image
 		permDeleted := TestImagePermanentDelete(imageRecord.Id)
 
-		// Test get all images
-		getAll := TestGetAllImages()
-
 		return updated && deleted && undeleted && permDeleted && getAll
-	} else {
-		// Test updating the image
-		updated := TestImageUpdate(imageRecord.Id)
-
-		// Test deleting the image
-		deleted := TestImageDeleteV2(imageRecord.Id)
-
-		getAll := TestGetAllImages()
-
-		return updated && deleted && getAll
 	}
+
+	// Test deleting the image
+	deleted := TestImageDeleteV2(imageRecord.Id)
+
+	return updated && deleted && getAll
 }
 
 func TestImagePermanentDelete(imageId string) (passed bool) {

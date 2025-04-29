@@ -59,6 +59,9 @@ func TestPublicKeyCRUDOperation(apiVersion string) (passed bool) {
 		return false
 	}
 
+	// Test get all public keys
+	getAll := TestGetAllPublicKeys()
+
 	if apiVersion == "v3" {
 		// Test soft deleting the public key
 		deleted := TestPublicKeyDelete(publicKeyRecord.Id)
@@ -69,19 +72,12 @@ func TestPublicKeyCRUDOperation(apiVersion string) (passed bool) {
 		// Test permanent deleting the public key
 		permDeleted := TestPublicKeyPermanentDelete(publicKeyRecord.Id)
 
-		// Test get all public keys
-		getAll := TestGetAllPublicKeys()
-
 		return deleted && undeleted && permDeleted && getAll
-	} else {
-		// Test deleting the public key
-		deleted := TestPublicKeyDeleteV2(publicKeyRecord.Id)
-
-		// Test get all public keys
-		getAll := TestGetAllPublicKeys()
-
-		return deleted && getAll
 	}
+	// Test deleting the public key
+	deleted := TestPublicKeyDeleteV2(publicKeyRecord.Id)
+
+	return deleted && getAll
 }
 
 func TestPublicKeyDelete(publicKeyId string) (passed bool) {

@@ -57,9 +57,13 @@ func TestRecipeCRUDOperation(apiVersion string) (passed bool) {
 		return false
 	}
 
+	// Test updating the recipe
+	updated := TestRecipeUpdate(recipeRecord.Id)
+
+	// Test get all recipes
+	getAll := TestGetAllRecipes()
+
 	if apiVersion == "v3" {
-		// Test updating the recipe
-		updated := TestRecipeUpdate(recipeRecord.Id)
 
 		// Test soft deleting the recipe
 		deleted := TestRecipeDelete(recipeRecord.Id)
@@ -70,22 +74,14 @@ func TestRecipeCRUDOperation(apiVersion string) (passed bool) {
 		// Test hard deleting the recipe
 		permDeleted := TestRecipePermanentDelete(recipeRecord.Id)
 
-		// Test get all recipes
-		getAll := TestGetAllRecipes()
-
 		return updated && deleted && undeleted && permDeleted && getAll
-	} else {
-		// Test updating the recipe
-		updated := TestRecipeUpdate(recipeRecord.Id)
-
-		// Test deleting the recipe
-		deleted := TestRecipeDeleteV2(recipeRecord.Id)
-
-		//Test get all recipes
-		getAll := TestGetAllRecipes()
-
-		return updated && deleted && getAll
 	}
+
+	// Test deleting the recipe
+	deleted := TestRecipeDeleteV2(recipeRecord.Id)
+
+	return updated && deleted && getAll
+
 }
 
 func TestRecipePermanentDelete(recipeId string) (passed bool) {
