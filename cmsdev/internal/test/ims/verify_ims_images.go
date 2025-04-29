@@ -22,6 +22,7 @@
 package ims
 
 import (
+	"fmt"
 	"net/http"
 
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
@@ -34,32 +35,54 @@ import (
  *
  */
 
-func testPackage() {
-	common.Infof("Testing package")
+// Test image CRUD operations using all supported API versions
+func TestImageCRUDOperationUsingAPIVersions() (passed bool) {
+	passed = true
+
+	for _, version := range common.IMSAPIVERSIONS {
+		common.PrintLog(fmt.Sprintf("Testing image CRUD operations using API version: %s", version))
+		common.SetIMSAPIVersion(version)
+		passed = passed && TestImageCRUDOperation(version)
+	}
+
+	// default API version
+	common.SetIMSAPIVersion("")
+	common.PrintLog("Testing image CRUD operations using default API version")
+	passed = passed && TestImageCRUDOperation(common.GetIMSAPIVersion())
+	return passed
 }
 
-func TestImageCRUDOperation() (passed bool) {
+func TestImageCRUDOperation(apiVersion string) (passed bool) {
 	// Test creating an image
 	imageRecord, success := TestImageCreate()
 	if !success {
 		return false
 	}
+
 	// Test updating the image
 	updated := TestImageUpdate(imageRecord.Id)
-
-	// Test soft deleting the image
-	deleted := TestImageDelete(imageRecord.Id)
-
-	// Test undeleting the image
-	undeleted := TestImageUndelete(imageRecord.Id)
-
-	// Test hard deleting the image
-	permDeleted := TestImagePermanentDelete(imageRecord.Id)
 
 	// Test get all images
 	getAll := TestGetAllImages()
 
-	return updated && deleted && undeleted && permDeleted && getAll
+	if apiVersion == "v3" {
+
+		// Test soft deleting the image
+		deleted := TestImageDelete(imageRecord.Id)
+
+		// Test undeleting the image
+		undeleted := TestImageUndelete(imageRecord.Id)
+
+		// Test hard deleting the image
+		permDeleted := TestImagePermanentDelete(imageRecord.Id)
+
+		return updated && deleted && undeleted && permDeleted && getAll
+	}
+
+	// Test deleting the image
+	deleted := TestImageDeleteV2(imageRecord.Id)
+
+	return updated && deleted && getAll
 }
 
 func TestImagePermanentDelete(imageId string) (passed bool) {
@@ -111,27 +134,56 @@ func TestImagePermanentDelete(imageId string) (passed bool) {
 }
 
 func TestImageUndelete(imageId string) (passed bool) {
+	// Get the image details before restoration
+	existingImageRecord, success := GetDeletedIMSImageRecordAPI(imageId, http.StatusOK)
+	if !success {
+		common.Errorf("Unable to fetch Image %s ", imageId)
+		return false
+	}
+
 	if success := UndeleteIMSImageRecordAPI(imageId); !success {
 		return false
 	}
 
 	// Verify the image is undeleted
-	if _, success := GetIMSImageRecordAPI(imageId, http.StatusOK); !success {
+	imageRecord, success := GetIMSImageRecordAPI(imageId, http.StatusOK)
+	if !success {
 		common.Errorf("Image %s was not restored", imageId)
 		return false
 	}
+
+	// Verify the image details are the same after restoration
+	if !VerifyIMSImageRecord(imageRecord, existingImageRecord) {
+		common.Errorf("Image %s details do not match after restore", imageId)
+		return false
+	}
+
 	common.Infof("Image %s was restored", imageId)
 	return true
 }
 
 func TestImageDelete(imageId string) (passed bool) {
+	// Get the image details before deletion
+	existingImageRecord, success := GetIMSImageRecordAPI(imageId, http.StatusOK)
+	if !success {
+		common.Errorf("Unable to fetch Image %s ", imageId)
+		return false
+	}
+
 	if success := DeleteIMSImageRecordAPI(imageId); !success {
 		return false
 	}
 
 	// Verify the image is deleted
-	if _, success := GetDeletedIMSImageRecordAPI(imageId, http.StatusOK); !success {
+	deletedImageRecord, success := GetDeletedIMSImageRecordAPI(imageId, http.StatusOK)
+	if !success {
 		common.Errorf("Image %s was not soft deleted", imageId)
+		return false
+	}
+
+	// Verify the image details are the same as before deletion
+	if !VerifyIMSImageRecord(deletedImageRecord, existingImageRecord) {
+		common.Errorf("Image %s details do not match after soft delete", imageId)
 		return false
 	}
 
@@ -209,7 +261,7 @@ func TestImageCreate() (imageRecord IMSImageRecord, passed bool) {
 		"value": imageName,
 	}
 	expectedMetadata := map[string]string{
-		"name": imageName,
+		metadata["key"]: metadata["value"],
 	}
 
 	imageRecord, success := CreateIMSImageRecordAPI(imageName, metadata)
@@ -251,5 +303,31 @@ func TestGetAllImages() (passed bool) {
 		return false
 	}
 	common.Infof("All images were retrieved successfully")
+	return true
+}
+
+func TestImageDeleteV2(imageId string) (passed bool) {
+	if success := DeleteIMSImageRecordAPI(imageId); !success {
+		return false
+	}
+
+	// Verify the image is not in the list of images
+	if _, success := GetIMSImageRecordAPI(imageId, http.StatusNotFound); !success {
+		common.Errorf("Image %s was not deleted", imageId)
+		return false
+	}
+
+	// Verify the image is not in the list of all images
+	imageRecords, success := GetIMSImageRecordsAPI()
+	if !success {
+		return false
+	}
+
+	if ImageRecordExists(imageId, imageRecords) {
+		common.Errorf("Image %s was not deleted", imageId)
+		return false
+	}
+
+	common.Infof("Image %s was deleted", imageId)
 	return true
 }
