@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMCMS-9379: TESTS: IMS: cmsdev: Test v2 API and default version API
 
 ### Fixed
-- CASMCMS-8135: IMS: cmsdev failed during post-install health check
+- CASMTRIAGE-8135: IMS: cmsdev failed during post-install health check
 - CASMCMS-9384: cmsdev should warn if docs-csm RPM is not installed
 
 ## [1.29.0] - 2025-04-24
