@@ -30,7 +30,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	resty "gopkg.in/resty.v1"
 	"io"
 	"net/http"
 	"os"
@@ -39,8 +38,10 @@ import (
 	"regexp"
 	"strings"
 
+	resty "gopkg.in/resty.v1"
+
 	coreV1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -370,7 +371,6 @@ func GetConfigMap(namespace, name string) (cm coreV1.ConfigMap, err error) {
 // Given a namespace, configmap name, and data field name, return the specified data field as a byte slice.
 func GetConfigMapDataField(namespace, cm_name, field_name string) (field_bytes []byte, err error) {
 	var cm coreV1.ConfigMap
-
 	cm, err = GetConfigMap(namespace, cm_name)
 	if err != nil {
 		return

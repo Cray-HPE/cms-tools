@@ -29,8 +29,9 @@ package bos
  */
 
 import (
-	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"strings"
+
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
 
 // The sessionsV2TestsURI and sessionsV2TestsCLICommand functions
@@ -47,6 +48,10 @@ func sessionsTestsAPI(params *common.Params, tenantList []string) (passed bool) 
 
 	// v2 sessions
 	if !sessionsV2TestsURI(params, tenantList) {
+		passed = false
+	}
+
+	if !TestBOSSessionsCRUDOperations() {
 		passed = false
 	}
 

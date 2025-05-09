@@ -27,10 +27,11 @@ package common
 import (
 	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"os"
 	"reflect"
 	"regexp"
+
+	"gopkg.in/yaml.v2"
 )
 
 func DecodeJSONIntoStringMap(mapJsonBytes []byte) (map[string]interface{}, error) {
