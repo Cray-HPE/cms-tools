@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- CASMCMS-9348: cmsdev BOS Add create/modify/delete tests
+   * API tests for sessiontemplates and sessions
+
 ## [1.30.0] - 2025-04-29
 
 ### Added

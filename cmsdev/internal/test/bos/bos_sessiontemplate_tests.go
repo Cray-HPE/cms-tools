@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2019-2025 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -29,8 +29,9 @@ package bos
  */
 
 import (
-	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"strings"
+
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
 
 // The sessionTemplatesTestsURI and sessionTemplatesTestsCLICommand functions define the API and CLI versions of the BOS session template subtests.
@@ -57,6 +58,10 @@ func sessionTemplatesTestsAPI(params *common.Params, tenantList []string) (passe
 
 	// v2
 	if !v2SessionTemplatesTestsURI(params, tenantList) {
+		passed = false
+	}
+
+	if !TestSessionTemplatesCRUDOperations() {
 		passed = false
 	}
 

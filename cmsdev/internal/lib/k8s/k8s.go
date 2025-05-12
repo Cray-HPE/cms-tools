@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  (C) Copyright 2020-2024 Hewlett Packard Enterprise Development LP
+//  (C) Copyright 2020-2025 Hewlett Packard Enterprise Development LP
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -30,7 +30,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	resty "gopkg.in/resty.v1"
 	"io"
 	"net/http"
 	"os"
@@ -39,8 +38,10 @@ import (
 	"regexp"
 	"strings"
 
+	resty "gopkg.in/resty.v1"
+
 	coreV1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
