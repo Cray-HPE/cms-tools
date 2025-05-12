@@ -335,7 +335,6 @@ func GetEndpoints() map[string]map[string]*Endpoint {
 			"GET": newMethodEndpoint("", "Retrieve CFS configurations", []int{200, 400}),
 		},
 		Url:     "/apis/cfs/v2/configurations",
-		Uri:     "/configurations",
 		Version: "v2",
 	}
 	endpoints["cfs"]["options"] = &Endpoint{
