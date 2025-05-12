@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+//  (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -27,10 +27,11 @@ package common
 import (
 	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"os"
 	"reflect"
 	"regexp"
+
+	"gopkg.in/yaml.v2"
 )
 
 func DecodeJSONIntoStringMap(mapJsonBytes []byte) (map[string]interface{}, error) {
