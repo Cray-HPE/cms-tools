@@ -96,6 +96,11 @@ func sessionTemplatesTestsCLI(tenantList []string) (passed bool) {
 		passed = false
 	}
 
+	// sessiontemplates CRUD operations tests
+	if !TestSessionTemplatesCRUDOperationsUsingCLI() {
+		passed = false
+	}
+
 	return
 }
 
