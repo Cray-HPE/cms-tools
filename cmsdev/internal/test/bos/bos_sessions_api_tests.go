@@ -86,7 +86,7 @@ func TestBOSSessionsCreate(staged bool, arch string, imageId string) (sessionRec
 	}
 
 	common.Debugf("Create BOS session payload: %s", sessionPayload)
-	// Create staged session
+	// Create BOS session
 	sessionRecord, success = CreateBOSSessionAPI(sessionPayload)
 	if !success {
 		return BOSSession{}, false
@@ -98,14 +98,14 @@ func TestBOSSessionsCreate(staged bool, arch string, imageId string) (sessionRec
 		return BOSSession{}, false
 	}
 
-	// Get the staged session
+	// Get the BOS session
 	_, success = GetBOSSessionAPI(sessionRecord.Name, http.StatusOK)
 	if !success {
 		common.Errorf("Failed to get BOS session '%s'", sessionRecord.Name)
 		return BOSSession{}, false
 	}
 
-	// Check if staged session is in the list of all sessions
+	// Check if BOS session is in the list of all sessions
 	sessionList, success := GetAllBOSSessionsAPI()
 	if !success {
 		return BOSSession{}, false
@@ -121,19 +121,19 @@ func TestBOSSessionsCreate(staged bool, arch string, imageId string) (sessionRec
 
 func TestBOSSessionsDelete(sessionName string) (passed bool) {
 	common.PrintLog(fmt.Sprintf("Deleting BOS session '%s'", sessionName))
-	// Delete staged session
+	// Delete BOS session
 	if !DeleteBOSSessionAPI(sessionName) {
 		return false
 	}
 
-	// Check if staged session is deleted
+	// Check if BOS session is deleted
 	_, success := GetBOSSessionAPI(sessionName, http.StatusNotFound)
 	if !success {
 		common.Errorf("BOS session '%s' still exists", sessionName)
 		return false
 	}
 
-	// Check if staged session is deleted from the list of all sessions
+	// Check if BOS session is deleted from the list of all sessions
 	sessionList, success := GetAllBOSSessionsAPI()
 	if !success {
 		return false
@@ -149,12 +149,12 @@ func TestBOSSessionsDelete(sessionName string) (passed bool) {
 }
 
 func TestBOSSessionsGetAll() (passed bool) {
-	// Get all staged sessions
-	common.PrintLog("Getting all staged sessions")
+	// Get all BOS sessions
+	common.PrintLog("Getting all BOS sessions")
 	sessionList, success := GetAllBOSSessionsAPI()
 	if !success {
 		return false
 	}
-	common.Infof("Found %d staged sessions", len(sessionList))
+	common.Infof("Found %d BOS sessions", len(sessionList))
 	return true
 }

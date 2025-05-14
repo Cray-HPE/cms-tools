@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2019-2025 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -32,9 +32,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
+
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
-	"strings"
 )
 
 const cray_cli = "/usr/bin/cray"
@@ -60,6 +61,19 @@ tenant = "%s"
 // we are acting on behalf of. The empty string will map to the CLI config
 // file with no tenant specified
 var cliConfigFilesByTenant = map[string]string{}
+
+// Using a global variable to track the return code of the CLI command execution
+// This is used to simulate different return codes for testing purposes
+// The default value is 0, which indicates success
+var cliExecreturnCode = 0
+
+func SetCliExecreturnCode(code int) {
+	cliExecreturnCode = code
+}
+
+func GetCliExecreturnCode() int {
+	return cliExecreturnCode
+}
 
 func GetAccessJSON() []byte {
 	common.Debugf("Getting access JSON object")
@@ -153,8 +167,12 @@ func TenantRunCLICommand(tenant string, cmdList ...string) []byte {
 		common.Error(err)
 		common.Errorf("Error running CLI command%s (%s)", strings.Join(cmdList, " "), tenantText)
 		return nil
-	} else if cmdResult.Rc != 0 {
+	} else if cmdResult.Rc != GetCliExecreturnCode() {
 		common.Errorf("CLI command%s (%s) failed with exit code %d", tenantText, strings.Join(cmdList, " "), cmdResult.Rc)
+		return nil
+	}
+	// Check for error code, return nil if there is an error
+	if cmdResult.Rc != 0 {
 		return nil
 	}
 	return cmdResult.OutBytes
