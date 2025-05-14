@@ -23,6 +23,7 @@ package ims
 
 import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
 /*
@@ -142,11 +143,17 @@ func TestCLIRecipeDelete(recipeId string) (passed bool) {
 		return false
 	}
 
+	// Set the CLI execution return code to 2. Since the recipe is deleted, the command should return 2.
+	test.SetCliExecreturnCode(2)
+
 	// Verify the recipe is not in the list of recipes
 	if _, success := getIMSRecipeRecordCLI(recipeId); success {
 		common.Errorf("Recipe %s was not soft deleted", recipeId)
 		return false
 	}
+
+	// Set the CLI execution return code to 0.
+	test.SetCliExecreturnCode(0)
 
 	// Verify the recipe is not in the list of all recipes
 	recipeRecords, success := getIMSRecipeRecordsCLI()
@@ -196,16 +203,24 @@ func TestCLIRecipePermanentDelete(recipeId string) (passed bool) {
 	if success := PermanentDeleteIMSRecipeRecordCLI(recipeId); !success {
 		return false
 	}
+
+	// Set the CLI execution return code to 2. Since the recipe is deleted, the command should return 2.
+	test.SetCliExecreturnCode(2)
+
 	// Verify the recipe is hard deleted
 	if _, success := GetDeletedIMSRecipeRecordCLI(recipeId); success {
 		common.Errorf("Recipe %s was not permanently deleted", recipeId)
 		return false
 	}
+
 	// Verify the recipe is not in the list of recipes
 	if _, success := getIMSRecipeRecordCLI(recipeId); success {
 		common.Errorf("Recipe %s was not permanently deleted", recipeId)
 		return false
 	}
+
+	// Set the CLI execution return code to 0.
+	test.SetCliExecreturnCode(0)
 
 	// Verify the recipe is not in the list of all recipes
 	recipeRecords, success := getIMSRecipeRecordsCLI()

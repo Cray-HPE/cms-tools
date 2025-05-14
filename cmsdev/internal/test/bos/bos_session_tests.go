@@ -71,6 +71,10 @@ func sessionsTestsCLI(tenantList []string) (passed bool) {
 		passed = false
 	}
 
+	if !TestSessionsCRUDOperationsUsingCLI() {
+		passed = false
+	}
+
 	return
 }
 

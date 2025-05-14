@@ -21,7 +21,10 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 package ims
 
-import "stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+import (
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
+)
 
 /*
  * ims_public_key_cli_test.go
@@ -89,10 +92,15 @@ func TestCLIPublicKeyDelete(publicKeyId string) (passed bool) {
 		return false
 	}
 
+	// Set the CLI execution return code to 2. Since the public key is deleted, the command should return 2.
+	test.SetCliExecreturnCode(2)
 	// verify the public key is not in the list of public keys
 	if _, success := getIMSPublicKeyRecordCLI(publicKeyId); success {
 		return false
 	}
+
+	// Set the CLI execution return code to 0.
+	test.SetCliExecreturnCode(0)
 
 	// verify the public key is not in the list of all public keys
 	publickeyRecords, success := getIMSPublicKeyRecordsCLI()
@@ -142,15 +150,23 @@ func TestCLIPublicKeyPermanentDelete(publicKeyId string) (passed bool) {
 	if success := PermanentDeleteIMSPublicKeyRecordCLI(publicKeyId); !success {
 		return false
 	}
+
+	// Set the CLI execution return code to 2. Since the public key is deleted, the command should return 2.
+	test.SetCliExecreturnCode(2)
+
 	// Verify the public key is hard deleted
 	if _, success := GetDeletedIMSPublicKeyRecordCLI(publicKeyId); success {
 		return false
 	}
+
 	// Verify the public key is not in the list of public keys
 	if _, success := getIMSPublicKeyRecordCLI(publicKeyId); success {
 		common.Errorf("Public key %s was not permanently deleted", publicKeyId)
 		return false
 	}
+
+	// Set the CLI execution return code to 0.
+	test.SetCliExecreturnCode(0)
 
 	// verify the public key is not in the list of all public keys
 	publickeyRecords, success := getIMSPublicKeyRecordsCLI()
