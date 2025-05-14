@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - CASMCMS-9348: cmsdev BOS Add create/modify/delete tests
    * API tests for sessiontemplates and sessions
+   * CLI tests for sessiontemplates and sessions
+- CASMCMS-9409: IMS cli test should suppress expected failures from log
 
 ## [1.30.0] - 2025-04-29
 

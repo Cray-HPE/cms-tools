@@ -58,6 +58,15 @@ var IMSAPIVERSIONS = []string{
 // variable to dynamically set the API version to be used in the tests
 var imsAPIVersions string = ""
 
+// List of API versions supported by the IMS service
+var IMSAPIVERSIONS = []string{
+	"v2",
+	"v3",
+}
+
+// variable to dynamically set the API version to be used in the tests
+var imsAPIVersions string = ""
+
 // List of RPMs version captured at the start of the test. In case of failure, rpm -qa will be captured.
 var RPMLIST = []string{
 	"craycli",
