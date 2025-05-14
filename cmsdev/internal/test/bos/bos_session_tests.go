@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2019-2025 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -29,8 +29,9 @@ package bos
  */
 
 import (
-	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"strings"
+
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
 
 // The sessionsV2TestsURI and sessionsV2TestsCLICommand functions
@@ -50,6 +51,10 @@ func sessionsTestsAPI(params *common.Params, tenantList []string) (passed bool) 
 		passed = false
 	}
 
+	if !TestBOSSessionsCRUDOperations() {
+		passed = false
+	}
+
 	return
 }
 
@@ -63,6 +68,10 @@ func sessionsTestsCLI(tenantList []string) (passed bool) {
 
 	// default (v2) sessions
 	if !sessionsV2TestsCLICommand(tenantList, bosDefaultSessionsCLI) {
+		passed = false
+	}
+
+	if !TestSessionsCRUDOperationsUsingCLI() {
 		passed = false
 	}
 

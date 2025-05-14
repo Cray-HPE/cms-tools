@@ -29,6 +29,7 @@ package ims
  */
 import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
 func TestImageCRUDOperationUsingCLI() (passed bool) {
@@ -137,11 +138,16 @@ func TestCLIImageDelete(imageId string) (passed bool) {
 		return false
 	}
 
+	// Set the CLI execution return code to 2. Since the image is deleted, the command should return 2.
+	test.SetCliExecreturnCode(2)
 	// Verify the image is not in the list of images
 	if _, success := getIMSImageRecordCLI(imageId); success {
 		common.Errorf("Image %s was not soft deleted", imageId)
 		return false
 	}
+
+	// Set the CLI execution return code to 0.
+	test.SetCliExecreturnCode(0)
 
 	// Verify the image is not in the list of images
 	imageRecords, success := getIMSImageRecordsCLI()
@@ -193,16 +199,24 @@ func TestCLIImagePermanentDelete(imageId string) (passed bool) {
 	if success := PermanentDeleteIMSImageRecordCLI(imageId); !success {
 		return false
 	}
+
+	// Set the CLI execution return code to 2. Since the image is deleted, the command should return 2.
+	test.SetCliExecreturnCode(2)
+
 	// Verify the image is hard deleted
 	if _, success := GetDeletedIMSImageRecordCLI(imageId); success {
 		common.Errorf("Image %s was not  permanently deleted", imageId)
 		return false
 	}
+
 	// Verify the image is not in the list of images
 	if _, success := getIMSImageRecordCLI(imageId); success {
 		common.Errorf("Image %s was not permanently deleted", imageId)
 		return false
 	}
+
+	// Set the CLI execution return code to 0.
+	test.SetCliExecreturnCode(0)
 
 	// Verify the image is not in the list of images
 	imageRecords, success := getIMSImageRecordsCLI()

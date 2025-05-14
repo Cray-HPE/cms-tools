@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2019-2025 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -29,12 +29,15 @@ package bos
  */
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	resty "gopkg.in/resty.v1"
 	"net/http"
 	"reflect"
+
+	resty "gopkg.in/resty.v1"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
 const bosV2SessionsUri = bosV2BaseUri + "/sessions"
@@ -286,4 +289,178 @@ func listV2SessionDataCli(tenantName string, cmdArgs ...string) (sessionDataList
 		passed = false
 	}
 	return
+}
+
+func CreateBOSSessionPayload(sessionName string, staged bool, operation string, arch string, imageId string) (payload string, ok bool) {
+	cfgName := "CFS_Configuration_" + string(common.GetRandomString(10))
+
+	payload, ok = GetCreateBOSSessionTemplatePayload(cfgName, false, arch, imageId)
+	if !ok {
+		return "", false
+	}
+	common.Debugf("BOS Session create - Session template payload: %s", payload)
+	// Create BOS session template
+	templateName := "BOS_SessionTemplate_" + string(common.GetRandomString(10))
+	sessionTemplateRecord, ok := CreateUpdateBOSSessiontemplatesAPI(payload, templateName, "PUT")
+	if !ok {
+		common.Errorf("Failed to create session template")
+		return "", false
+	}
+	paylaod := map[string]interface{}{
+		"name":          sessionName,
+		"operation":     operation,
+		"template_name": sessionTemplateRecord.Name,
+		"limit":         "fakexname",
+		"stage":         staged,
+	}
+
+	payloadJson, err := json.Marshal(paylaod)
+	if err != nil {
+		common.Errorf("Failed to marshal payload: %v", err)
+		return "", false
+	}
+	return string(payloadJson), true
+}
+
+func CreateBOSSessionAPI(sessionPayload string) (sessionRecord BOSSession, ok bool) {
+	params := test.GetAccessTokenParams()
+	if params == nil {
+		common.Error(fmt.Errorf("Unable to get access token params"))
+		return BOSSession{}, false
+	}
+
+	params.JsonStr = sessionPayload
+
+	url := common.BASEURL + endpoints["bos"]["sessions"].Url +
+		"/" + endpoints["bos"]["sessions"].Version +
+		endpoints["bos"]["sessions"].Uri
+
+	resp, err := test.RestfulVerifyStatus("POST", url, *params, http.StatusCreated)
+	if err != nil {
+		common.Errorf("Failed to create staged session: %v", err)
+		return BOSSession{}, false
+	}
+	if err := json.Unmarshal(resp.Body(), &sessionRecord); err != nil {
+		common.Errorf("Failed to unmarshal staged session response: %v", err)
+		return BOSSession{}, false
+	}
+	ok = true
+	return
+}
+
+func DeleteBOSSessionAPI(sessionName string) (passed bool) {
+	params := test.GetAccessTokenParams()
+	if params == nil {
+		common.Error(fmt.Errorf("Unable to get access token params"))
+		return false
+	}
+
+	url := common.BASEURL + endpoints["bos"]["sessions"].Url +
+		"/" + endpoints["bos"]["sessions"].Version +
+		endpoints["bos"]["sessions"].Uri +
+		"/" + sessionName
+
+	_, err := test.RestfulVerifyStatus("DELETE", url, *params, http.StatusNoContent)
+	if err != nil {
+		common.Errorf("Failed to delete staged session: %v", err)
+		return false
+	}
+	passed = true
+	return
+}
+
+func GetAllBOSSessionsAPI() (sessionList []BOSSession, ok bool) {
+	common.Infof("Getting all sessions")
+	params := test.GetAccessTokenParams()
+	if params == nil {
+		common.Error(fmt.Errorf("Unable to get access token params"))
+		return nil, false
+	}
+
+	url := common.BASEURL + endpoints["bos"]["sessions"].Url +
+		"/" + endpoints["bos"]["sessions"].Version +
+		endpoints["bos"]["sessions"].Uri
+
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	if err != nil {
+		common.Errorf("Failed to get all staged sessions: %v", err)
+		return nil, false
+	}
+	if err := json.Unmarshal(resp.Body(), &sessionList); err != nil {
+		common.Errorf("Failed to unmarshal staged session response: %v", err)
+		return nil, false
+	}
+	ok = true
+	return
+}
+
+func GetBOSSessionAPI(sessionName string, httpStatus int) (sessionRecord BOSSession, ok bool) {
+	common.Infof("Getting BOS session '%s'", sessionName)
+	params := test.GetAccessTokenParams()
+	if params == nil {
+		common.Error(fmt.Errorf("Unable to get access token params"))
+		return BOSSession{}, false
+	}
+
+	url := common.BASEURL + endpoints["bos"]["sessions"].Url +
+		"/" + endpoints["bos"]["sessions"].Version +
+		endpoints["bos"]["sessions"].Uri +
+		"/" + sessionName
+
+	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
+	if err != nil {
+		common.Errorf("Failed to get staged session: %v", err)
+		return BOSSession{}, false
+	}
+	if err := json.Unmarshal(resp.Body(), &sessionRecord); err != nil {
+		common.Errorf("Failed to unmarshal staged session response: %v", err)
+		return BOSSession{}, false
+	}
+	ok = true
+	return
+}
+
+func BOSSessionExists(sessionName string, sessionList []BOSSession) (ok bool) {
+	for _, session := range sessionList {
+		if session.Name == sessionName {
+			return true
+		}
+	}
+	common.Infof("BOS session '%s' not found in list of sessions", sessionName)
+	return false
+}
+
+func VerifyBOSSession(sessionRecord BOSSession, sessionPayload string) (ok bool) {
+	// Unmarshal the payoad into a map
+	var payloadMap map[string]interface{}
+	if err := json.Unmarshal([]byte(sessionPayload), &payloadMap); err != nil {
+		common.Errorf("Failed to unmarshal session payload: %v", err)
+		return false
+	}
+	// Verify the session name
+	if sessionRecord.Name != payloadMap["name"] {
+		common.Errorf("Session name '%s' does not match expected name '%s'", sessionRecord.Name, payloadMap["name"])
+		return false
+	}
+	// Verify the operation
+	if sessionRecord.Operation != payloadMap["operation"] {
+		common.Errorf("Session operation '%s' does not match expected operation '%s'", sessionRecord.Operation, payloadMap["operation"])
+		return false
+	}
+	// Verify the template name
+	if sessionRecord.Template_name != payloadMap["template_name"] {
+		common.Errorf("Session template name '%s' does not match expected template name '%s'", sessionRecord.Template_name, payloadMap["template_name"])
+		return false
+	}
+	// Verify the stage field
+	if sessionRecord.Stage != payloadMap["stage"] {
+		common.Errorf("Session stage '%t' does not match expected stage '%t'", sessionRecord.Stage, payloadMap["stage"])
+		return false
+	}
+	// Verify the limit field
+	if sessionRecord.Limit != payloadMap["limit"] {
+		common.Errorf("Session limit '%s' does not match expected limit '%s'", sessionRecord.Limit, payloadMap["limit"])
+		return false
+	}
+	return true
 }

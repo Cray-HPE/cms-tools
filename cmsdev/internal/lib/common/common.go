@@ -47,6 +47,16 @@ const BASEHOST = "api-gw-service-nmn.local"
 const BASEURL = "https://" + BASEHOST
 const LOCALHOST = "http://localhost:5000"
 const NAMESPACE string = "services"
+const CSMPRODCATALOGCMNAME string = "cray-product-catalog"
+
+// List of API versions supported by the IMS service
+var IMSAPIVERSIONS = []string{
+	"v2",
+	"v3",
+}
+
+// variable to dynamically set the API version to be used in the tests
+var imsAPIVersions string = ""
 
 // List of API versions supported by the IMS service
 var IMSAPIVERSIONS = []string{
@@ -425,6 +435,47 @@ func GetEndpoints() map[string]map[string]*Endpoint {
 		Version: "v2",
 	}
 
+	endpoints["bos"] = make(map[string]*Endpoint)
+
+	endpoints["bos"]["sessiontemplates"] = &Endpoint{
+		Methods: map[string]*endpointMethod{
+			"GET":    newMethodEndpoint("", "Retrieve all session templates", []int{200, 404}),
+			"POST":   newMethodEndpoint("", "Create a session template", []int{201, 400, 409}),
+			"PATCH":  newMethodEndpoint("", "Update a session template", []int{200, 400, 404, 409}),
+			"DELETE": newMethodEndpoint("", "Delete a session template", []int{204, 400, 404, 409}),
+		},
+		Url:     "/apis/bos",
+		Uri:     "/sessiontemplates",
+		Version: "v2",
+	}
+	endpoints["bos"]["sessions"] = &Endpoint{
+		Methods: map[string]*endpointMethod{
+			"GET":    newMethodEndpoint("", "Retrieve all sessions", []int{200, 404}),
+			"POST":   newMethodEndpoint("", "Create a session", []int{201, 400, 409}),
+			"DELETE": newMethodEndpoint("", "Delete a session", []int{204, 400, 404}),
+		},
+		Url:     "/apis/bos",
+		Uri:     "/sessions",
+		Version: "v2",
+	}
+	endpoints["bos"]["applystaged"] = &Endpoint{
+		Methods: map[string]*endpointMethod{
+			"POST": newMethodEndpoint("", "Apply staged changes", []int{200, 400}),
+		},
+		Url:     "/apis/bos",
+		Uri:     "/applystaged",
+		Version: "v2",
+	}
+
+	endpoints["bos"]["sessiontemplatesvalid"] = &Endpoint{
+		Methods: map[string]*endpointMethod{
+			"GET": newMethodEndpoint("", "Validate session template", []int{200, 400, 404}),
+		},
+		Url:     "/apis/bos",
+		Uri:     "/sessiontemplatesvalid",
+		Version: "v2",
+	}
+
 	return endpoints
 }
 
@@ -493,6 +544,11 @@ func doRest(method, url string, params Params, client *resty.Client) (*resty.Res
 		resp, err = client.R().
 			SetBody(params.JsonStrArray).
 			Patch(url)
+	case "PUT":
+		// payload passed as string
+		resp, err = client.R().
+			SetBody(params.JsonStr).
+			Put(url)
 	case "DELETE":
 		resp, err = client.R().Delete(url)
 	}
