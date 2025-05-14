@@ -46,7 +46,6 @@ var bosCliVersions = map[string]string{
 func RunVersionedBOSCommand(cliVersion string, cmdArgs ...string) []byte {
 	if cliVersion == "" {
 		return runBosCLI(cmdArgs...)
-
 	}
 	newArgs := append([]string{cliVersion}, cmdArgs...)
 	return runBosCLI(newArgs...)
