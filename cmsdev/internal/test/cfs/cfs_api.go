@@ -31,6 +31,7 @@ package cfs
 import (
 	"fmt"
 	"net/http"
+
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
@@ -69,6 +70,21 @@ var cfsEndpoints = []cfsEndpoint{
 		IdField:  "name",
 		Versions: []int{3},
 	},
+}
+
+func GetSupportAPIVersions(component string) (versions []string) {
+	// Get the supported API versions for a given component
+	// The component name is the last part of the URL, e.g. /apis/cfs/v3/components
+	versions = []string{}
+	for _, endpoint := range cfsEndpoints {
+		if endpoint.Name == component {
+			for _, ver := range endpoint.Versions {
+				versions = append(versions, fmt.Sprintf("v%d", ver))
+			}
+			break
+		}
+	}
+	return
 }
 
 func (endpoint cfsEndpoint) InVersion(version int) bool {

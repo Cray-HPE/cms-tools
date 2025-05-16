@@ -334,7 +334,8 @@ func GetEndpoints() map[string]map[string]*Endpoint {
 		Methods: map[string]*endpointMethod{
 			"GET": newMethodEndpoint("", "Retrieve CFS configurations", []int{200, 400}),
 		},
-		Url:     "/apis/cfs/v2/configurations",
+		Url:     "/apis/cfs",
+		Uri:     "/configurations",
 		Version: "v2",
 	}
 	endpoints["cfs"]["options"] = &Endpoint{
@@ -357,6 +358,18 @@ func GetEndpoints() map[string]map[string]*Endpoint {
 		},
 		Url:     "/apis/cfs/healthz",
 		Version: "v2",
+	}
+
+	endpoints["cfs"]["sources"] = &Endpoint{
+		Methods: map[string]*endpointMethod{
+			"GET":    newMethodEndpoint("", "Retrieve all CFS sources", []int{200, 400, 404}),
+			"POST":   newMethodEndpoint("", "Create a CFS source", []int{201, 400, 409}),
+			"PATCH":  newMethodEndpoint("", "Update a CFS source", []int{200, 400, 404}),
+			"DELETE": newMethodEndpoint("", "Delete a CFS source", []int{204, 400, 404}),
+		},
+		Url:     "/apis/cfs",
+		Uri:     "/sources",
+		Version: "v3",
 	}
 
 	// IMS service endpoints
