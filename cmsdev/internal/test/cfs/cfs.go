@@ -91,7 +91,19 @@ func IsCFSRunning() (passed bool) {
 	if !testCFSAPI() {
 		passed = false
 	}
+	if !TestCFSConfigurationsCRUDOperationUsingAPIVersions() {
+		passed = false
+	}
+	if !TestCFSSourcesCRUDOperation() {
+		passed = false
+	}
 	if !testCFSCLI() {
+		passed = false
+	}
+	if !TestCFSConfigurationsCRUDOperationUsingCLI() {
+		passed = false
+	}
+	if !TestCFSSourcesCRUDOperationCLI() {
 		passed = false
 	}
 	if !passed {

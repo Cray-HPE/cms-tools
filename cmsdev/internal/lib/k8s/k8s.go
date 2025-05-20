@@ -37,6 +37,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	resty "gopkg.in/resty.v1"
 
@@ -61,6 +62,10 @@ type ContainerEnvVar struct {
 
 var KubectlPath, VcsUser, VcsPass string
 var kubeConfig *rest.Config
+
+// Retry constants for k8s
+const MaxRetries = 45
+const RetryIntervalSeconds = 2
 
 func getKubeconfigEnvVar() (kubeconfigEnvVar string) {
 	kubeconfigEnvVar = os.Getenv("KUBECONFIG")
@@ -515,15 +520,28 @@ func GetPodStatus(namespace, podName string) (string, error) {
 	if err != nil {
 		return status, err
 	}
-	pod, err := clientset.CoreV1().Pods(namespace).Get(
-		context.TODO(),
-		podName,
-		v1.GetOptions{},
-	)
-	if err != nil {
-		return status, err
+
+	for retries := 0; retries < MaxRetries; retries++ {
+		pod, err := clientset.CoreV1().Pods(namespace).Get(
+			context.TODO(),
+			podName,
+			v1.GetOptions{},
+		)
+		if err != nil {
+			return status, err
+		}
+
+		status = string(pod.Status.Phase)
+		if status != "Pending" {
+			return status, nil
+		}
+
+		// Log and wait before retrying
+		common.Infof("Pod %s in namespace %s is in 'Pending' state. Retrying in %d seconds...", podName, namespace, RetryIntervalSeconds)
+		time.Sleep(time.Duration(RetryIntervalSeconds) * time.Second)
 	}
-	return string(pod.Status.Phase), err
+
+	return status, fmt.Errorf("pod %s in namespace %s is still in 'Pending' state after %d retries", podName, namespace, MaxRetries)
 }
 
 // returns pod stats
