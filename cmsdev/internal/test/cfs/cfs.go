@@ -100,6 +100,12 @@ func IsCFSRunning() (passed bool) {
 	if !testCFSCLI() {
 		passed = false
 	}
+	if !TestCFSConfigurationsCRUDOperationUsingCLI() {
+		passed = false
+	}
+	if !TestCFSSourcesCRUDOperationCLI() {
+		passed = false
+	}
 	if !passed {
 		common.ArtifactsKubernetes()
 		if len(podNames) > 0 {
