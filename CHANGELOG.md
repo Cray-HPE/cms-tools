@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    * API tests for sources and configurations
    * CLI tests for sources and configurations
 
+### Fixed
+- CASMTRIAGE-8181: cmsdev test cfs fails intermittently in the pipeline, but passes on manual execution
+
 ## [1.31.0] - 2025-05-14
 
 ### Added
