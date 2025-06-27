@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -62,7 +62,8 @@ if [[ -f .rpm_release && -s .rpm_release ]]; then
 fi
 
 if [[ -f ./cmsdev/go.mod && -s ./cmsdev/go.mod ]]; then
-    GO_VERSION=$(grep -E '^go [1-9][0-9]*[.](0|[1-9][0-9]*)[[:space:]]*$' ./cmsdev/go.mod | awk '{ print $2 }')
+    numpat='(0|[1-9][0-9]*)'
+    GO_VERSION=$(grep -E "^go [1-9][0-9]*[.]${numpat}([[:space:]]*|[.]${numpat}[[:space:]]*)$" ./cmsdev/go.mod | awk '{ print $2 }' | cut -d. -f1-2)
     export GO_VERSION
 fi
 

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.33.0] - 2025-06-27
+
+### Changed
+
+- Modified `vars.sh` to handle Go versions that include a patch number
+- CASMCMS-9465 - update the ims signing keys test for including the DST keys
+
+### Dependencies
+- Bump `github.com/magiconair/properties` from 1.8.9 to 1.8.10 ([#253](https://github.com/Cray-HPE/cms-tools/pull/253))
+- Bump `golang.org/x/net` from 0.36.0 to 0.41.0 ([#254](https://github.com/Cray-HPE/cms-tools/pull/254), [#282](https://github.com/Cray-HPE/cms-tools/pull/282))
+- Bump `golang.org/x/oauth2` from 0.15.0 to 0.30.0 ([#280](https://github.com/Cray-HPE/cms-tools/pull/280))
+- Bump `golang.org/x/time` from 0.5.0 to 0.12.0 ([#286](https://github.com/Cray-HPE/cms-tools/pull/286))
+
 ## [1.32.0] - 2025-05-20
 
 ### Added
