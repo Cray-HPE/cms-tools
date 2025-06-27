@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.33.0] - 2025-06-27
+
 ### Changed
 
 - Modified `vars.sh` to handle Go versions that include a patch number
