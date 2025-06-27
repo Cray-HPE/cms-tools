@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Dependencies
 - Bump `github.com/magiconair/properties` from 1.8.9 to 1.8.10 ([#253](https://github.com/Cray-HPE/cms-tools/pull/253))
-- Bump `golang.org/x/net` from 0.36.0 to 0.38.0 ([#254](https://github.com/Cray-HPE/cms-tools/pull/254))
+- Bump `golang.org/x/net` from 0.36.0 to 0.41.0 ([#254](https://github.com/Cray-HPE/cms-tools/pull/254), [#282](https://github.com/Cray-HPE/cms-tools/pull/282))
 - Bump `github.com/magiconair/properties` from 1.8.9 to 1.8.10 ([#253](https://github.com/Cray-HPE/cms-tools/pull/253))
 - Bump `github.com/spf13/cobra` from 1.7.0 to 1.9.1 ([#279](https://github.com/Cray-HPE/cms-tools/pull/279))
 
