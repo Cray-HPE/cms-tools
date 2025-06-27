@@ -93,7 +93,7 @@ func getSigningkeys(imagename string) (keys []string, err error) {
 	cmd = exec.Command("podman", "run", "--entrypoint", "", "registry.local/"+imagename, "ls", "/signing-keys")
 	common.Infof("Running command: %s", cmd)
 	cmdOut, err = cmd.CombinedOutput()
-	common.Debugf("OUT: %s", cmdOut)
+	common.Infof("OUT: %s", cmdOut)
 	if err != nil {
 		common.Errorf("Error running podman ls /signing-keys command")
 		return
@@ -106,7 +106,7 @@ func getSigningkeys(imagename string) (keys []string, err error) {
 		return
 	}
 	for _, key := range keys {
-		common.Debugf("Found Key: %s", key)
+		common.Infof("Found Key: %s", key)
 	}
 	return
 }
