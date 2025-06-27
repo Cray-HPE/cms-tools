@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `github.com/magiconair/properties` from 1.8.9 to 1.8.10 ([#253](https://github.com/Cray-HPE/cms-tools/pull/253))
 - Bump `golang.org/x/net` from 0.36.0 to 0.38.0 ([#254](https://github.com/Cray-HPE/cms-tools/pull/254))
 - Bump `github.com/magiconair/properties` from 1.8.9 to 1.8.10 ([#253](https://github.com/Cray-HPE/cms-tools/pull/253))
+- Bump `github.com/go-logr/logr` from 1.2.4 to 1.4.3 ([#277](https://github.com/Cray-HPE/cms-tools/pull/277))
 
 ## [1.32.0] - 2025-05-20
 
