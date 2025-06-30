@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- CASMCMS-9469: cmsdev test cfs fails intermittently in the pipeline, but passes on manual execution
+
 ## [1.26.1] - 2025-03-31
 
 ### Fixed
