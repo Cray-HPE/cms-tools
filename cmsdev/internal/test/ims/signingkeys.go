@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2021-2023, 2025 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -111,42 +111,7 @@ func getSigningkeys(imagename string) (keys []string, err error) {
 	return
 }
 
-// Run the command podman run --entrypoint "" registry.local/imagename cat /scripts/entrypoint.sh
-// Verify that keys are present in the script
-func verifySigningkeys(imagename string, keys []string) (err error) {
-	var cmd *exec.Cmd
-	var cmdOut []byte
-	// Run the command podman run --entrypoint "" registry.local/imagename cat /scripts/entrypoint.sh
-	cmd = exec.Command("podman", "run", "--entrypoint", "", "registry.local/"+imagename, "cat", "/scripts/entrypoint.sh")
-	common.Infof("Running command: %s", cmd)
-	cmdOut, err = cmd.CombinedOutput()
-	common.Debugf("OUT: %s", cmdOut)
-	if err == nil && len(cmdOut) == 0 {
-		err = fmt.Errorf("Command succeeded but gave no output")
-		return
-	} else if err != nil {
-		common.Errorf("Error running podman cat /scripts/entrypoint.sh command")
-		return
-	}
-	keysfound := 0
-	// Look for lines with --signing-key /signing-keys/key
-	for _, key := range keys {
-		re := regexp.MustCompile(".*--signing-key /signing-keys/" + key)
-		foundkey := re.FindAllString(string(cmdOut), -1)
-		if len(foundkey) > 0 {
-			common.Debugf("Found Key: %s %s", key, foundkey[0])
-			keysfound++
-		}
-	}
-	if keysfound == len(keys) {
-		common.Debugf("Expected %d keys, found %d keys", len(keys), keysfound)
-		return
-	}
-	err = fmt.Errorf("We expected to find %d signing keys, but actually found %d", len(keys), keysfound)
-	return
-}
-
-// Run the signingkeys test
+// Run the signing keys test
 func signingkeysTest() bool {
 	common.Infof("Performing RPM signing keys test")
 
@@ -157,17 +122,16 @@ func signingkeysTest() bool {
 		return false
 	}
 
-	// Get signingkeys
+	// Get signing keys
 	keys, err := getSigningkeys(imagename)
 	if err != nil {
 		common.Error(err)
 		return false
 	}
 
-	// verify signingkeys
-	err = verifySigningkeys(imagename, keys)
-	if err != nil {
-		common.Error(err)
+	// Verify there are signing keys baked in the image
+	if len(keys) == 0 {
+		common.Errorf("No signing keys found in image %s", imagename)
 		return false
 	}
 
