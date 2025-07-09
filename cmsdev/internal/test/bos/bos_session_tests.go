@@ -51,7 +51,7 @@ func sessionsTestsAPI(params *common.Params, tenantList []string) (passed bool) 
 		passed = false
 	}
 
-	if !TestBOSSessionsCRUDOperations() {
+	if !TestBOSSessionsCRUDOperationsUsingTenants() {
 		passed = false
 	}
 
@@ -71,7 +71,7 @@ func sessionsTestsCLI(tenantList []string) (passed bool) {
 		passed = false
 	}
 
-	if !TestSessionsCRUDOperationsUsingCLI() {
+	if !TestSessionsCRUDOperationsWithTenantUsingCLI() {
 		passed = false
 	}
 

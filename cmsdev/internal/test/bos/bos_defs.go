@@ -21,7 +21,11 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 package bos
 
-import "stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+import (
+	"sync"
+
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+)
 
 /*
  * bos_defs.go
@@ -91,6 +95,25 @@ type BOSSession struct {
 	Stage            bool   `json:"stage"`
 	Template_name    string `json:"template_name"`
 	Tenant           string `json:"tenant"`
+}
+
+type BOSSessionTemplateInventory struct {
+	TemplateNameList []string `json:"template_name_list"`
+}
+
+var (
+	instance *BOSSessionTemplateInventory
+	once     sync.Once
+)
+
+// GetBOSSessionTemplateInventoryInstance returns the singleton instance of BOSSessionTemplateInventory
+func GetBOSSessionTemplateInventoryInstance() *BOSSessionTemplateInventory {
+	once.Do(func() {
+		instance = &BOSSessionTemplateInventory{
+			TemplateNameList: []string{},
+		}
+	})
+	return instance
 }
 
 // CMS service endpoints

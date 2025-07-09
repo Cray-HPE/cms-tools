@@ -35,9 +35,36 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
 
+func TestBOSSessionsCRUDOperationsUsingTenants() (passed bool) {
+	passed = TestBOSSessionsCRUDOperations()
+	tenantList := []string{}
+	dummyTenantName := "dummy-tenant-" + string(common.GetRandomString(5))
+	tenantList = append(tenantList, dummyTenantName)
+	// Running the tests with tenants
+	tenantName := GetTenantFromList()
+	if len(tenantName) != 0 {
+		tenantList = append(tenantList, tenantName)
+	}
+
+	for _, tenant := range tenantList {
+		// Set the tenant name for the tests
+		common.SetTenantName(tenant)
+		passed = passed && TestBOSSessionsCRUDOperations()
+		// Unsetting the tenant name after tests
+		common.SetTenantName("")
+	}
+	return passed
+}
+
 func TestBOSSessionsCRUDOperations() (passed bool) {
 	passed = true
 	var testRan bool
+	if len(common.GetTenantName()) != 0 {
+		common.PrintLog(fmt.Sprintf("Running BOS session tests with tenant: %s", common.GetTenantName()))
+	} else {
+		common.PrintLog("Running BOS session tests without tenant")
+	}
+
 	// Range over archMap to create session templates with different architectures
 	for arch := range archMap {
 		imageId, err := GetLatestImageIdFromCsmProductCatalog(arch)
@@ -58,8 +85,19 @@ func TestBOSSessionsCRUDOperations() (passed bool) {
 				continue
 			}
 
-			passed = TestBOSSessionsDelete(sessionRecord.Name) &&
-				TestBOSSessionsGetAll() && passed
+			if len(sessionRecord.Name) != 0 {
+				passed = TestBOSSessionsDelete(sessionRecord.Name) &&
+					TestBOSSessionsGetAll() && passed
+				// Deleting session template as part of cleanup
+				sessionTemplateInventory := GetBOSSessionTemplateInventoryInstance()
+				if !DeleteBOSSessionTemplatesAPI(sessionTemplateInventory.TemplateNameList[0]) {
+					common.Errorf("Unable to delete BOS session template '%s'", sessionTemplateInventory.TemplateNameList[0])
+				}
+				// Remove the template from inventory
+				if len(sessionTemplateInventory.TemplateNameList) > 0 {
+					sessionTemplateInventory.TemplateNameList = sessionTemplateInventory.TemplateNameList[1:]
+				}
+			}
 		}
 
 	}
@@ -77,10 +115,11 @@ func TestBOSSessionsCRUDOperations() (passed bool) {
 
 func TestBOSSessionsCreate(staged bool, arch string, imageId string) (sessionRecord BOSSession, passed bool) {
 	sessionName := "BOS_Session_" + string(common.GetRandomString(10))
+	templateName := "BOS_SessionTemplate_" + string(common.GetRandomString(10))
 	common.PrintLog(fmt.Sprintf("Creating BOS session %s with staged=%t", sessionName, staged))
 
 	// Create session payload
-	sessionPayload, success := CreateBOSSessionPayload(sessionName, staged, "reboot", arch, imageId)
+	sessionPayload, success := CreateBOSSessionPayload(sessionName, templateName, staged, "reboot", arch, imageId)
 	if !success {
 		return BOSSession{}, false
 	}
@@ -90,6 +129,10 @@ func TestBOSSessionsCreate(staged bool, arch string, imageId string) (sessionRec
 	sessionRecord, success = CreateBOSSessionAPI(sessionPayload)
 	if !success {
 		return BOSSession{}, false
+	}
+
+	if GetExpectedHTTPStatusCode() != http.StatusOK {
+		return BOSSession{}, true // If the tenant is a dummy tenant, we skip the verification as creation is expected to fail
 	}
 
 	// Verify the created session
@@ -115,6 +158,10 @@ func TestBOSSessionsCreate(staged bool, arch string, imageId string) (sessionRec
 		common.Errorf("BOS session '%s' not found in the list of all sessions", sessionRecord.Name)
 		return BOSSession{}, false
 	}
+	// Add the session template to inventory for cleanup
+	sessionTemplateInventory := GetBOSSessionTemplateInventoryInstance()
+	sessionTemplateInventory.TemplateNameList = append(sessionTemplateInventory.TemplateNameList, templateName)
+
 	common.Infof("BOS session %s created successfully", sessionRecord.Name)
 	return sessionRecord, true
 }

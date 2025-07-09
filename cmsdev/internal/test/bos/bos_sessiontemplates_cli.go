@@ -45,10 +45,10 @@ var bosCliVersions = map[string]string{
 
 func RunVersionedBOSCommand(cliVersion string, cmdArgs ...string) []byte {
 	if cliVersion == "" {
-		return runBosCLI(cmdArgs...)
+		return runTenantBosCLI(common.GetTenantName(), cmdArgs...)
 	}
 	newArgs := append([]string{cliVersion}, cmdArgs...)
-	return runBosCLI(newArgs...)
+	return runTenantBosCLI(common.GetTenantName(), newArgs...)
 }
 
 func GetCreateBOSSessionTemplatePayloadCLI(cfsConfigName string, enableCFS bool, arch string, imageId string) (fileName string, payload string, ok bool) {
@@ -99,6 +99,10 @@ func CreateBOSSessionTemplatesCLI(templateName, filename, cfgName, cliVersion st
 		} else {
 			common.Error(err)
 		}
+	}
+	// if the tenant is a dummy tenant, we expect the command to fail
+	if strings.Contains(common.GetTenantName(), "dummy-tenant") {
+		return BOSSessionTemplate{}, true
 	}
 	return
 }
