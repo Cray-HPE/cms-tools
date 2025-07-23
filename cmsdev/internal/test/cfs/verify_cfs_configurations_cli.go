@@ -31,22 +31,54 @@ package cfs
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
+func TestCFSConfigurationsCRUDOperationWithTenantsUsingCLI() (passed bool) {
+	passed = TestCFSConfigurationsCRUDOperationUsingCLI()
+	tenantList := []string{}
+	dummyTenant := "dummy-tenant-" + string(common.GetRandomString(5))
+	tenantList = append(tenantList, dummyTenant)
+	// Get an actual tenant
+	tenantName := GetTenantFromList()
+	if len(tenantName) > 0 {
+		tenantList = append(tenantList, tenantName)
+	}
+	for _, tenant := range tenantList {
+		common.SetTenantName(tenant)
+		passed = passed && TestCFSConfigurationsCRUDOperationUsingCLI()
+		common.SetTenantName("")
+	}
+	return passed
+}
+
 func TestCFSConfigurationsCRUDOperationUsingCLI() (passed bool) {
 	passed = true
-	// Get supported API versions for configurations endpoints
-	for _, cliVersion := range GetSupportAPIVersions("configurations") {
-		common.PrintLog(fmt.Sprintf("Testing CFS configurations CRUD operations using CLI and version: %s", cliVersion))
-		passed = passed && TestCFSConfigurationsCRUDOperationCLI(cliVersion)
+
+	if len(common.GetTenantName()) != 0 {
+		common.PrintLog(fmt.Sprintf("Running CFS configurations CLI tests with tenant: %s", common.GetTenantName()))
+	} else {
+		common.PrintLog("Running CFS configurations CLI tests without tenant")
 	}
 
-	// Test default CLI version
-	common.PrintLog("Testing CFS configurations CRUD operations using default CLI version")
-	passed = passed && TestCFSConfigurationsCRUDOperationCLI("")
+	// Get supported API versions for configurations endpoints
+	for _, cliVersion := range GetSupportAPIVersions("configurations") {
+		if common.GetTenantName() == "" || cliVersion != "v2" {
+			common.PrintLog(fmt.Sprintf("Testing CFS configurations CRUD operations using CLI and version: %s", cliVersion))
+			result := TestCFSConfigurationsCRUDOperationCLI(cliVersion)
+			passed = passed && result
+		}
+	}
+
+	if common.GetTenantName() == "" {
+		// Test default CLI version which is v2
+		common.PrintLog("Testing CFS configurations CRUD operations using default CLI version")
+		result := TestCFSConfigurationsCRUDOperationCLI("")
+		passed = passed && result
+	}
 
 	return passed
 }
@@ -59,16 +91,19 @@ func TestCFSConfigurationsCRUDOperationCLI(cliVersion string) (passed bool) {
 		return false
 	}
 
-	// Update the CFS configuration using CLI
-	updated := TestCLICFSConfigurationUpdate(cfsConfigurationRecord.Name, cliVersion)
+	if len(cfsConfigurationRecord.Name) != 0 {
+		// Update the CFS configuration using CLI
+		updated := TestCLICFSConfigurationUpdate(cfsConfigurationRecord.Name, cliVersion)
 
-	// Delete the CFS configuration using CLI
-	deleted := TestCLICFSConfigurationDelete(cfsConfigurationRecord.Name, cliVersion)
+		// Delete the CFS configuration using CLI
+		deleted := TestCLICFSConfigurationDelete(cfsConfigurationRecord.Name, cliVersion)
 
-	// Get all CFS configurations using CLI
-	getAll := TestCLICFSConfigurationGetAll(cliVersion)
+		// Get all CFS configurations using CLI
+		getAll := TestCLICFSConfigurationGetAll(cliVersion)
 
-	return updated && deleted && getAll
+		return updated && deleted && getAll
+	}
+	return true
 }
 
 func TestCLICFSConfigurationCreate(cliVersion string) (cfsConfigurationRecord CFSConfiguration, passed bool) {
@@ -82,16 +117,30 @@ func TestCLICFSConfigurationCreate(cliVersion string) (cfsConfigurationRecord CF
 		return CFSConfiguration{}, false
 	}
 
+	common.Infof("Creating CFS configuration with file: %s", fileName)
+
+	if strings.Contains(common.GetTenantName(), "dummy-tenant") {
+		// Set execution return code to 2, since dummy tenant is used
+		test.SetCliExecreturnCode(2)
+	}
+
 	// Create a CFS configuration using CLI
 	cfsConfigurationRecord, success = CreateUpdateCFSConfigurationCLI(cfgName, fileName, cliVersion)
 	if !success {
 		common.Errorf("Failed to create CFS configuration using CLI")
+		// set the CLI execution return code to 0 if code execution reaches here and CLI execution return code was set to 2
+		test.SetCliExecreturnCode(0)
 		return CFSConfiguration{}, false
 	}
 
 	// Remove the created configuration file
 	if err := os.Remove(fileName); err != nil {
 		common.Errorf("Unable to remove file %s: %v", fileName, err)
+	}
+
+	if test.GetCliExecreturnCode() != 0 {
+		test.SetCliExecreturnCode(0)
+		return CFSConfiguration{}, true // if the tenant is dummy, we skip the verification as creation is expected to fail
 	}
 
 	// Verify CFS configuration record using CLI

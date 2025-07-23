@@ -33,24 +33,27 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
-func TestCFSSourcesCRUDOperationCLI() (passed bool) {
+func TestCFSSourcesCRUDOperationUsingCLI() (passed bool) {
 	passed = true
+
 	// Create a CFS configuration using CLI
 	cfsConfigurationRecord, success := TestCLICFSSourcesCreate("v3")
 	if !success {
 		return false
 	}
 
-	// Update the CFS configuration using CLI
-	updated := TestCLICFSSourcesUpdate(cfsConfigurationRecord.Name, "v3")
+	if len(cfsConfigurationRecord.Name) != 0 {
+		// Update the CFS configuration using CLI
+		updated := TestCLICFSSourcesUpdate(cfsConfigurationRecord.Name, "v3")
 
-	// Delete the CFS configuration using CLI
-	deleted := TestCLICFSSourcesDelete(cfsConfigurationRecord.Name, "v3")
+		// Delete the CFS configuration using CLI
+		deleted := TestCLICFSSourcesDelete(cfsConfigurationRecord.Name, "v3")
 
-	// Get all CFS configurations using CLI
-	getAll := TestCLICFSSourcesGetAll("v3")
-
-	return passed && updated && deleted && getAll
+		// Get all CFS configurations using CLI
+		getAll := TestCLICFSSourcesGetAll("v3")
+		return passed && updated && deleted && getAll
+	}
+	return passed
 }
 
 func TestCLICFSSourcesCreate(cliVersion string) (cfsSourceRecord CFSSources, passed bool) {

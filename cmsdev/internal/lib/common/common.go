@@ -58,6 +58,9 @@ var IMSAPIVERSIONS = []string{
 // variable to dynamically set the API version to be used in the tests
 var imsAPIVersions string = ""
 
+// variable to dynamically set the tenant name to be used in the tests
+var tenantName string = ""
+
 // List of RPMs version captured at the start of the test. In case of failure, rpm -qa will be captured.
 var RPMLIST = []string{
 	"craycli",
@@ -167,6 +170,15 @@ func SetIMSAPIVersion(version string) {
 func GetIMSAPIVersion() string {
 	// Get the API version to be used in the tests
 	return imsAPIVersions
+}
+
+func SetTenantName(name string) {
+	// Set the tenant name to be used in the tests
+	tenantName = name
+}
+
+func GetTenantName() string {
+	return tenantName
 }
 
 // Set and unset the run sub-tag

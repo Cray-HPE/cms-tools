@@ -35,30 +35,59 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
 
+func TestCFSConfigurationsCRUDOperationWithTenantsUsingAPIVersions() (passed bool) {
+	passed = TestCFSConfigurationsCRUDOperationUsingAPIVersions()
+	tenantList := []string{}
+	dummyTenant := "dummy-tenant-" + string(common.GetRandomString(5))
+	tenantList = append(tenantList, dummyTenant)
+	// Get an actual tenant
+	tenantName := GetTenantFromList()
+	if len(tenantName) > 0 {
+		tenantList = append(tenantList, tenantName)
+	}
+	for _, tenant := range tenantList {
+		common.SetTenantName(tenant)
+		passed = passed && TestCFSConfigurationsCRUDOperationUsingAPIVersions()
+		common.SetTenantName("")
+	}
+	return passed
+
+}
+
 func TestCFSConfigurationsCRUDOperationUsingAPIVersions() (passed bool) {
 	passed = true
 	// Get supported API versions for configurations endpoints
 	for _, apiVersion := range GetSupportAPIVersions("configurations") {
-		common.PrintLog(fmt.Sprintf("Testing CFS configurations CRUD operations using API version: %s", apiVersion))
-		passed = passed && TestCFSConfigurationsCRUDOperation(apiVersion)
+		if common.GetTenantName() == "" || apiVersion != "v2" {
+			common.PrintLog(fmt.Sprintf("Testing CFS configurations CRUD operations using API version: %s", apiVersion))
+			passed = passed && TestCFSConfigurationsCRUDOperation(apiVersion)
+		}
 	}
 
 	return passed
 }
 
 func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
+	if len(common.GetTenantName()) != 0 {
+		common.PrintLog(fmt.Sprintf("Running CFS configurations tests with tenant: %s", common.GetTenantName()))
+	} else {
+		common.PrintLog("Running CFS configurations tests without tenant")
+	}
 	cfsConfigurationRecord, success := TestCFSConfigurationCreate(apiVersion)
 	if !success {
 		return false
 	}
 
-	updated := TestCFSConfigurationUpdate(cfsConfigurationRecord.Name, apiVersion)
+	if len(cfsConfigurationRecord.Name) != 0 {
+		updated := TestCFSConfigurationUpdate(cfsConfigurationRecord.Name, apiVersion)
 
-	deleted := TestCFSConfigurationDelete(cfsConfigurationRecord.Name, apiVersion)
+		deleted := TestCFSConfigurationDelete(cfsConfigurationRecord.Name, apiVersion)
 
-	getAll := TestCFSConfigurationGetAll(apiVersion)
+		getAll := TestCFSConfigurationGetAll(apiVersion)
 
-	return updated && deleted && getAll
+		return updated && deleted && getAll
+	}
+	return true
 }
 
 func TestCFSConfigurationCreate(apiVersion string) (cfsConfigurationRecord CFSConfiguration, success bool) {
@@ -76,6 +105,11 @@ func TestCFSConfigurationCreate(apiVersion string) (cfsConfigurationRecord CFSCo
 	cfsConfigurationRecord, success = CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload)
 	if !success {
 		return CFSConfiguration{}, false
+	}
+
+	// If the create operation is performed using dummy tenant, we expect the status code not to be 200.
+	if GetExpectedHTTPStatusCode() != http.StatusOK {
+		return CFSConfiguration{}, true
 	}
 
 	// verify Cfs configuration record

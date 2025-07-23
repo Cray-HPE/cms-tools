@@ -33,7 +33,9 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 
+	resty "gopkg.in/resty.v1"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
@@ -155,7 +157,7 @@ func CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, payload string) 
 	// Set the payload for the request
 	params.JsonStr = payload
 	url := constructCFSURL("configurations", apiVersion) + "/" + cfgName
-	resp, err := test.RestfulVerifyStatus("PUT", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("PUT", url, *params, http.StatusOK)
 
 	if err != nil {
 		common.Error(err)
@@ -180,7 +182,7 @@ func GetCFSConfigurationRecordAPI(cfgName, apiVersion string, httpStatus int) (c
 	}
 
 	url := constructCFSURL("configurations", apiVersion) + "/" + cfgName
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, httpStatus)
 
 	if err != nil {
 		common.Error(err)
@@ -205,7 +207,7 @@ func GetCFSConfigurationsListAPIV2(apiVersion string) (cfsConfigurations []CFSCo
 	}
 
 	url := constructCFSURL("configurations", apiVersion)
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, http.StatusOK)
 
 	if err != nil {
 		common.Error(err)
@@ -230,7 +232,7 @@ func GetCFSConfigurationsListAPI(apiVersion string) (cfsConfigurations CFSConfig
 	}
 
 	url := constructCFSURL("configurations", apiVersion)
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, http.StatusOK)
 
 	if err != nil {
 		common.Error(err)
@@ -273,7 +275,7 @@ func DeleteCFSConfigurationRecordAPI(cfgName, apiVersion string) (ok bool) {
 	}
 
 	url := constructCFSURL("configurations", apiVersion) + "/" + cfgName
-	_, err := test.RestfulVerifyStatus("DELETE", url, *params, http.StatusNoContent)
+	_, err := VerifyRestStatusWithTenant("DELETE", url, *params, http.StatusNoContent)
 
 	if err != nil {
 		common.Error(err)
@@ -358,4 +360,44 @@ func constructCFSURL(endpoint, apiVersion string) string {
 		return base + "/" + apiVersion + endpoints["cfs"][endpoint].Uri
 	}
 	return base + endpoints["cfs"][endpoint].Uri
+}
+
+func VerifyRestStatusWithTenant(method, uri string, params common.Params, expectedStatus int) (*resty.Response, error) {
+	tenantName := common.GetTenantName()
+	// Checking if Tenant name is set or not
+	if len(tenantName) == 0 {
+		return test.RestfulVerifyStatus(method, uri, params, expectedStatus)
+	} else {
+		if strings.Contains(tenantName, "dummy-tenant") {
+			// If the tenant name is a dummy tenant, we can skip the verification
+			return test.TenantRestfulVerifyStatus(method, uri, tenantName, params, http.StatusBadRequest)
+		}
+		return test.TenantRestfulVerifyStatus(method, uri, tenantName, params, expectedStatus)
+	}
+}
+
+func GetExpectedHTTPStatusCode() int {
+	tenantName := common.GetTenantName()
+	if strings.Contains(tenantName, "dummy-tenant") {
+		// If the tenant name is a dummy tenant, we can skip the verification
+		return http.StatusBadRequest
+	}
+	return http.StatusOK
+}
+
+func GetTenantFromList() string {
+	tenantList, err := k8s.GetTenants()
+	if err != nil {
+		common.Errorf("Error getting tenant list: %s", err.Error())
+		return ""
+	}
+
+	// Set the tenant name to be used in the tests
+	tenantName, err := common.GetRandomStringFromList(tenantList)
+	if err != nil {
+		common.Errorf("Error getting random tenant from list: %s", err.Error())
+		return ""
+	}
+	common.Infof("Using tenant: %s", tenantName)
+	return tenantName
 }
