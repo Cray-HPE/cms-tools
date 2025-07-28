@@ -124,11 +124,11 @@ func TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfgName s
 
 	common.SetTenantName(newTenant)
 	// Attempt to create CFS configuration with the same name in a different tenant
-	_, success = CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, http.StatusBadRequest)
+	_, success = CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, http.StatusForbidden)
 	// Reset tenant name to the original tenant
 	common.SetTenantName(currentTenant)
 
-	if success {
+	if !success {
 		common.Errorf("Create CFS configuration successful with same name %s for a different tenant: %s", cfgName, newTenant)
 		return false
 	}
@@ -207,11 +207,11 @@ func TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfgName string) (
 
 	common.SetTenantName(newTenant)
 	// Attempt to update CFS configuration with the same name in a different tenant
-	_, success = CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, http.StatusBadRequest)
+	_, success = CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, http.StatusForbidden)
 	// Reset tenant name to the original tenant
 	common.SetTenantName(currentTenant)
 
-	if success {
+	if !success {
 		common.Errorf("Successfully updated CFS configuration %s using new tenant: %s", cfgName, newTenant)
 		return false
 	}
@@ -274,11 +274,11 @@ func TestCFSConfigurationDeleteUsingDifferentTenant(apiVersion, cfgName string) 
 
 	common.SetTenantName(newTenant)
 	// Attempt to delete CFS configuration with the same name in a different tenant
-	success = DeleteCFSConfigurationRecordAPI(cfgName, apiVersion, http.StatusBadRequest)
+	success = DeleteCFSConfigurationRecordAPI(cfgName, apiVersion, http.StatusForbidden)
 	// Reset tenant name to the original tenant
 	common.SetTenantName(currentTenant)
 
-	if success {
+	if !success {
 		common.Errorf("Successfully deleted CFS configuration %s using new tenant: %s", cfgName, newTenant)
 		return false
 	}

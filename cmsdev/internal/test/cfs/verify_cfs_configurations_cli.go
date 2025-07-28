@@ -49,7 +49,8 @@ func TestCFSConfigurationsCRUDOperationWithTenantsUsingCLI() (passed bool) {
 	}
 	for _, tenant := range tenantList {
 		common.SetTenantName(tenant)
-		passed = passed && TestCFSConfigurationsCRUDOperationUsingCLI()
+		result := TestCFSConfigurationsCRUDOperationUsingCLI()
+		passed = passed && result
 		common.SetTenantName("")
 	}
 	return passed
@@ -91,6 +92,13 @@ func TestCFSConfigurationsCRUDOperationCLI(cliVersion string) (passed bool) {
 		return false
 	}
 
+	if len(cfsConfigurationRecord.Name) != 0 && !strings.Contains(common.GetTenantName(), "dummy-tenant") && cliVersion == "v3" {
+		createdWithTenant := TestCLICFSConfigurationCreateWithSameNameDifferentTenant(cfsConfigurationRecord.Name, cliVersion)
+		updatedWithTenant := TestCLICFSConfigurationUpdateWithDifferentTenant(cfsConfigurationRecord.Name, cliVersion)
+		deletedWithTenant := TestCLICFSConfigurationDeleteWithDifferentTenant(cfsConfigurationRecord.Name, cliVersion)
+		passed = createdWithTenant && updatedWithTenant && deletedWithTenant
+	}
+
 	if len(cfsConfigurationRecord.Name) != 0 {
 		// Update the CFS configuration using CLI
 		updated := TestCLICFSConfigurationUpdate(cfsConfigurationRecord.Name, cliVersion)
@@ -101,9 +109,53 @@ func TestCFSConfigurationsCRUDOperationCLI(cliVersion string) (passed bool) {
 		// Get all CFS configurations using CLI
 		getAll := TestCLICFSConfigurationGetAll(cliVersion)
 
-		return updated && deleted && getAll
+		return passed && updated && deleted && getAll
 	}
 	return true
+}
+
+func TestCLICFSConfigurationCreateWithSameNameDifferentTenant(cfgName, cliVersion string) (passed bool) {
+	common.PrintLog(fmt.Sprintf("Creating CFS configuration with same name and different tenant: %s", cfgName))
+	currentTenant := common.GetTenantName()
+	newTenant := GetAnotherTenantFromList(currentTenant)
+
+	if len(newTenant) == 0 {
+		common.Warnf("No other tenant found to test CFS configuration creation with same name, skipping the test.")
+		return true
+	}
+
+	common.SetTenantName(newTenant)
+
+	common.Infof("Creating CFS configuration %s belonging to tenant %s using new tenant %s", cfgName, currentTenant, newTenant)
+
+	// Create CFS configuration payload
+	fileName, _, success := CreateCFSConfigurationFile(cfgName, cliVersion)
+	if !success {
+		return false
+	}
+	// Set the CLI execution return code to 2, since creating the configuration with the same name with different tenant is expected to fail
+	test.SetCliExecreturnCode(2)
+	// Create a CFS configuration using CLI
+	_, success = CreateUpdateCFSConfigurationCLI(cfgName, fileName, cliVersion)
+
+	// Set the CLi execution code back to 0
+	test.SetCliExecreturnCode(0)
+	// Reset tenant name to the original tenant
+	common.SetTenantName(currentTenant)
+
+	if success {
+		common.Errorf("Created CFS configuration %s using CLI with different tenant %s.", cfgName, newTenant)
+		return false
+	}
+
+	// Remove the created configuration file
+	if err := os.Remove(fileName); err != nil {
+		common.Errorf("Unable to remove file %s: %v", fileName, err)
+	}
+
+	passed = true
+	common.Infof("Unable to Create CFS configuration with same name %s for a different tenant: %s", cfgName, newTenant)
+	return
 }
 
 func TestCLICFSConfigurationCreate(cliVersion string) (cfsConfigurationRecord CFSConfiguration, passed bool) {
@@ -170,6 +222,50 @@ func TestCLICFSConfigurationCreate(cliVersion string) (cfsConfigurationRecord CF
 	return cfsConfigurationRecord, true
 }
 
+func TestCLICFSConfigurationUpdateWithDifferentTenant(cfgName, cliVersion string) (passed bool) {
+	common.PrintLog(fmt.Sprintf("Updating CFS configuration %s with different tenant.", cfgName))
+	currentTenant := common.GetTenantName()
+	newTenant := GetAnotherTenantFromList(currentTenant)
+
+	if len(newTenant) == 0 {
+		common.Warnf("No other tenant found to test CFS configuration update with same name, skipping the test.")
+		return true
+	}
+
+	common.SetTenantName(newTenant)
+
+	common.Infof("Updating CFS configuration %s belonging to tenant %s using new tenant %s", cfgName, currentTenant, newTenant)
+
+	// Get CFS configuration payload
+	fileName, _, success := CreateCFSConfigurationFile(cfgName, cliVersion)
+	if !success {
+		return false
+	}
+	// Set the CLI execution return code to 2, since updating the configuration with different tenant is expected to fail
+	test.SetCliExecreturnCode(2)
+	// Update a CFS configuration using CLI
+	_, success = CreateUpdateCFSConfigurationCLI(cfgName, fileName, cliVersion)
+
+	// Set the CLi execution code back to 0
+	test.SetCliExecreturnCode(0)
+	// Reset tenant name to the original tenant
+	common.SetTenantName(currentTenant)
+
+	if success {
+		common.Errorf("Updated CFS configuration %s using CLI with different tenant %s.", cfgName, newTenant)
+		return false
+	}
+
+	// Remove the created configuration file
+	if err := os.Remove(fileName); err != nil {
+		common.Errorf("Unable to remove file %s: %v", fileName, err)
+	}
+
+	passed = true
+	common.Infof("CFS configuration %s not updated using new tenant: %s", cfgName, newTenant)
+	return
+}
+
 func TestCLICFSConfigurationUpdate(cfgName, cliVersion string) (passed bool) {
 	common.PrintLog(fmt.Sprintf("Updating CFS configuration: %s", cfgName))
 
@@ -216,6 +312,40 @@ func TestCLICFSConfigurationUpdate(cfgName, cliVersion string) (passed bool) {
 
 	common.Infof("CFS configuration updated successfully: %s", cfgName)
 	return true
+}
+
+func TestCLICFSConfigurationDeleteWithDifferentTenant(cfgName, cliVersion string) (passed bool) {
+	common.PrintLog(fmt.Sprintf("Deleting CFS configuration %s with different tenant.", cfgName))
+	currentTenant := common.GetTenantName()
+	newTenant := GetAnotherTenantFromList(currentTenant)
+
+	if len(newTenant) == 0 {
+		common.Warnf("No other tenant found to test CFS configuration deletion with same name, skipping the test.")
+		return true
+	}
+
+	common.SetTenantName(newTenant)
+
+	common.Infof("Deleting CFS configuration %s belonging to tenant %s using new tenant %s", cfgName, currentTenant, newTenant)
+
+	// Set the CLI execution return code to 2, since deleting the configuration with different tenant is expected to fail
+	test.SetCliExecreturnCode(2)
+	// Delete a CFS configuration using CLI
+	success := DeleteCFSConfigurationRecordCLI(cfgName, cliVersion)
+
+	// Set the CLi execution code back to 0
+	test.SetCliExecreturnCode(0)
+	// Reset tenant name to the original tenant
+	common.SetTenantName(currentTenant)
+
+	if success {
+		common.Errorf("Deleted CFS configuration %s using CLI with different tenant %s.", cfgName, newTenant)
+		return false
+	}
+
+	passed = true
+	common.Infof("CFS configuration %s not deleted using new tenant: %s", cfgName, newTenant)
+	return
 }
 
 func TestCLICFSConfigurationDelete(cfgName, cliVersion string) (passed bool) {
