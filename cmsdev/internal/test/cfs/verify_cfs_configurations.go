@@ -31,6 +31,7 @@ package cfs
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
@@ -47,7 +48,8 @@ func TestCFSConfigurationsCRUDOperationWithTenantsUsingAPIVersions() (passed boo
 	}
 	for _, tenant := range tenantList {
 		common.SetTenantName(tenant)
-		passed = passed && TestCFSConfigurationsCRUDOperationUsingAPIVersions()
+		result := TestCFSConfigurationsCRUDOperationUsingAPIVersions()
+		passed = passed && result
 		common.SetTenantName("")
 	}
 	return passed
@@ -60,7 +62,8 @@ func TestCFSConfigurationsCRUDOperationUsingAPIVersions() (passed bool) {
 	for _, apiVersion := range GetSupportAPIVersions("configurations") {
 		if common.GetTenantName() == "" || apiVersion != "v2" {
 			common.PrintLog(fmt.Sprintf("Testing CFS configurations CRUD operations using API version: %s", apiVersion))
-			passed = passed && TestCFSConfigurationsCRUDOperation(apiVersion)
+			result := TestCFSConfigurationsCRUDOperation(apiVersion)
+			passed = passed && result
 		}
 	}
 
@@ -68,6 +71,7 @@ func TestCFSConfigurationsCRUDOperationUsingAPIVersions() (passed bool) {
 }
 
 func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
+	passed = true
 	if len(common.GetTenantName()) != 0 {
 		common.PrintLog(fmt.Sprintf("Running CFS configurations tests with tenant: %s", common.GetTenantName()))
 	} else {
@@ -78,6 +82,14 @@ func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 		return false
 	}
 
+	// Testing CFS configuration CRUD operation that does not belong to the same tenant
+	if len(cfsConfigurationRecord.Name) != 0 && !strings.Contains(common.GetTenantName(), "dummy-tenant") && apiVersion != "v2" {
+		createdWithTenant := TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfsConfigurationRecord.Name)
+		updatedWithTenant := TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfsConfigurationRecord.Name)
+		deletedWithTenant := TestCFSConfigurationDeleteUsingDifferentTenant(apiVersion, cfsConfigurationRecord.Name)
+		passed = createdWithTenant && updatedWithTenant && deletedWithTenant
+	}
+
 	if len(cfsConfigurationRecord.Name) != 0 {
 		updated := TestCFSConfigurationUpdate(cfsConfigurationRecord.Name, apiVersion)
 
@@ -85,8 +97,42 @@ func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 
 		getAll := TestCFSConfigurationGetAll(apiVersion)
 
-		return updated && deleted && getAll
+		return passed && updated && deleted && getAll
 	}
+	return true
+}
+
+func TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfgName string) (success bool) {
+
+	common.PrintLog(fmt.Sprintf("Creating CFS configuration with same name and different tenant: %s", cfgName))
+
+	// get CFS configuration payload
+	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion)
+	if !success {
+		return false
+	}
+
+	currentTenant := common.GetTenantName()
+	newTenant := GetAnotherTenantFromList(currentTenant)
+
+	if len(newTenant) == 0 {
+		common.Warnf("No other tenant found to test CFS configuration creation with same name, skipping the test.")
+		return true
+	}
+
+	common.Infof("Creating CFS configuration %s belonging to tenant %s using new tenant %s", cfgName, currentTenant, newTenant)
+
+	common.SetTenantName(newTenant)
+	// Attempt to create CFS configuration with the same name in a different tenant
+	_, success = CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, http.StatusBadRequest)
+	// Reset tenant name to the original tenant
+	common.SetTenantName(currentTenant)
+
+	if success {
+		common.Errorf("Create CFS configuration successful with same name %s for a different tenant: %s", cfgName, newTenant)
+		return false
+	}
+	common.Infof("Unable to Create CFS configuration with same name %s for a different tenant: %s", cfgName, newTenant)
 	return true
 }
 
@@ -102,7 +148,7 @@ func TestCFSConfigurationCreate(apiVersion string) (cfsConfigurationRecord CFSCo
 	}
 
 	// create CFS configuration
-	cfsConfigurationRecord, success = CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload)
+	cfsConfigurationRecord, success = CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, http.StatusOK)
 	if !success {
 		return CFSConfiguration{}, false
 	}
@@ -140,6 +186,40 @@ func TestCFSConfigurationCreate(apiVersion string) (cfsConfigurationRecord CFSCo
 	return cfsConfigurationRecord, true
 }
 
+func TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfgName string) (success bool) {
+	common.PrintLog(fmt.Sprintf("Updating CFS configuration %s with a non owner tenant.", cfgName))
+
+	// get CFS configuration payload
+	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion)
+	if !success {
+		return false
+	}
+
+	currentTenant := common.GetTenantName()
+	newTenant := GetAnotherTenantFromList(currentTenant)
+
+	if len(newTenant) == 0 {
+		common.Warnf("No other tenant found to test CFS configuration update with same name, skipping the test.")
+		return true
+	}
+
+	common.Infof("Updating CFS configuration %s belonging to tenant %s using new tenant %s", cfgName, currentTenant, newTenant)
+
+	common.SetTenantName(newTenant)
+	// Attempt to update CFS configuration with the same name in a different tenant
+	_, success = CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, http.StatusBadRequest)
+	// Reset tenant name to the original tenant
+	common.SetTenantName(currentTenant)
+
+	if success {
+		common.Errorf("Successfully updated CFS configuration %s using new tenant: %s", cfgName, newTenant)
+		return false
+	}
+	common.Infof("CFS configuration %s not updated using new tenant: %s", cfgName, newTenant)
+
+	return true
+}
+
 func TestCFSConfigurationUpdate(cfgName, apiVersion string) (success bool) {
 	common.PrintLog(fmt.Sprintf("Updating CFS configuration: %s", cfgName))
 	// get CFS configuration payload
@@ -149,7 +229,7 @@ func TestCFSConfigurationUpdate(cfgName, apiVersion string) (success bool) {
 	}
 
 	// Update CFS configuration record
-	cfsConfigurationRecord, success := CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload)
+	cfsConfigurationRecord, success := CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, http.StatusOK)
 	if !success {
 		return false
 	}
@@ -178,10 +258,39 @@ func TestCFSConfigurationUpdate(cfgName, apiVersion string) (success bool) {
 	return true
 }
 
+func TestCFSConfigurationDeleteUsingDifferentTenant(apiVersion, cfgName string) (success bool) {
+	common.PrintLog(fmt.Sprintf("Deleting CFS configuration %s using a different tenant", cfgName))
+
+	// Get another tenant
+	currentTenant := common.GetTenantName()
+	newTenant := GetAnotherTenantFromList(currentTenant)
+
+	if len(newTenant) == 0 {
+		common.Warnf("No other tenant found to test CFS configuration deletion with same name, skipping the test.")
+		return true
+	}
+
+	common.Infof("Deleting CFS configuration %s belonging to tenant %s using new tenant %s", cfgName, currentTenant, newTenant)
+
+	common.SetTenantName(newTenant)
+	// Attempt to delete CFS configuration with the same name in a different tenant
+	success = DeleteCFSConfigurationRecordAPI(cfgName, apiVersion, http.StatusBadRequest)
+	// Reset tenant name to the original tenant
+	common.SetTenantName(currentTenant)
+
+	if success {
+		common.Errorf("Successfully deleted CFS configuration %s using new tenant: %s", cfgName, newTenant)
+		return false
+	}
+	common.Infof("CFS configuration %s not deleted using new tenant: %s", cfgName, newTenant)
+
+	return true
+}
+
 func TestCFSConfigurationDelete(cfgName string, apiVersion string) (success bool) {
 	common.PrintLog(fmt.Sprintf("Deleting CFS configuration: %s", cfgName))
 	// Delete CFS configuration record
-	success = DeleteCFSConfigurationRecordAPI(cfgName, apiVersion)
+	success = DeleteCFSConfigurationRecordAPI(cfgName, apiVersion, http.StatusNoContent)
 	if !success {
 		return false
 	}

@@ -147,7 +147,7 @@ func GetCreateCFGConfigurationPayload(apiVersion string) (payload string, ok boo
 	return string(jsonPayload), true
 }
 
-func CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, payload string) (cfsConfig CFSConfiguration, ok bool) {
+func CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, payload string, httpStatus int) (cfsConfig CFSConfiguration, ok bool) {
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		common.Error(fmt.Errorf("Unable to get access token params"))
@@ -157,7 +157,7 @@ func CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, payload string) 
 	// Set the payload for the request
 	params.JsonStr = payload
 	url := constructCFSURL("configurations", apiVersion) + "/" + cfgName
-	resp, err := VerifyRestStatusWithTenant("PUT", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("PUT", url, *params, httpStatus)
 
 	if err != nil {
 		common.Error(err)
@@ -267,7 +267,7 @@ func GetAPIBasedCFSConfigurationRecordList(apiVersion string) (cfsConfig []CFSCo
 	return cfsConfig, true
 }
 
-func DeleteCFSConfigurationRecordAPI(cfgName, apiVersion string) (ok bool) {
+func DeleteCFSConfigurationRecordAPI(cfgName, apiVersion string, httpStatus int) (ok bool) {
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		common.Error(fmt.Errorf("Unable to get access token params"))
@@ -275,7 +275,7 @@ func DeleteCFSConfigurationRecordAPI(cfgName, apiVersion string) (ok bool) {
 	}
 
 	url := constructCFSURL("configurations", apiVersion) + "/" + cfgName
-	_, err := VerifyRestStatusWithTenant("DELETE", url, *params, http.StatusNoContent)
+	_, err := VerifyRestStatusWithTenant("DELETE", url, *params, httpStatus)
 
 	if err != nil {
 		common.Error(err)
@@ -399,5 +399,22 @@ func GetTenantFromList() string {
 		return ""
 	}
 	common.Infof("Using tenant: %s", tenantName)
+	return tenantName
+}
+
+func GetAnotherTenantFromList(currentTenant string) string {
+	tenantList, err := k8s.GetTenants()
+	if err != nil {
+		common.Errorf("Error getting tenant list: %s", err.Error())
+		return ""
+	}
+
+	// Set the tenant name to be used in the tests
+	tenantName, err := common.GetRandomStringFromListExcept(tenantList, currentTenant)
+	if err != nil {
+		common.Errorf("Error getting random tenant from list excluding %s: %s", currentTenant, err.Error())
+		return ""
+	}
+	common.Infof("Using another tenant: %s", tenantName)
 	return tenantName
 }

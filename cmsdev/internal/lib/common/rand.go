@@ -74,6 +74,20 @@ func GetRandomStringFromList(stringList []string) (randString string, err error)
 	return
 }
 
+// Returns a random string from a list of strings accept for the one specified
+func GetRandomStringFromListExcept(stringList []string, except string) (randString string, err error) {
+	if len(stringList) > 1 {
+		listIndex := IntInRange(0, len(stringList)-1)
+		randString = stringList[listIndex]
+		if randString == except {
+			return GetRandomStringFromListExcept(stringList, except)
+		}
+	} else {
+		err = fmt.Errorf("Tenant List does not have enough elements to choose from. Current list length: %d", len(stringList))
+	}
+	return
+}
+
 // Generate a random string of the specified length from the specified characters
 func StringFromChars(length int, chars string) string {
 	out := make([]byte, length)
