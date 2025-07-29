@@ -93,6 +93,8 @@ func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 			// Verify that the system admin is able to create a configuration of the same name, but belonging to tenant A
 			createdWithOldTenant := TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cfsConfigurationRecord.Name, currentTenant)
 			passed = passed && createdWithAdmin && createdWithNoTenant && createdWithOldTenant
+			// Seeting the tenant back to the original tenant
+			common.SetTenantName(currentTenant)
 		}
 	}
 
@@ -151,14 +153,12 @@ func TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cf
 	// verify Cfs configuration record
 	_, success = GetCFSConfigurationRecordAPI(cfgName, apiVersion, http.StatusOK)
 	if !success {
-		common.SetTenantName(currentTenant)
 		common.Errorf("Unable to get CFS configuration record: %s", cfgName)
 		return false
 	}
 
 	// Verify cfs configurations in the list of configurations
 	cfsConfigurations, success := GetAPIBasedCFSConfigurationRecordList(apiVersion)
-	common.SetTenantName(currentTenant)
 	if !success {
 		common.Errorf("Unable to get CFS configurations list")
 		return false
