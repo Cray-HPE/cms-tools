@@ -191,6 +191,7 @@ func TestCLICFSConfigurationCreate(cliVersion string) (cfsConfigurationRecord CF
 	}
 
 	if test.GetCliExecreturnCode() != 0 {
+		common.Infof("CFS configuration %s not created with dummy tenant: %s", cfgName, common.GetTenantName())
 		test.SetCliExecreturnCode(0)
 		return CFSConfiguration{}, true // if the tenant is dummy, we skip the verification as creation is expected to fail
 	}

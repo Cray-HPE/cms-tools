@@ -49,7 +49,7 @@ func RunVersionedCFSCommand(cliVersion string, cmdArgs ...string) []byte {
 
 func CreateCFSConfigurationFile(cfgName, cliVersion string) (fileName string, payload string, ok bool) {
 	fileName = "cfs_configuration"
-	payload, success := GetCreateCFGConfigurationPayload(cliVersion)
+	payload, success := GetCreateCFGConfigurationPayload(cliVersion, false)
 	if !success {
 		return "", "", false
 	}

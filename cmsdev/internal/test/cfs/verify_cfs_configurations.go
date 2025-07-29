@@ -82,6 +82,20 @@ func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 		return false
 	}
 
+	currentTenant := common.GetTenantName()
+	if len(cfsConfigurationRecord.Name) != 0 && !strings.Contains(currentTenant, "dummy-tenant") && currentTenant != "" {
+		NewTenant := GetAnotherTenantFromList(currentTenant)
+		if len(NewTenant) != 0 {
+			// Verify that the system admin is able to create a configuration of the same name, but belonging to tenant B
+			createdWithAdmin := TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cfsConfigurationRecord.Name, NewTenant)
+			// Verify that the system admin is able to create a configuration of the same name, but that belongs to no tenant
+			createdWithNoTenant := TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cfsConfigurationRecord.Name, "")
+			// Verify that the system admin is able to create a configuration of the same name, but belonging to tenant A
+			createdWithOldTenant := TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cfsConfigurationRecord.Name, currentTenant)
+			passed = passed && createdWithAdmin && createdWithNoTenant && createdWithOldTenant
+		}
+	}
+
 	// Testing CFS configuration CRUD operation that does not belong to the same tenant
 	if len(cfsConfigurationRecord.Name) != 0 && !strings.Contains(common.GetTenantName(), "dummy-tenant") && apiVersion != "v2" {
 		createdWithTenant := TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfsConfigurationRecord.Name)
@@ -102,12 +116,73 @@ func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 	return true
 }
 
+func TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cfgName, newTenant string) (success bool) {
+	common.PrintLog(fmt.Sprintf("Admin Creating CFS configuration with same name %s and different tenant.", cfgName))
+	var addTenant bool
+
+	currentTenant := common.GetTenantName()
+
+	// Set the tenant name to the new tenant so that it is used for creation of paylaod
+	if len(newTenant) != 0 {
+		common.SetTenantName(newTenant)
+		addTenant = true
+	} else {
+		addTenant = false
+	}
+
+	// get CFS configuration payload with tenane_name set in the payload
+	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion, addTenant)
+	if !success {
+		return false
+	}
+
+	common.Infof("Admin Creating CFS configuration %s belonging to tenant %s using new tenant %s", cfgName, currentTenant, newTenant)
+
+	// Unsetting the tenant name to create a configuration that belongs to the new tenant using admin
+	common.SetTenantName("")
+	// Attempt to create CFS configuration with the same name in a different tenant
+	cfsConfigurationRecord, success := CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, http.StatusOK)
+	if !success {
+		return false
+	}
+
+	// Set the new tenant for GET call to work
+	common.SetTenantName(newTenant)
+	// verify Cfs configuration record
+	_, success = GetCFSConfigurationRecordAPI(cfgName, apiVersion, http.StatusOK)
+	if !success {
+		common.SetTenantName(currentTenant)
+		common.Errorf("Unable to get CFS configuration record: %s", cfgName)
+		return false
+	}
+
+	// Verify cfs configurations in the list of configurations
+	cfsConfigurations, success := GetAPIBasedCFSConfigurationRecordList(apiVersion)
+	common.SetTenantName(currentTenant)
+	if !success {
+		common.Errorf("Unable to get CFS configurations list")
+		return false
+	}
+
+	if !CFSConfigurationExists(cfsConfigurations, cfgName) {
+		common.Errorf("CFS configuration %s was not found in the list of cfs configurations", cfgName)
+		return false
+	}
+
+	// Verify the CFS configuration record
+	if !VerifyCFSConfigurationRecord(cfsConfigurationRecord, cfsConfigurationPayload, cfgName, apiVersion) {
+		return false
+	}
+	common.Infof("Admin successfully updated CFS configuration %s tenant %s -> tenant %s", cfgName, currentTenant, newTenant)
+	return true
+}
+
 func TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfgName string) (success bool) {
 
-	common.PrintLog(fmt.Sprintf("Creating CFS configuration with same name and different tenant: %s", cfgName))
+	common.PrintLog(fmt.Sprintf("Creating CFS configuration with same name %s and different tenant", cfgName))
 
 	// get CFS configuration payload
-	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion)
+	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion, false)
 	if !success {
 		return false
 	}
@@ -142,7 +217,7 @@ func TestCFSConfigurationCreate(apiVersion string) (cfsConfigurationRecord CFSCo
 	common.PrintLog(fmt.Sprintf("Creating CFS configuration: %s", cfgName))
 
 	// get CFS configuration payload
-	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion)
+	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion, false)
 	if !success {
 		return CFSConfiguration{}, false
 	}
@@ -155,6 +230,7 @@ func TestCFSConfigurationCreate(apiVersion string) (cfsConfigurationRecord CFSCo
 
 	// If the create operation is performed using dummy tenant, we expect the status code not to be 200.
 	if GetExpectedHTTPStatusCode() != http.StatusOK {
+		common.Infof("CFS configuration %s not created with dummy tenant: %s", cfgName, common.GetTenantName())
 		return CFSConfiguration{}, true
 	}
 
@@ -190,7 +266,7 @@ func TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfgName string) (
 	common.PrintLog(fmt.Sprintf("Updating CFS configuration %s with a non owner tenant.", cfgName))
 
 	// get CFS configuration payload
-	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion)
+	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion, false)
 	if !success {
 		return false
 	}
@@ -223,7 +299,7 @@ func TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfgName string) (
 func TestCFSConfigurationUpdate(cfgName, apiVersion string) (success bool) {
 	common.PrintLog(fmt.Sprintf("Updating CFS configuration: %s", cfgName))
 	// get CFS configuration payload
-	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion)
+	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion, false)
 	if !success {
 		return false
 	}

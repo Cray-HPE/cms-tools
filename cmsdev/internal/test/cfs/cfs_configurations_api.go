@@ -103,7 +103,7 @@ func GetProdCatalogConfigData() (cfsConfigLayerData CsmProductCatalogConfigurati
 
 }
 
-func GetCreateCFGConfigurationPayload(apiVersion string) (payload string, ok bool) {
+func GetCreateCFGConfigurationPayload(apiVersion string, addTenant bool) (payload string, ok bool) {
 	common.Infof("Getting product catalog configuration layer data")
 	configData, err := GetProdCatalogConfigData()
 	if err != nil {
@@ -121,6 +121,11 @@ func GetCreateCFGConfigurationPayload(apiVersion string) (payload string, ok boo
 				"name":     cfgLayerName,
 			},
 		},
+	}
+
+	// add the tenant in the payload body if the configuration is created by admin
+	if addTenant {
+		cfsPayload["tenant_name"] = common.GetTenantName()
 	}
 
 	// Setting the clone_url in the payload based on the API version
