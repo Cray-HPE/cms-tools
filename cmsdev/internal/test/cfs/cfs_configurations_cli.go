@@ -47,9 +47,9 @@ func RunVersionedCFSCommand(cliVersion string, cmdArgs ...string) []byte {
 	return test.TenantRunCLICommandJSON(common.GetTenantName(), "cfs", newArgs...)
 }
 
-func CreateCFSConfigurationFile(cfgName, cliVersion string) (fileName string, payload string, ok bool) {
+func CreateCFSConfigurationFile(cfgName, cliVersion string, addTenant bool) (fileName string, payload string, ok bool) {
 	fileName = "cfs_configuration"
-	payload, success := GetCreateCFGConfigurationPayload(cliVersion, false)
+	payload, success := GetCreateCFGConfigurationPayload(cliVersion, addTenant)
 	if !success {
 		return "", "", false
 	}

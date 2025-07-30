@@ -92,6 +92,22 @@ func TestCFSConfigurationsCRUDOperationCLI(cliVersion string) (passed bool) {
 		return false
 	}
 
+	currentTenant := common.GetTenantName()
+	if len(cfsConfigurationRecord.Name) != 0 && !strings.Contains(currentTenant, "dummy-tenant") && currentTenant != "" {
+		NewTenant := GetAnotherTenantFromList(currentTenant)
+		if len(NewTenant) != 0 {
+			// Verify that the system admin is able to create a configuration of the same name, but belonging to tenant B
+			createdWithAdmin := TestCLICFSConfigurationCreateByAdminWithSameNameDifferentTenant(cfsConfigurationRecord.Name, cliVersion, NewTenant)
+			// Verify that the system admin is able to create a configuration of the same name, but that belongs to no tenant
+			createdWithNoTenant := TestCLICFSConfigurationCreateByAdminWithSameNameDifferentTenant(cfsConfigurationRecord.Name, cliVersion, "")
+			// Verify that the system admin is able to create a configuration of the same name, but belonging to tenant A
+			createdWithOldTenant := TestCLICFSConfigurationCreateByAdminWithSameNameDifferentTenant(cfsConfigurationRecord.Name, cliVersion, currentTenant)
+			passed = passed && createdWithAdmin && createdWithNoTenant && createdWithOldTenant
+			// Seeting the tenant back to the original tenant
+			common.SetTenantName(currentTenant)
+		}
+	}
+
 	if len(cfsConfigurationRecord.Name) != 0 && !strings.Contains(common.GetTenantName(), "dummy-tenant") && cliVersion == "v3" {
 		createdWithTenant := TestCLICFSConfigurationCreateWithSameNameDifferentTenant(cfsConfigurationRecord.Name, cliVersion)
 		updatedWithTenant := TestCLICFSConfigurationUpdateWithDifferentTenant(cfsConfigurationRecord.Name, cliVersion)
@@ -114,6 +130,72 @@ func TestCFSConfigurationsCRUDOperationCLI(cliVersion string) (passed bool) {
 	return true
 }
 
+func TestCLICFSConfigurationCreateByAdminWithSameNameDifferentTenant(cfgName, cliVersion, newTenant string) (passed bool) {
+	common.PrintLog(fmt.Sprintf("Admin Creating CFS configuration with same name %s and different tenant.", cfgName))
+	currentTenant := common.GetTenantName()
+	var addTenant bool
+
+	// Set the tenant name to the new tenant so that it is used for creation of paylaod
+	if len(newTenant) != 0 {
+		common.SetTenantName(newTenant)
+		addTenant = true
+	} else {
+		addTenant = false
+	}
+
+	common.Infof("Creating CFS configuration %s belonging to tenant %s using new tenant %s", cfgName, currentTenant, newTenant)
+
+	// Create CFS configuration payload
+	fileName, payload, success := CreateCFSConfigurationFile(cfgName, cliVersion, addTenant)
+	if !success {
+		return false
+	}
+
+	// Unsetting the tenant name to create a configuration that belongs to the new tenant using admin
+	common.SetTenantName("")
+
+	// Create a CFS configuration using CLI
+	cfsConfigurationRecord, success := CreateUpdateCFSConfigurationCLI(cfgName, fileName, cliVersion)
+
+	if !success {
+		return false
+	}
+
+	// Remove the created configuration file
+	if err := os.Remove(fileName); err != nil {
+		common.Errorf("Unable to remove file %s: %v", fileName, err)
+	}
+
+	// Set the new tenant for GET call to work
+	common.SetTenantName(newTenant)
+
+	// Verify CFS configuration record using CLI
+	_, success = GetCFSConfigurationRecordCLI(cfgName, cliVersion)
+	if !success {
+		return false
+	}
+
+	// Verify CFS configurations in the list of configurations using CLI
+	cfsConfigurations, success := GetCLIVersionBasedCFSConfigurationRecordList(cliVersion)
+	if !success {
+		common.Errorf("Unable to get CFS configurations list using CLI")
+		return false
+	}
+
+	if !CFSConfigurationExists(cfsConfigurations, cfgName) {
+		common.Errorf("CFS configuration %s was not found in the list of cfs configurations", cfgName)
+		return false
+	}
+
+	// Verify the CFS configuration record
+	if !VerifyCFSConfigurationRecord(cfsConfigurationRecord, payload, cfgName, cliVersion) {
+		return false
+	}
+
+	common.Infof("Admin successfully updated CFS configuration %s tenant %s -> tenant %s", cfgName, currentTenant, newTenant)
+	return true
+}
+
 func TestCLICFSConfigurationCreateWithSameNameDifferentTenant(cfgName, cliVersion string) (passed bool) {
 	common.PrintLog(fmt.Sprintf("Creating CFS configuration with same name and different tenant: %s", cfgName))
 	currentTenant := common.GetTenantName()
@@ -129,7 +211,7 @@ func TestCLICFSConfigurationCreateWithSameNameDifferentTenant(cfgName, cliVersio
 	common.Infof("Creating CFS configuration %s belonging to tenant %s using new tenant %s", cfgName, currentTenant, newTenant)
 
 	// Create CFS configuration payload
-	fileName, _, success := CreateCFSConfigurationFile(cfgName, cliVersion)
+	fileName, _, success := CreateCFSConfigurationFile(cfgName, cliVersion, false)
 	if !success {
 		return false
 	}
@@ -164,7 +246,7 @@ func TestCLICFSConfigurationCreate(cliVersion string) (cfsConfigurationRecord CF
 	common.PrintLog(fmt.Sprintf("Creating CFS configuration: %s", cfgName))
 
 	// Get CFS configuration payload
-	fileName, payload, success := CreateCFSConfigurationFile(cfgName, cliVersion)
+	fileName, payload, success := CreateCFSConfigurationFile(cfgName, cliVersion, false)
 	if !success {
 		return CFSConfiguration{}, false
 	}
@@ -238,7 +320,7 @@ func TestCLICFSConfigurationUpdateWithDifferentTenant(cfgName, cliVersion string
 	common.Infof("Updating CFS configuration %s belonging to tenant %s using new tenant %s", cfgName, currentTenant, newTenant)
 
 	// Get CFS configuration payload
-	fileName, _, success := CreateCFSConfigurationFile(cfgName, cliVersion)
+	fileName, _, success := CreateCFSConfigurationFile(cfgName, cliVersion, false)
 	if !success {
 		return false
 	}
@@ -271,7 +353,7 @@ func TestCLICFSConfigurationUpdate(cfgName, cliVersion string) (passed bool) {
 	common.PrintLog(fmt.Sprintf("Updating CFS configuration: %s", cfgName))
 
 	// Get CFS configuration payload
-	fileName, payload, success := CreateCFSConfigurationFile(cfgName, cliVersion)
+	fileName, payload, success := CreateCFSConfigurationFile(cfgName, cliVersion, false)
 	if !success {
 		return false
 	}
