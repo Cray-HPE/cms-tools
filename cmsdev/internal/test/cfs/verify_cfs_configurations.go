@@ -164,7 +164,7 @@ func TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cf
 	}
 
 	if !CFSConfigurationExists(cfsConfigurations, cfgName) {
-		common.Errorf("CFS configuration %s was not found in the list of cfs configurations", cfgName)
+		common.Errorf("CFS configuration %s was not found in the list of CFS configurations", cfgName)
 		return false
 	}
 
@@ -206,7 +206,7 @@ func TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfgName s
 		common.Errorf("Create CFS configuration successful with same name %s for a different tenant: %s", cfgName, newTenant)
 		return false
 	}
-	common.Infof("Unable to Create CFS configuration with same name %s for a different tenant: %s", cfgName, newTenant)
+	common.Infof("Unable to create CFS configuration with same name %s for a different tenant: %s", cfgName, newTenant)
 	return true
 }
 
@@ -229,7 +229,7 @@ func TestCFSConfigurationCreate(apiVersion string) (cfsConfigurationRecord CFSCo
 
 	// If the create operation is performed using dummy tenant, we expect the status code not to be 200.
 	if GetExpectedHTTPStatusCode() != http.StatusOK {
-		common.Infof("CFS configuration %s not created with dummy tenant: %s", cfgName, common.GetTenantName())
+		common.Infof("CFS configuration %s not successfully created with dummy tenant: %s", cfgName, common.GetTenantName())
 		return CFSConfiguration{}, true
 	}
 

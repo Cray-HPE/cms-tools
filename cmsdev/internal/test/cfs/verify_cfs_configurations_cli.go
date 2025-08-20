@@ -182,7 +182,7 @@ func TestCLICFSConfigurationCreateByAdminWithSameNameDifferentTenant(cfgName, cl
 	}
 
 	if !CFSConfigurationExists(cfsConfigurations, cfgName) {
-		common.Errorf("CFS configuration %s was not found in the list of cfs configurations", cfgName)
+		common.Errorf("CFS configuration %s was not found in the list of CFS configurations", cfgName)
 		return false
 	}
 
@@ -235,7 +235,7 @@ func TestCLICFSConfigurationCreateWithSameNameDifferentTenant(cfgName, cliVersio
 	}
 
 	passed = true
-	common.Infof("Unable to Create CFS configuration with same name %s for a different tenant: %s", cfgName, newTenant)
+	common.Infof("Unable to create CFS configuration with same name %s for a different tenant: %s", cfgName, newTenant)
 	return
 }
 
@@ -272,7 +272,7 @@ func TestCLICFSConfigurationCreate(cliVersion string) (cfsConfigurationRecord CF
 	}
 
 	if test.GetCliExecreturnCode() != 0 {
-		common.Infof("CFS configuration %s not created with dummy tenant: %s", cfgName, common.GetTenantName())
+		common.Infof("CFS configuration %s not successfully created with dummy tenant: %s", cfgName, common.GetTenantName())
 		test.SetCliExecreturnCode(0)
 		return CFSConfiguration{}, true // if the tenant is dummy, we skip the verification as creation is expected to fail
 	}
