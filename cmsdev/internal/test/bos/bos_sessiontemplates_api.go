@@ -405,7 +405,7 @@ func VerifyRestStatusWithTenant(method, uri string, params common.Params, expect
 	if len(tenantName) == 0 {
 		return test.RestfulVerifyStatus(method, uri, params, expectedStatus)
 	} else {
-		if strings.Contains(tenantName, "dummy-tenant") {
+		if IsDummyTenant(tenantName) {
 			// If the tenant name is a dummy tenant, we can skip the verification
 			return test.TenantRestfulVerifyStatus(method, uri, tenantName, params, http.StatusBadRequest)
 		}
@@ -415,7 +415,7 @@ func VerifyRestStatusWithTenant(method, uri string, params common.Params, expect
 
 func GetExpectedHTTPStatusCode() int {
 	tenantName := common.GetTenantName()
-	if strings.Contains(tenantName, "dummy-tenant") {
+	if IsDummyTenant(tenantName) {
 		// If the tenant name is a dummy tenant, we can skip the verification
 		return http.StatusBadRequest
 	}
