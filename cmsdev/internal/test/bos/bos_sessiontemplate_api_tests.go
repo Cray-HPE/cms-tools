@@ -38,7 +38,7 @@ import (
 func TestSessionTemplatesCRUDOperationsUsingTenants() (passed bool) {
 	passed = TestSessionTemplatesCRUDOperations()
 	tenantList := []string{}
-	dummyTenantName := "dummy-tenant-" + string(common.GetRandomString(5))
+	dummyTenantName := GetDummyTenantName()
 	tenantList = append(tenantList, dummyTenantName)
 	// Running the tests with tenants
 	tenantName := GetTenantFromList()

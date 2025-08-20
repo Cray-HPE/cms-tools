@@ -32,7 +32,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
@@ -41,7 +40,7 @@ import (
 func TestSessionsCRUDOperationsWithTenantUsingCLI() (passed bool) {
 	passed = TestSessionsCRUDOperationsUsingCLI()
 	tenantList := []string{}
-	dummyTenantName := "dummy-tenant-" + string(common.GetRandomString(5))
+	dummyTenantName := GetDummyTenantName()
 	tenantList = append(tenantList, dummyTenantName)
 	// Running the tests with tenants
 	tenantName := GetTenantFromList()
@@ -130,7 +129,7 @@ func TestCLIBOSSessionsCreate(staged bool, arch, imageId, cliVersion string) (se
 		return BOSSession{}, false
 	}
 
-	if strings.Contains(common.GetTenantName(), "dummy-tenant") {
+	if IsDummyTenant(common.GetTenantName()) {
 		// Set execution code to 2 to indiacate that we expect the command to fail
 		test.SetCliExecreturnCode(2)
 	}

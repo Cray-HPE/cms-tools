@@ -101,7 +101,7 @@ func CreateBOSSessionTemplatesCLI(templateName, filename, cfgName, cliVersion st
 		}
 	}
 	// if the tenant is a dummy tenant, we expect the command to fail
-	if strings.Contains(common.GetTenantName(), "dummy-tenant") {
+	if IsDummyTenant(common.GetTenantName()) {
 		return BOSSessionTemplate{}, true
 	}
 	return

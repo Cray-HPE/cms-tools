@@ -438,3 +438,11 @@ func GetTenantFromList() string {
 	common.Infof("Using tenant: %s", tenantName)
 	return tenantName
 }
+
+func GetDummyTenantName() string {
+	return "dummy-tenant-" + string(common.GetRandomString(5))
+}
+
+func IsDummyTenant(tenantName string) bool {
+	return strings.HasPrefix(tenantName, "dummy-tenant")
+}

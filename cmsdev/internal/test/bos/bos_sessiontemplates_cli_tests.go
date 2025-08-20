@@ -31,7 +31,6 @@ package bos
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
@@ -40,7 +39,7 @@ import (
 func TestSessionTemplatesCRUDOperationsWithTenantUsingCLI() (passed bool) {
 	passed = TestSessionTemplatesCRUDOperationsUsingCLI()
 	tenantList := []string{}
-	dummyTenantName := "dummy-tenant-" + string(common.GetRandomString(5))
+	dummyTenantName := GetDummyTenantName()
 	tenantList = append(tenantList, dummyTenantName)
 	// Running the tests with tenants
 	tenantName := GetTenantFromList()
@@ -118,7 +117,7 @@ func TestCLISessionTemplatesCreate(arch, imageId, cliVersion string) (sessionTem
 	}
 
 	// If the tenant is a dummy tenant, we expect the command to fail
-	if strings.Contains(common.GetTenantName(), "dummy-tenant") {
+	if IsDummyTenant(common.GetTenantName()) {
 		// Set execution code to 2 to indicate that the session template creation is not supported for dummy tenants
 		test.SetCliExecreturnCode(2)
 	}

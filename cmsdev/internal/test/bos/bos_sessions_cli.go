@@ -31,7 +31,6 @@ package bos
 import (
 	"encoding/json"
 	"strconv"
-	"strings"
 
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
@@ -48,7 +47,7 @@ func CreateBOSSessionCLI(staged bool, sessionName, templateName, cliVersion stri
 		}
 	}
 	// If the tenant is a dummy tenant, we expect the command to fail
-	if strings.Contains(common.GetTenantName(), "dummy-tenant") {
+	if IsDummyTenant(common.GetTenantName()) {
 		return BOSSession{}, true
 	}
 
