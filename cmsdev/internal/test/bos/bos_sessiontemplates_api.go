@@ -34,6 +34,7 @@ import (
 	"sort"
 	"strings"
 
+	resty "gopkg.in/resty.v1"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
@@ -222,7 +223,8 @@ func CreateUpdateBOSSessiontemplatesAPI(bosSessionTemplatePayload string, sessio
 	url := common.BASEURL + endpoints["bos"]["sessiontemplates"].Url +
 		"/" + endpoints["bos"]["sessiontemplates"].Version +
 		endpoints["bos"]["sessiontemplates"].Uri + "/" + sessionTemplateName
-	resp, err := test.RestfulVerifyStatus(method, url, *params, http.StatusOK)
+
+	resp, err := VerifyRestStatusWithTenant(method, url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
 		return BOSSessionTemplate{}, false
@@ -248,7 +250,7 @@ func DeleteBOSSessionTemplatesAPI(sessionTemplateName string) (ok bool) {
 	url := common.BASEURL + endpoints["bos"]["sessiontemplates"].Url +
 		"/" + endpoints["bos"]["sessiontemplates"].Version +
 		endpoints["bos"]["sessiontemplates"].Uri + "/" + sessionTemplateName
-	_, err := test.RestfulVerifyStatus("DELETE", url, *params, http.StatusNoContent)
+	_, err := VerifyRestStatusWithTenant("DELETE", url, *params, http.StatusNoContent)
 	if err != nil {
 		common.Error(err)
 		return false
@@ -269,7 +271,7 @@ func ValidateBOSSessionTemplateAPI(templateName string) (ok bool) {
 	url := common.BASEURL + endpoints["bos"]["sessiontemplatesvalid"].Url +
 		"/" + endpoints["bos"]["sessiontemplatesvalid"].Version +
 		endpoints["bos"]["sessiontemplatesvalid"].Uri + "/" + templateName
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
 		return false
@@ -298,7 +300,7 @@ func GetBOSSessionTemplatesAPI(templateName string, httpStatus int) (bosSessionT
 	url := common.BASEURL + endpoints["bos"]["sessiontemplates"].Url +
 		"/" + endpoints["bos"]["sessiontemplates"].Version +
 		endpoints["bos"]["sessiontemplates"].Uri + "/" + templateName
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, httpStatus)
 	if err != nil {
 		common.Error(err)
 		return BOSSessionTemplate{}, false
@@ -325,7 +327,7 @@ func GetAllBOSSessionTemplatesAPI() (bosSessionTemplates []BOSSessionTemplate, o
 	url := common.BASEURL + endpoints["bos"]["sessiontemplates"].Url +
 		"/" + endpoints["bos"]["sessiontemplates"].Version +
 		endpoints["bos"]["sessiontemplates"].Uri
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
 		return []BOSSessionTemplate{}, false
@@ -395,4 +397,52 @@ func VerifyBOSSessionTemplate(sessionTemplate BOSSessionTemplate, sessionTemplat
 	}
 
 	return true
+}
+
+func VerifyRestStatusWithTenant(method, uri string, params common.Params, expectedStatus int) (*resty.Response, error) {
+	tenantName := common.GetTenantName()
+	// Checking if Tenant name is set or not
+	if len(tenantName) == 0 {
+		return test.RestfulVerifyStatus(method, uri, params, expectedStatus)
+	} else {
+		if IsDummyTenant(tenantName) {
+			// If the tenant name is a dummy tenant, we can skip the verification
+			return test.TenantRestfulVerifyStatus(method, uri, tenantName, params, http.StatusBadRequest)
+		}
+		return test.TenantRestfulVerifyStatus(method, uri, tenantName, params, expectedStatus)
+	}
+}
+
+func GetExpectedHTTPStatusCode() int {
+	tenantName := common.GetTenantName()
+	if IsDummyTenant(tenantName) {
+		// If the tenant name is a dummy tenant, the expected response is StatusBadRequest
+		return http.StatusBadRequest
+	}
+	return http.StatusOK
+}
+
+func GetTenantFromList() string {
+	tenantList, err := k8s.GetTenants()
+	if err != nil {
+		common.Errorf("Error getting tenant list: %s", err.Error())
+		return ""
+	}
+
+	// Set the tenant name to be used in the tests
+	tenantName, err := common.GetRandomStringFromList(tenantList)
+	if err != nil {
+		common.Errorf("Error getting random tenant from list: %s", err.Error())
+		return ""
+	}
+	common.Infof("Using tenant: %s", tenantName)
+	return tenantName
+}
+
+func GetDummyTenantName() string {
+	return "dummy-tenant-" + string(common.GetRandomString(5))
+}
+
+func IsDummyTenant(tenantName string) bool {
+	return strings.HasPrefix(tenantName, "dummy-tenant")
 }

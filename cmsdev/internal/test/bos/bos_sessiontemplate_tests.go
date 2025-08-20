@@ -61,7 +61,7 @@ func sessionTemplatesTestsAPI(params *common.Params, tenantList []string) (passe
 		passed = false
 	}
 
-	if !TestSessionTemplatesCRUDOperations() {
+	if !TestSessionTemplatesCRUDOperationsUsingTenants() {
 		passed = false
 	}
 
@@ -97,7 +97,7 @@ func sessionTemplatesTestsCLI(tenantList []string) (passed bool) {
 	}
 
 	// sessiontemplates CRUD operations tests
-	if !TestSessionTemplatesCRUDOperationsUsingCLI() {
+	if !TestSessionTemplatesCRUDOperationsWithTenantUsingCLI() {
 		passed = false
 	}
 
