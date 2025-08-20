@@ -40,7 +40,7 @@ import (
 func TestSessionsCRUDOperationsWithTenantUsingCLI() (passed bool) {
 	passed = TestSessionsCRUDOperationsUsingCLI()
 	tenantList := []string{}
-	dummyTenantName := GetDummyTenantName()
+	dummyTenantName := common.GetDummyTenantName()
 	tenantList = append(tenantList, dummyTenantName)
 	// Running the tests with tenants
 	tenantName := GetTenantFromList()
@@ -129,7 +129,7 @@ func TestCLIBOSSessionsCreate(staged bool, arch, imageId, cliVersion string) (se
 		return BOSSession{}, false
 	}
 
-	if IsDummyTenant(common.GetTenantName()) {
+	if common.IsDummyTenant(common.GetTenantName()) {
 		// Set execution code to 2 to indiacate that we expect the command to fail
 		test.SetCliExecreturnCode(2)
 	}

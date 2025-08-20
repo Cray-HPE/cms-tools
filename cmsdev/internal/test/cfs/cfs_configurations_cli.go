@@ -83,7 +83,7 @@ func CreateUpdateCFSConfigurationCLI(cfgName, fileName, cliVersion string) (cfsC
 		}
 	}
 	// if the tenant is a dummy tenant, we expect the command to fail
-	if strings.Contains(common.GetTenantName(), "dummy-tenant") {
+	if common.IsDummyTenant(common.GetTenantName()) {
 		return CFSConfiguration{}, true
 	}
 	return

@@ -31,7 +31,6 @@ package cfs
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
@@ -40,7 +39,7 @@ import (
 func TestCFSConfigurationsCRUDOperationWithTenantsUsingCLI() (passed bool) {
 	passed = TestCFSConfigurationsCRUDOperationUsingCLI()
 	tenantList := []string{}
-	dummyTenant := "dummy-tenant-" + string(common.GetRandomString(5))
+	dummyTenant := common.GetDummyTenantName()
 	tenantList = append(tenantList, dummyTenant)
 	// Get an actual tenant
 	tenantName := GetTenantFromList()
@@ -93,7 +92,7 @@ func TestCFSConfigurationsCRUDOperationCLI(cliVersion string) (passed bool) {
 	}
 
 	currentTenant := common.GetTenantName()
-	if len(cfsConfigurationRecord.Name) != 0 && !strings.Contains(currentTenant, "dummy-tenant") && currentTenant != "" {
+	if len(cfsConfigurationRecord.Name) != 0 && !common.IsDummyTenant(currentTenant) && currentTenant != "" {
 		NewTenant := GetAnotherTenantFromList(currentTenant)
 		if len(NewTenant) != 0 {
 			// Verify that the system admin is able to create a configuration of the same name, but belonging to tenant B
@@ -108,7 +107,7 @@ func TestCFSConfigurationsCRUDOperationCLI(cliVersion string) (passed bool) {
 		}
 	}
 
-	if len(cfsConfigurationRecord.Name) != 0 && !strings.Contains(common.GetTenantName(), "dummy-tenant") && cliVersion == "v3" {
+	if len(cfsConfigurationRecord.Name) != 0 && !common.IsDummyTenant(common.GetTenantName()) && cliVersion == "v3" {
 		createdWithTenant := TestCLICFSConfigurationCreateWithSameNameDifferentTenant(cfsConfigurationRecord.Name, cliVersion)
 		updatedWithTenant := TestCLICFSConfigurationUpdateWithDifferentTenant(cfsConfigurationRecord.Name, cliVersion)
 		deletedWithTenant := TestCLICFSConfigurationDeleteWithDifferentTenant(cfsConfigurationRecord.Name, cliVersion)
@@ -253,7 +252,7 @@ func TestCLICFSConfigurationCreate(cliVersion string) (cfsConfigurationRecord CF
 
 	common.Infof("Creating CFS configuration with file: %s", fileName)
 
-	if strings.Contains(common.GetTenantName(), "dummy-tenant") {
+	if common.IsDummyTenant(common.GetTenantName()) {
 		// Set execution return code to 2, since dummy tenant is used
 		test.SetCliExecreturnCode(2)
 	}

@@ -31,7 +31,6 @@ package cfs
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
@@ -39,7 +38,7 @@ import (
 func TestCFSConfigurationsCRUDOperationWithTenantsUsingAPIVersions() (passed bool) {
 	passed = TestCFSConfigurationsCRUDOperationUsingAPIVersions()
 	tenantList := []string{}
-	dummyTenant := "dummy-tenant-" + string(common.GetRandomString(5))
+	dummyTenant := common.GetDummyTenantName()
 	tenantList = append(tenantList, dummyTenant)
 	// Get an actual tenant
 	tenantName := GetTenantFromList()
@@ -83,7 +82,7 @@ func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 	}
 
 	currentTenant := common.GetTenantName()
-	if len(cfsConfigurationRecord.Name) != 0 && !strings.Contains(currentTenant, "dummy-tenant") && currentTenant != "" {
+	if len(cfsConfigurationRecord.Name) != 0 && !common.IsDummyTenant(currentTenant) && currentTenant != "" {
 		NewTenant := GetAnotherTenantFromList(currentTenant)
 		if len(NewTenant) != 0 {
 			// Verify that the system admin is able to create a configuration of the same name, but belonging to tenant B
@@ -99,7 +98,7 @@ func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 	}
 
 	// Testing CFS configuration CRUD operation that does not belong to the same tenant
-	if len(cfsConfigurationRecord.Name) != 0 && !strings.Contains(common.GetTenantName(), "dummy-tenant") && apiVersion != "v2" {
+	if len(cfsConfigurationRecord.Name) != 0 && !common.IsDummyTenant(common.GetTenantName()) && apiVersion != "v2" {
 		createdWithTenant := TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfsConfigurationRecord.Name)
 		updatedWithTenant := TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfsConfigurationRecord.Name)
 		deletedWithTenant := TestCFSConfigurationDeleteUsingDifferentTenant(apiVersion, cfsConfigurationRecord.Name)
