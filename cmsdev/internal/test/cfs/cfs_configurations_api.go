@@ -383,7 +383,7 @@ func VerifyRestStatusWithTenant(method, uri string, params common.Params, expect
 func GetExpectedHTTPStatusCode() int {
 	tenantName := common.GetTenantName()
 	if common.IsDummyTenant(tenantName) {
-		// If the tenant name is a dummy tenant, we can skip the verification
+		// If the tenant name is a dummy tenant, BadRequest is the expected status code
 		return http.StatusBadRequest
 	}
 	return http.StatusOK
