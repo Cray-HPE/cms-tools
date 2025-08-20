@@ -132,7 +132,7 @@ func TestBOSSessionsCreate(staged bool, arch string, imageId string) (sessionRec
 	}
 
 	if GetExpectedHTTPStatusCode() != http.StatusOK {
-		return BOSSession{}, true // If the tenant is a dummy tenant, we skip the verification as creation is expected to fail
+		return BOSSession{}, true // If creation was expected to fail (e.g. using a dummy tenant), skip verification of created resource
 	}
 
 	// Verify the created session

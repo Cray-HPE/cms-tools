@@ -133,7 +133,7 @@ func TestCLISessionTemplatesCreate(arch, imageId, cliVersion string) (sessionTem
 		common.Errorf("Unable to remove file %s: %v", fileName, err)
 	}
 
-	// If the tenant is a dummy tenant, we skip the verification as creation is expected to fail
+	// If creation was expected to fail (e.g. using a dummy tenant), skip verification of created resource
 	if test.GetCliExecreturnCode() != 0 {
 		test.SetCliExecreturnCode(0)
 		return sessionTemplateRecord, true

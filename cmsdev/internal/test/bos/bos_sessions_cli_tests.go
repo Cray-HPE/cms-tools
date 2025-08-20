@@ -155,7 +155,7 @@ func TestCLIBOSSessionsCreate(staged bool, arch, imageId, cliVersion string) (se
 
 	if test.GetCliExecreturnCode() != 0 {
 		test.SetCliExecreturnCode(0)
-		return BOSSession{}, true // If the tenant is a dummy tenant, we skip the verification as creation is expected to fail
+		return BOSSession{}, true // If creation was expected to fail (e.g. using a dummy tenant), skip verification of created resource
 	}
 
 	// Creating expected session record for verification

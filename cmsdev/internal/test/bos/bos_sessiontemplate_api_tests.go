@@ -119,7 +119,7 @@ func TestSessionTemplatesCreate(imageArch string, imageId string) (sessionTempla
 	}
 
 	if GetExpectedHTTPStatusCode() != http.StatusOK {
-		return BOSSessionTemplate{}, true // If the tenant is a dummy tenant, we skip the verification as creation is expected to fail
+		return BOSSessionTemplate{}, true // If creation was expected to fail (e.g. using a dummy tenant), skip verification of created resource
 	}
 
 	// Verify sessiontemplate
