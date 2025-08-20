@@ -74,7 +74,7 @@ func GetRandomStringFromList(stringList []string) (randString string, err error)
 	return
 }
 
-// Returns a random string from a list of strings accept for the one specified
+// Returns a random string from a list of strings except for the one specified
 func GetRandomStringFromListExcept(stringList []string, except string) (randString string, err error) {
 	if len(stringList) > 1 {
 		listIndex := IntInRange(0, len(stringList)-1)
