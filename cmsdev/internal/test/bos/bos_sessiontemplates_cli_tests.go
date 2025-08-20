@@ -36,9 +36,36 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
+func TestSessionTemplatesCRUDOperationsWithTenantUsingCLI() (passed bool) {
+	passed = TestSessionTemplatesCRUDOperationsUsingCLI()
+	tenantList := []string{}
+	dummyTenantName := GetDummyTenantName()
+	tenantList = append(tenantList, dummyTenantName)
+	// Running the tests with tenants
+	tenantName := GetTenantFromList()
+	if len(tenantName) != 0 {
+		tenantList = append(tenantList, tenantName)
+	}
+
+	for _, tenant := range tenantList {
+		// Set the tenant name for the tests
+		common.SetTenantName(tenant)
+		passed = passed && TestSessionTemplatesCRUDOperationsUsingCLI()
+		// Unsetting the tenant name after tests
+		common.SetTenantName("")
+	}
+	return passed
+}
+
 func TestSessionTemplatesCRUDOperationsUsingCLI() (passed bool) {
 	passed = true
 	var testRan bool
+	if len(common.GetTenantName()) != 0 {
+		common.PrintLog(fmt.Sprintf("Running BOS session template tests with tenant: %s", common.GetTenantName()))
+	} else {
+		common.PrintLog("Running BOS session template tests without Tenant")
+	}
+
 	// Range over archMap to create session templates with different architectures
 	for arch := range archMap {
 		imageId, err := GetLatestImageIdFromCsmProductCatalog(arch)
@@ -57,11 +84,13 @@ func TestSessionTemplatesCRUDOperationsUsingCLI() (passed bool) {
 				passed = false
 				continue
 			}
-			common.Infof("Session template created successfully with name %s", sessionTemplateRecord.Name)
 
-			passed = TestCLISessionTemplatesUpdate(sessionTemplateRecord.Name, imageId, bosCliVersions[cliVersion]) &&
-				TestCLISessionTemplatesDelete(sessionTemplateRecord.Name, bosCliVersions[cliVersion]) &&
-				TestCLISessionTemplatesGetAll(sessionTemplateRecord.Name, bosCliVersions[cliVersion])
+			if len(sessionTemplateRecord.Name) != 0 {
+				common.Infof("Session template created successfully with name %s", sessionTemplateRecord.Name)
+				passed = TestCLISessionTemplatesUpdate(sessionTemplateRecord.Name, imageId, bosCliVersions[cliVersion]) &&
+					TestCLISessionTemplatesDelete(sessionTemplateRecord.Name, bosCliVersions[cliVersion]) &&
+					TestCLISessionTemplatesGetAll(sessionTemplateRecord.Name, bosCliVersions[cliVersion])
+			}
 		}
 
 	}
@@ -87,6 +116,12 @@ func TestCLISessionTemplatesCreate(arch, imageId, cliVersion string) (sessionTem
 		return BOSSessionTemplate{}, false
 	}
 
+	// If the tenant is a dummy tenant, we expect the command to fail
+	if IsDummyTenant(common.GetTenantName()) {
+		// Set execution code to 2 to indicate that the session template creation is not supported for dummy tenants
+		test.SetCliExecreturnCode(2)
+	}
+
 	sessionTemplateRecord, success = CreateBOSSessionTemplatesCLI(templateName, fileName, cfgName, cliVersion)
 	if !success {
 		return BOSSessionTemplate{}, false
@@ -95,6 +130,12 @@ func TestCLISessionTemplatesCreate(arch, imageId, cliVersion string) (sessionTem
 	// Remove the created session template file
 	if err := os.Remove(fileName); err != nil {
 		common.Errorf("Unable to remove file %s: %v", fileName, err)
+	}
+
+	// If creation was expected to fail (e.g. using a dummy tenant), skip verification of created resource
+	if test.GetCliExecreturnCode() != 0 {
+		test.SetCliExecreturnCode(0)
+		return sessionTemplateRecord, true
 	}
 
 	// Verify sessiontemplate

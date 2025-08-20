@@ -46,6 +46,11 @@ func CreateBOSSessionCLI(staged bool, sessionName, templateName, cliVersion stri
 			common.Error(err)
 		}
 	}
+	// If the tenant is a dummy tenant, we expect the command to fail
+	if IsDummyTenant(common.GetTenantName()) {
+		return BOSSession{}, true
+	}
+
 	return
 }
 

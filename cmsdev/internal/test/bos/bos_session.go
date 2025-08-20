@@ -291,7 +291,7 @@ func listV2SessionDataCli(tenantName string, cmdArgs ...string) (sessionDataList
 	return
 }
 
-func CreateBOSSessionPayload(sessionName string, staged bool, operation string, arch string, imageId string) (payload string, ok bool) {
+func CreateBOSSessionPayload(sessionName, templateName string, staged bool, operation string, arch string, imageId string) (payload string, ok bool) {
 	cfgName := "CFS_Configuration_" + string(common.GetRandomString(10))
 
 	payload, ok = GetCreateBOSSessionTemplatePayload(cfgName, false, arch, imageId)
@@ -300,7 +300,6 @@ func CreateBOSSessionPayload(sessionName string, staged bool, operation string, 
 	}
 	common.Debugf("BOS Session create - Session template payload: %s", payload)
 	// Create BOS session template
-	templateName := "BOS_SessionTemplate_" + string(common.GetRandomString(10))
 	sessionTemplateRecord, ok := CreateUpdateBOSSessiontemplatesAPI(payload, templateName, "PUT")
 	if !ok {
 		common.Errorf("Failed to create session template")
@@ -335,7 +334,7 @@ func CreateBOSSessionAPI(sessionPayload string) (sessionRecord BOSSession, ok bo
 		"/" + endpoints["bos"]["sessions"].Version +
 		endpoints["bos"]["sessions"].Uri
 
-	resp, err := test.RestfulVerifyStatus("POST", url, *params, http.StatusCreated)
+	resp, err := VerifyRestStatusWithTenant("POST", url, *params, http.StatusCreated)
 	if err != nil {
 		common.Errorf("Failed to create staged session: %v", err)
 		return BOSSession{}, false
@@ -360,7 +359,7 @@ func DeleteBOSSessionAPI(sessionName string) (passed bool) {
 		endpoints["bos"]["sessions"].Uri +
 		"/" + sessionName
 
-	_, err := test.RestfulVerifyStatus("DELETE", url, *params, http.StatusNoContent)
+	_, err := VerifyRestStatusWithTenant("DELETE", url, *params, http.StatusNoContent)
 	if err != nil {
 		common.Errorf("Failed to delete staged session: %v", err)
 		return false
@@ -381,7 +380,7 @@ func GetAllBOSSessionsAPI() (sessionList []BOSSession, ok bool) {
 		"/" + endpoints["bos"]["sessions"].Version +
 		endpoints["bos"]["sessions"].Uri
 
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Errorf("Failed to get all staged sessions: %v", err)
 		return nil, false
@@ -407,7 +406,7 @@ func GetBOSSessionAPI(sessionName string, httpStatus int) (sessionRecord BOSSess
 		endpoints["bos"]["sessions"].Uri +
 		"/" + sessionName
 
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, httpStatus)
 	if err != nil {
 		common.Errorf("Failed to get staged session: %v", err)
 		return BOSSession{}, false

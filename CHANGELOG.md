@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- CASMCMS-9472: Add multitenancy BOS CRUD tests to cmsdev
+
+### Dependencies
+- Bump `github.com/go-openapi/jsonpointer` from 0.21.1 to 0.21.2 ([#296](https://github.com/Cray-HPE/cms-tools/pull/296))
+- Bump `github.com/spf13/pflag` from 1.0.6 to 1.0.7 ([#295](https://github.com/Cray-HPE/cms-tools/pull/295))
+- Bump `github.com/go-openapi/jsonpointer` from 0.21.1 to 0.21.2 ([#296](https://github.com/Cray-HPE/cms-tools/pull/296))
+
 ## [1.33.0] - 2025-06-27
 
 ### Changed
