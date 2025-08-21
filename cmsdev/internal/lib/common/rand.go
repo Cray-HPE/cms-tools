@@ -76,16 +76,21 @@ func GetRandomStringFromList(stringList []string) (randString string, err error)
 
 // Returns a random string from a list of strings except for the one specified
 func GetRandomStringFromListExcept(stringList []string, except string) (randString string, err error) {
-	if len(stringList) > 1 {
-		listIndex := IntInRange(0, len(stringList)-1)
-		randString = stringList[listIndex]
-		if randString == except {
-			return GetRandomStringFromListExcept(stringList, except)
-		}
-	} else {
-		err = fmt.Errorf("Tenant List does not have enough elements to choose from. Current list length: %d", len(stringList))
+	var filteredList []string
+	if len(stringList) == 0 {
+		err = fmt.Errorf("Tenant list is empty")
+		return
 	}
-	return
+	for _, s := range stringList {
+		if s != except {
+			filteredList = append(filteredList, s)
+		}
+	}
+	if len(filteredList) == 0 {
+		err = fmt.Errorf("Every string in the list is the excepted string (%s)", except)
+		return
+	}
+	return GetRandomStringFromList(filteredList)
 }
 
 // Generate a random string of the specified length from the specified characters
