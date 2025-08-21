@@ -78,16 +78,17 @@ func GetRandomStringFromList(stringList []string) (randString string, err error)
 func GetRandomStringFromListExcept(stringList []string, except string) (randString string, err error) {
 	var filteredList []string
 	if len(stringList) == 0 {
-		err = fmt.Errorf("Tenant list is empty")
+		err = fmt.Errorf("Provided list is empty")
 		return
 	}
+	// Filter out the excepted string
 	for _, s := range stringList {
 		if s != except {
 			filteredList = append(filteredList, s)
 		}
 	}
 	if len(filteredList) == 0 {
-		err = fmt.Errorf("Every string in the list is the excepted string (%s)", except)
+		err = fmt.Errorf("Every string in the list is the except string (%s)", except)
 		return
 	}
 	return GetRandomStringFromList(filteredList)
