@@ -38,7 +38,7 @@ import (
 func TestBOSSessionsCRUDOperationsUsingTenants() (passed bool) {
 	passed = TestBOSSessionsCRUDOperations()
 	tenantList := []string{}
-	dummyTenantName := GetDummyTenantName()
+	dummyTenantName := common.GetDummyTenantName()
 	tenantList = append(tenantList, dummyTenantName)
 	// Running the tests with tenants
 	tenantName := GetTenantFromList()

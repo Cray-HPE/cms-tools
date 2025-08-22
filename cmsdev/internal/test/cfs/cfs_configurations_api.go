@@ -34,6 +34,7 @@ import (
 	"net/http"
 	"sort"
 
+	resty "gopkg.in/resty.v1"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
@@ -101,7 +102,7 @@ func GetProdCatalogConfigData() (cfsConfigLayerData CsmProductCatalogConfigurati
 
 }
 
-func GetCreateCFGConfigurationPayload(apiVersion string) (payload string, ok bool) {
+func GetCreateCFGConfigurationPayload(apiVersion string, addTenant bool) (payload string, ok bool) {
 	common.Infof("Getting product catalog configuration layer data")
 	configData, err := GetProdCatalogConfigData()
 	if err != nil {
@@ -119,6 +120,11 @@ func GetCreateCFGConfigurationPayload(apiVersion string) (payload string, ok boo
 				"name":     cfgLayerName,
 			},
 		},
+	}
+
+	// add the tenant in the payload body if the configuration is created by admin
+	if addTenant {
+		cfsPayload["tenant_name"] = common.GetTenantName()
 	}
 
 	// Setting the clone_url in the payload based on the API version
@@ -145,7 +151,7 @@ func GetCreateCFGConfigurationPayload(apiVersion string) (payload string, ok boo
 	return string(jsonPayload), true
 }
 
-func CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, payload string) (cfsConfig CFSConfiguration, ok bool) {
+func CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, payload string, httpStatus int) (cfsConfig CFSConfiguration, ok bool) {
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		common.Error(fmt.Errorf("Unable to get access token params"))
@@ -155,7 +161,7 @@ func CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, payload string) 
 	// Set the payload for the request
 	params.JsonStr = payload
 	url := constructCFSURL("configurations", apiVersion) + "/" + cfgName
-	resp, err := test.RestfulVerifyStatus("PUT", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("PUT", url, *params, httpStatus)
 
 	if err != nil {
 		common.Error(err)
@@ -180,7 +186,7 @@ func GetCFSConfigurationRecordAPI(cfgName, apiVersion string, httpStatus int) (c
 	}
 
 	url := constructCFSURL("configurations", apiVersion) + "/" + cfgName
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, httpStatus)
 
 	if err != nil {
 		common.Error(err)
@@ -205,7 +211,7 @@ func GetCFSConfigurationsListAPIV2(apiVersion string) (cfsConfigurations []CFSCo
 	}
 
 	url := constructCFSURL("configurations", apiVersion)
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, http.StatusOK)
 
 	if err != nil {
 		common.Error(err)
@@ -230,7 +236,7 @@ func GetCFSConfigurationsListAPI(apiVersion string) (cfsConfigurations CFSConfig
 	}
 
 	url := constructCFSURL("configurations", apiVersion)
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, http.StatusOK)
 
 	if err != nil {
 		common.Error(err)
@@ -265,7 +271,7 @@ func GetAPIBasedCFSConfigurationRecordList(apiVersion string) (cfsConfig []CFSCo
 	return cfsConfig, true
 }
 
-func DeleteCFSConfigurationRecordAPI(cfgName, apiVersion string) (ok bool) {
+func DeleteCFSConfigurationRecordAPI(cfgName, apiVersion string, httpStatus int) (ok bool) {
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		common.Error(fmt.Errorf("Unable to get access token params"))
@@ -273,7 +279,7 @@ func DeleteCFSConfigurationRecordAPI(cfgName, apiVersion string) (ok bool) {
 	}
 
 	url := constructCFSURL("configurations", apiVersion) + "/" + cfgName
-	_, err := test.RestfulVerifyStatus("DELETE", url, *params, http.StatusNoContent)
+	_, err := VerifyRestStatusWithTenant("DELETE", url, *params, httpStatus)
 
 	if err != nil {
 		common.Error(err)
@@ -358,4 +364,61 @@ func constructCFSURL(endpoint, apiVersion string) string {
 		return base + "/" + apiVersion + endpoints["cfs"][endpoint].Uri
 	}
 	return base + endpoints["cfs"][endpoint].Uri
+}
+
+func VerifyRestStatusWithTenant(method, uri string, params common.Params, expectedStatus int) (*resty.Response, error) {
+	tenantName := common.GetTenantName()
+	// Checking if Tenant name is set or not
+	if len(tenantName) == 0 {
+		return test.RestfulVerifyStatus(method, uri, params, expectedStatus)
+	} else {
+		if common.IsDummyTenant(tenantName) {
+			// If the tenant name is a dummy tenant, we can skip the verification
+			return test.TenantRestfulVerifyStatus(method, uri, tenantName, params, http.StatusBadRequest)
+		}
+		return test.TenantRestfulVerifyStatus(method, uri, tenantName, params, expectedStatus)
+	}
+}
+
+func GetExpectedHTTPStatusCode() int {
+	tenantName := common.GetTenantName()
+	if common.IsDummyTenant(tenantName) {
+		// If the tenant name is a dummy tenant, BadRequest is the expected status code
+		return http.StatusBadRequest
+	}
+	return http.StatusOK
+}
+
+func GetTenantFromList() string {
+	tenantList, err := k8s.GetTenants()
+	if err != nil {
+		common.Errorf("Error getting tenant list: %s", err.Error())
+		return ""
+	}
+
+	// Set the tenant name to be used in the tests
+	tenantName, err := common.GetRandomStringFromList(tenantList)
+	if err != nil {
+		common.Errorf("Error getting random tenant from list: %s", err.Error())
+		return ""
+	}
+	common.Infof("Using tenant: %s", tenantName)
+	return tenantName
+}
+
+func GetAnotherTenantFromList(currentTenant string) string {
+	tenantList, err := k8s.GetTenants()
+	if err != nil {
+		common.Errorf("Error getting tenant list: %s", err.Error())
+		return ""
+	}
+
+	// Set the tenant name to be used in the tests
+	tenantName, err := common.GetRandomStringFromListExcept(tenantList, currentTenant)
+	if err != nil {
+		common.Errorf("Error getting random tenant from list excluding %s: %s", currentTenant, err.Error())
+		return ""
+	}
+	common.Infof("Using another tenant: %s", tenantName)
+	return tenantName
 }
