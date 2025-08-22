@@ -182,6 +182,14 @@ func GetTenantName() string {
 	return tenantName
 }
 
+func GetDummyTenantName() string {
+	return "dummy-tenant-" + string(GetRandomString(5))
+}
+
+func IsDummyTenant(tenantName string) bool {
+	return strings.HasPrefix(tenantName, "dummy-tenant")
+}
+
 // Set and unset the run sub-tag
 func SetRunSubTag(tag string) {
 	if len(runTags) < 1 {

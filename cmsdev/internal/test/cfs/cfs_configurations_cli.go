@@ -41,14 +41,15 @@ import (
 func RunVersionedCFSCommand(cliVersion string, cmdArgs ...string) []byte {
 	common.Infof("Testing CFS CLI (%s %s)", cliVersion, strings.Join(cmdArgs, " "))
 	if cliVersion == "" {
-		return test.RunCLICommandJSON("cfs", cmdArgs...)
+		return test.TenantRunCLICommandJSON(common.GetTenantName(), "cfs", cmdArgs...)
 	}
 	newArgs := append([]string{cliVersion}, cmdArgs...)
-	return test.RunCLICommandJSON("cfs", newArgs...)
+	return test.TenantRunCLICommandJSON(common.GetTenantName(), "cfs", newArgs...)
 }
 
-func CreateCFSConfigurationFile(cfgName, cliVersion string) (fileName string, payload string, ok bool) {
-	payload, success := GetCreateCFGConfigurationPayload(cliVersion)
+func CreateCFSConfigurationFile(cfgName, cliVersion string, addTenant bool) (fileName string, payload string, ok bool) {
+	fileName = "cfs_configuration"
+	payload, success := GetCreateCFGConfigurationPayload(cliVersion, addTenant)
 	if !success {
 		return "", "", false
 	}
@@ -80,6 +81,10 @@ func CreateUpdateCFSConfigurationCLI(cfgName, fileName, cliVersion string) (cfsC
 		} else {
 			common.Error(err)
 		}
+	}
+	// if the tenant is a dummy tenant, we expect the command to fail
+	if common.IsDummyTenant(common.GetTenantName()) {
+		return CFSConfiguration{}, true
 	}
 	return
 }

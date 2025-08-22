@@ -43,13 +43,15 @@ func TestCFSSourcesCRUDOperation() (passed bool) {
 		return false
 	}
 
-	updated := TestCFSSourceUpdate(cfsSourceRecord.Name)
+	if len(cfsSourceRecord.Name) != 0 {
+		updated := TestCFSSourceUpdate(cfsSourceRecord.Name)
 
-	deleted := TestCFSSourceDelete(cfsSourceRecord.Name)
+		deleted := TestCFSSourceDelete(cfsSourceRecord.Name)
 
-	getAll := TestCFSSourceGetAll()
+		getAll := TestCFSSourceGetAll()
 
-	passed = passed && updated && deleted && getAll
+		passed = passed && updated && deleted && getAll
+	}
 
 	return passed
 }

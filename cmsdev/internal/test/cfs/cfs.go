@@ -91,7 +91,7 @@ func IsCFSRunning() (passed bool) {
 	if !testCFSAPI() {
 		passed = false
 	}
-	if !TestCFSConfigurationsCRUDOperationUsingAPIVersions() {
+	if !TestCFSConfigurationsCRUDOperationWithTenantsUsingAPIVersions() {
 		passed = false
 	}
 	if !TestCFSSourcesCRUDOperation() {
@@ -100,10 +100,10 @@ func IsCFSRunning() (passed bool) {
 	if !testCFSCLI() {
 		passed = false
 	}
-	if !TestCFSConfigurationsCRUDOperationUsingCLI() {
+	if !TestCFSConfigurationsCRUDOperationWithTenantsUsingCLI() {
 		passed = false
 	}
-	if !TestCFSSourcesCRUDOperationCLI() {
+	if !TestCFSSourcesCRUDOperationUsingCLI() {
 		passed = false
 	}
 	if !passed {

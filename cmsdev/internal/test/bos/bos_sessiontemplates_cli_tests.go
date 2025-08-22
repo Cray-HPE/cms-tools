@@ -39,7 +39,7 @@ import (
 func TestSessionTemplatesCRUDOperationsWithTenantUsingCLI() (passed bool) {
 	passed = TestSessionTemplatesCRUDOperationsUsingCLI()
 	tenantList := []string{}
-	dummyTenantName := GetDummyTenantName()
+	dummyTenantName := common.GetDummyTenantName()
 	tenantList = append(tenantList, dummyTenantName)
 	// Running the tests with tenants
 	tenantName := GetTenantFromList()
@@ -117,7 +117,7 @@ func TestCLISessionTemplatesCreate(arch, imageId, cliVersion string) (sessionTem
 	}
 
 	// If the tenant is a dummy tenant, we expect the command to fail
-	if IsDummyTenant(common.GetTenantName()) {
+	if common.IsDummyTenant(common.GetTenantName()) {
 		// Set execution code to 2 to indicate that the session template creation is not supported for dummy tenants
 		test.SetCliExecreturnCode(2)
 	}
