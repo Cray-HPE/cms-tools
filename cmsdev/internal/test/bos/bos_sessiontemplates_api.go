@@ -405,7 +405,7 @@ func VerifyRestStatusWithTenant(method, uri string, params common.Params, expect
 	if len(tenantName) == 0 {
 		return test.RestfulVerifyStatus(method, uri, params, expectedStatus)
 	} else {
-		if IsDummyTenant(tenantName) {
+		if common.IsDummyTenant(tenantName) {
 			// If the tenant name is a dummy tenant, we can skip the verification
 			return test.TenantRestfulVerifyStatus(method, uri, tenantName, params, http.StatusBadRequest)
 		}
@@ -415,7 +415,7 @@ func VerifyRestStatusWithTenant(method, uri string, params common.Params, expect
 
 func GetExpectedHTTPStatusCode() int {
 	tenantName := common.GetTenantName()
-	if IsDummyTenant(tenantName) {
+	if common.IsDummyTenant(tenantName) {
 		// If the tenant name is a dummy tenant, the expected response is StatusBadRequest
 		return http.StatusBadRequest
 	}
@@ -437,12 +437,4 @@ func GetTenantFromList() string {
 	}
 	common.Infof("Using tenant: %s", tenantName)
 	return tenantName
-}
-
-func GetDummyTenantName() string {
-	return "dummy-tenant-" + string(common.GetRandomString(5))
-}
-
-func IsDummyTenant(tenantName string) bool {
-	return strings.HasPrefix(tenantName, "dummy-tenant")
 }
