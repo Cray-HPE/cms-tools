@@ -32,15 +32,18 @@ package common
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 var CommandPaths = map[string]string{}
 
 const CmdRcCannotGet = -1
+const CLI_TIMEOUT_SECONDS = 300 * time.Second // Timeout for CLI calls setting it to 5 minute
 
 // Ran is set to true if the Run command was called on the
 // Cmd object. It does not mean that the command itself actually
@@ -105,7 +108,11 @@ func (cmdResult *CommandResult) SetEnvVars() string {
 func (cmdResult *CommandResult) Run() (err error) {
 	var stdout, stderr bytes.Buffer
 
-	cmdResult.ExecCmd = exec.Command(cmdResult.CmdPath, cmdResult.CmdArgs...)
+	// Create a context for CLI command.
+	ctx, cancel := context.WithTimeout(context.Background(), CLI_TIMEOUT_SECONDS)
+	defer cancel()
+
+	cmdResult.ExecCmd = exec.CommandContext(ctx, cmdResult.CmdPath, cmdResult.CmdArgs...)
 	cmdResult.CmdString = fmt.Sprintf("%s", cmdResult.ExecCmd)
 	envVarNames := cmdResult.SetEnvVars()
 	if len(envVarNames) > 0 {
@@ -119,6 +126,15 @@ func (cmdResult *CommandResult) Run() (err error) {
 
 	cmdResult.CmdErr = cmdResult.ExecCmd.Run()
 	cmdResult.Ran = true
+
+	// Check for timeout first
+	if ctx.Err() == context.DeadlineExceeded {
+		cmdResult.Rc = CmdRcCannotGet
+		Error(fmt.Errorf("CLI command timed out"))
+		err = fmt.Errorf("CLI command timed out")
+		return
+	}
+
 	if cmdResult.CmdErr != nil {
 		if exitError, ok := cmdResult.CmdErr.(*exec.ExitError); ok {
 			cmdResult.Rc = exitError.ExitCode()
