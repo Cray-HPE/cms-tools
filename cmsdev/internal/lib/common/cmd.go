@@ -43,7 +43,7 @@ import (
 var CommandPaths = map[string]string{}
 
 const CmdRcCannotGet = -1
-const CLI_TIMEOUT_SECONDS = 120 * time.Second // Timeout for CLI calls setting it to 5 minute
+const CLI_TIMEOUT_SECONDS = 120 * time.Second // Timeout for CLI calls setting it to 2 minutes
 
 // Ran is set to true if the Run command was called on the
 // Cmd object. It does not mean that the command itself actually
@@ -132,10 +132,7 @@ func (cmdResult *CommandResult) Run() (err error) {
 		cmdResult.Rc = CmdRcCannotGet
 		Error(fmt.Errorf("CLI command timed out"))
 		err = fmt.Errorf("CLI command timed out")
-		return
-	}
-
-	if cmdResult.CmdErr != nil {
+	} else if cmdResult.CmdErr != nil {
 		if exitError, ok := cmdResult.CmdErr.(*exec.ExitError); ok {
 			cmdResult.Rc = exitError.ExitCode()
 		} else {
@@ -146,6 +143,7 @@ func (cmdResult *CommandResult) Run() (err error) {
 	} else {
 		cmdResult.Rc = 0
 	}
+
 	cmdResult.OutBytes, cmdResult.ErrBytes = stdout.Bytes(), stderr.Bytes()
 	if cmdResult.Rc != CmdRcCannotGet {
 		Debugf("Command return code: %d", cmdResult.Rc)

@@ -31,12 +31,13 @@ package vcs
 import (
 	"crypto/tls"
 	"fmt"
-	resty "gopkg.in/resty.v1"
 	"net/http"
 	"os"
+	"strings"
+
+	resty "gopkg.in/resty.v1"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
-	"strings"
 )
 
 const VCSURL = common.BASEURL + "/vcs/api/v1"
@@ -138,6 +139,7 @@ func vcsRequest(requestType, requestUri, jsonString string, expectedStatusCode i
 	}
 
 	client := resty.New()
+	client.SetTimeout(common.API_TIMEOUT_SECONDS)
 	client.SetHeader("Content-Type", "application/json")
 	client.SetBasicAuth(vcsUser, vcsPass)
 
