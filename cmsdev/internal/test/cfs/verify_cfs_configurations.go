@@ -158,6 +158,15 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 
 	passed = passed && !updated && !deleted && !get
 
+	// Delete the configuration using admin
+	common.SetTenantName("")
+	success = DeleteCFSConfigurationRecordAPI(cfgName, apiVersion, http.StatusNoContent)
+	if !success {
+		common.Infof("CFS configuration %s not successfully deleted with Admin: %s", cfgName)
+	}
+	// Setting the tenant back to the original tenant
+	common.SetTenantName(existingTenant)
+
 	return
 }
 
@@ -412,6 +421,11 @@ func TestCFSConfigurationDelete(cfgName string, apiVersion string) (success bool
 	success = DeleteCFSConfigurationRecordAPI(cfgName, apiVersion, http.StatusNoContent)
 	if !success {
 		return false
+	}
+
+	if GetExpectedHTTPStatusCode() != http.StatusNoContent {
+		common.Infof("CFS configuration %s not successfully deleted with dummy tenant: %s", cfgName, common.GetTenantName())
+		return true
 	}
 
 	// Verify CFS configuration record is deleted
