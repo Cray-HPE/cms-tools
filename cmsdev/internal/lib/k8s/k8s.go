@@ -207,12 +207,20 @@ func GetAccessJSON(params ...string) ([]byte, error) {
 	}
 	client := resty.New()
 	client.SetTimeout(common.API_TIMEOUT_SECONDS)
+	client.SetRetryCount(common.API_RETRY_COUNT)
+	client.SetRetryWaitTime(common.API_RETRY_WAIT_SECONDS * time.Second)
 	client.SetHeader("Content-Type", "application/json")
 	client.SetFormData(map[string]string{
 		"grant_type":    "client_credentials",
 		"client_id":     "admin-client",
 		"client_secret": clientSecret,
 	})
+
+	// Add retry condition for HTTP 503 status code
+	client.AddRetryCondition(func(r *resty.Response) (bool, error) {
+		return r.StatusCode() == 503, errors.New("Received HTTP 503 from server, retrying...")
+	})
+
 	resp, err := client.R().Post("https://api-gw-service-nmn.local/keycloak/realms/shasta/protocol/openid-connect/token")
 	if err != nil {
 		return nil, err

@@ -30,10 +30,12 @@ package vcs
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	resty "gopkg.in/resty.v1"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
@@ -140,9 +142,15 @@ func vcsRequest(requestType, requestUri, jsonString string, expectedStatusCode i
 
 	client := resty.New()
 	client.SetTimeout(common.API_TIMEOUT_SECONDS)
+	client.SetRetryCount(common.API_RETRY_COUNT)
+	client.SetRetryWaitTime(common.API_RETRY_WAIT_SECONDS * time.Second)
 	client.SetHeader("Content-Type", "application/json")
 	client.SetBasicAuth(vcsUser, vcsPass)
 
+	// Add retry condition for HTTP 503 status code
+	client.AddRetryCondition(func(r *resty.Response) (bool, error) {
+		return r.StatusCode() == 503, errors.New("Received HTTP 503 from server, retrying...")
+	})
 	requestUrl := VCSURL + requestUri
 
 	for true {
