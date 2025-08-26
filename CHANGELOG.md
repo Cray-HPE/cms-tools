@@ -8,8 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- CASMCMS-9472: Add multitenancy BOS CRUD tests to cmsdev
-- CASMCMS-9471: Add multitenancy CFS CRUD tests to cmsdev
+- CASMCMS-9472: cmsdev: Add multitenancy BOS CRUD tests
+- CASMCMS-9471: cmsdev: Add multitenancy CFS CRUD tests
+
+### Changed
+- CASMCMS-8550: cmsdev: Add timeouts for CLI and API calls
 
 ### Dependencies
 - Bump `github.com/go-openapi/jsonpointer` from 0.21.1 to 0.21.2 ([#296](https://github.com/Cray-HPE/cms-tools/pull/296))

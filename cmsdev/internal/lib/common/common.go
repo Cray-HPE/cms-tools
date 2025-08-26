@@ -48,6 +48,7 @@ const BASEURL = "https://" + BASEHOST
 const LOCALHOST = "http://localhost:5000"
 const NAMESPACE string = "services"
 const CSMPRODCATALOGCMNAME string = "cray-product-catalog"
+const API_TIMEOUT_SECONDS = 120 * time.Second // Timeout for API calls setting it to 2 minutes
 
 // List of API versions supported by the IMS service
 var IMSAPIVERSIONS = []string{
@@ -583,6 +584,7 @@ func doRest(method, url string, params Params, client *resty.Client) (*resty.Res
 // Restful() performs CMS RESTful calls
 func Restful(method, url string, params Params) (*resty.Response, error) {
 	client := resty.New()
+	client.SetTimeout(API_TIMEOUT_SECONDS)
 	client.SetHeaders(map[string]string{
 		"Accept":       "application/json",
 		"User-Agent":   "cmsdev",
@@ -595,6 +597,7 @@ func Restful(method, url string, params Params) (*resty.Response, error) {
 // Restful() performs CMS RESTful calls on behalf of the specified tenant
 func RestfulTenant(method, url, tenant string, params Params) (*resty.Response, error) {
 	client := resty.New()
+	client.SetTimeout(API_TIMEOUT_SECONDS)
 	client.SetHeaders(map[string]string{
 		"Accept":           "application/json",
 		"User-Agent":       "cmsdev",
