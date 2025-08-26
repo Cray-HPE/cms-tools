@@ -598,6 +598,7 @@ func Restful(method, url string, params Params) (*resty.Response, error) {
 	client.SetAuthToken(params.Token)
 	// Add retry condition for HTTP 503 status code
 	client.AddRetryCondition(func(r *resty.Response) (bool, error) {
+		fmt.Printf("Received HTTP code 503 from server, Waiting for: %d seconds before retry\n", API_RETRY_WAIT_SECONDS)
 		return r.StatusCode() == 503, errors.New("Received HTTP 503 from server, retrying...")
 	})
 	return doRest(method, url, params, client)
@@ -618,6 +619,7 @@ func RestfulTenant(method, url, tenant string, params Params) (*resty.Response, 
 	client.SetAuthToken(params.Token)
 	// Add retry condition for HTTP 503 status code
 	client.AddRetryCondition(func(r *resty.Response) (bool, error) {
+		fmt.Printf("Received HTTP code 503 from server, Waiting for: %d seconds before retry\n", API_RETRY_WAIT_SECONDS)
 		return r.StatusCode() == 503, errors.New("Received HTTP 503 from server, retrying...")
 	})
 	return doRest(method, url, params, client)
