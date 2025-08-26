@@ -30,7 +30,6 @@ package vcs
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -149,8 +148,11 @@ func vcsRequest(requestType, requestUri, jsonString string, expectedStatusCode i
 
 	// Add retry condition for HTTP 503 status code
 	client.AddRetryCondition(func(r *resty.Response) (bool, error) {
-		fmt.Printf("Received HTTP code 503 from server, Waiting for: %d seconds before retry\n", common.API_RETRY_WAIT_SECONDS)
-		return r.StatusCode() == 503, errors.New("Received HTTP 503 from server, retrying...")
+		if r.StatusCode() == 503 {
+			fmt.Printf("Received HTTP code 503 from server, Waiting for: %d seconds before retry\n", common.API_RETRY_WAIT_SECONDS)
+			return true, nil
+		}
+		return false, nil
 	})
 	requestUrl := VCSURL + requestUri
 
