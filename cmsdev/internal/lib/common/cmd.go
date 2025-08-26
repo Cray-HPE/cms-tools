@@ -43,7 +43,7 @@ import (
 var CommandPaths = map[string]string{}
 
 const CmdRcCannotGet = -1
-const CLI_TIMEOUT_SECONDS = 3 * time.Second // Timeout for CLI calls setting it to 2 minutes
+const CLI_TIMEOUT_SECONDS = 120 * time.Second // Timeout for CLI calls setting it to 2 minutes
 
 // Ran is set to true if the Run command was called on the
 // Cmd object. It does not mean that the command itself actually

@@ -48,7 +48,7 @@ const BASEURL = "https://" + BASEHOST
 const LOCALHOST = "http://localhost:5000"
 const NAMESPACE string = "services"
 const CSMPRODCATALOGCMNAME string = "cray-product-catalog"
-const API_TIMEOUT_SECONDS = 3 * time.Second // Timeout for API calls setting it to 2 minutes
+const API_TIMEOUT_SECONDS = 120 * time.Second // Timeout for API calls setting it to 2 minutes
 
 // List of API versions supported by the IMS service
 var IMSAPIVERSIONS = []string{
