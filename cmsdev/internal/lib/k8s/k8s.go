@@ -206,6 +206,7 @@ func GetAccessJSON(params ...string) ([]byte, error) {
 		clientSecret = string(clientSecretByte)
 	}
 	client := resty.New()
+	client.SetTimeout(common.API_TIMEOUT_SECONDS)
 	client.SetHeader("Content-Type", "application/json")
 	client.SetFormData(map[string]string{
 		"grant_type":    "client_credentials",
