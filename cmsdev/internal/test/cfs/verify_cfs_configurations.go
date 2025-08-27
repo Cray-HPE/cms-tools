@@ -362,6 +362,12 @@ func TestCFSConfigurationUpdate(cfgName, apiVersion string) (success bool) {
 		return false
 	}
 
+	// If the update operation is performed using dummy tenant, we expect the status code not to be 200.
+	if GetExpectedHTTPStatusCode() != http.StatusOK {
+		common.Infof("CFS configuration %s not successfully updated with dummy tenant: %s", cfgName, common.GetTenantName())
+		return true
+	}
+
 	// Verify the CFS configuration record
 	_, success = GetCFSConfigurationRecordAPI(cfgName, apiVersion, http.StatusOK)
 	if !success {
@@ -423,6 +429,7 @@ func TestCFSConfigurationDelete(cfgName string, apiVersion string) (success bool
 		return false
 	}
 
+	// / If the delete operation is performed using dummy tenant, we expect the status code not to be 204.
 	if GetExpectedHTTPStatusCode() != http.StatusNoContent {
 		common.Infof("CFS configuration %s not successfully deleted with dummy tenant: %s", cfgName, common.GetTenantName())
 		return true
