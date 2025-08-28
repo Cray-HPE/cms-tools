@@ -155,8 +155,10 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 	getAll := TestCFSConfigurationGetAll(apiVersion)
 
 	updated := TestCFSConfigurationUpdate(cfsConfigurationRecord.Name, apiVersion)
+	common.Infof("Update value: %t", updated)
 
 	deleted := TestCFSConfigurationDelete(cfsConfigurationRecord.Name, apiVersion)
+	common.Infof("Delete value: %t", deleted)
 
 	// Delete the configuration using admin
 	common.SetTenantName("")
@@ -167,6 +169,7 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 	}
 
 	passed = passed && !updated && !deleted && !get && !getAll && success
+	common.Infof("TestCFSConfigurationsCRUDOperationWithDummyTenant: passed: %t", passed)
 	// Setting the tenant back to the original tenant
 	common.SetTenantName(existingTenant)
 
@@ -364,6 +367,8 @@ func TestCFSConfigurationUpdate(cfgName, apiVersion string) (success bool) {
 	if !success {
 		return false
 	}
+
+	common.Infof("cfg conf record after update: %+v and status %t", cfsConfigurationRecord, success)
 
 	// If the update operation is performed using dummy tenant, we expect the status code not to be 200.
 	if GetExpectedHTTPStatusCode() != http.StatusOK {

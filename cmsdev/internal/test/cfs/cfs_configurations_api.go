@@ -173,7 +173,7 @@ func CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, payload string, 
 		common.Error(err)
 		return CFSConfiguration{}, false
 	}
-
+	common.Infof("CFS configuration record: %+v", cfsConfig)
 	ok = true
 	return
 }
