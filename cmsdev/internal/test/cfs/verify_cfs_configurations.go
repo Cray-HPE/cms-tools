@@ -130,15 +130,15 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 	cfgName := "CFS_Configuration_" + string(common.GetRandomString(10))
 	common.PrintLog(fmt.Sprintf("Running CFS configurations update, Delete tests with dummy tenant: %s after creating with Admin.", common.GetTenantName()))
 
-	// Unsetting the tenant name to create a configuration that belongs to the new tenant using admin
-	common.SetTenantName("")
-
 	// get CFS configuration payload with tenane_name set in the payload
 	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion, true)
 	if !success {
 		common.Infof("Unable to get CFS configuration payload, skippinhg the test.")
 		return true
 	}
+
+	// Unsetting the tenant name to create a configuration that belongs to the new tenant using admin
+	common.SetTenantName("")
 
 	// Attempt to create CFS configuration with the same name in a different tenant
 	cfsConfigurationRecord, success := CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, http.StatusOK)
@@ -149,14 +149,17 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 
 	common.SetTenantName(existingTenant)
 
+	// Run CRUD operations with dummy tenant
+	common.PrintLog(fmt.Sprintf("Running GET CFS configuration: %s test", cfsConfigurationRecord.Name))
+	_, get := GetCFSConfigurationRecordAPI(cfsConfigurationRecord.Name, apiVersion, http.StatusOK)
+
+	getAll := TestCFSConfigurationGetAll(apiVersion)
+
 	updated := TestCFSConfigurationUpdate(cfsConfigurationRecord.Name, apiVersion)
 
 	deleted := TestCFSConfigurationDelete(cfsConfigurationRecord.Name, apiVersion)
 
-	// verify Cfs configuration record
-	_, get := GetCFSConfigurationRecordAPI(cfsConfigurationRecord.Name, apiVersion, http.StatusOK)
-
-	passed = passed && !updated && !deleted && !get
+	passed = passed && !updated && !deleted && !get && !getAll
 
 	// Delete the configuration using admin
 	common.SetTenantName("")
