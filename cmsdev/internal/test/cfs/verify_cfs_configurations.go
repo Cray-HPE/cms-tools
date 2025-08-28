@@ -105,7 +105,6 @@ func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 
 	// Testing CFS configuration CRUD operation that does not belong to the same tenant
 	if len(cfsConfigurationRecord.Name) != 0 && !common.IsDummyTenant(common.GetTenantName()) && apiVersion != "v2" {
-
 		createdWithTenant := TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfsConfigurationRecord.Name)
 		updatedWithTenant := TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfsConfigurationRecord.Name)
 		deletedWithTenant := TestCFSConfigurationDeleteUsingDifferentTenant(apiVersion, cfsConfigurationRecord.Name)
