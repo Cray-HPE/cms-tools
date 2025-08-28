@@ -81,7 +81,7 @@ func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 		return false
 	}
 
-	// Test Update, Delete and get with dummy tenant after creating with Admin
+	// Test Update, Delete, and Get with dummy tenant after creating with admin
 	if len(cfsConfigurationRecord.Name) == 0 && apiVersion != "v2" {
 		result := TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion)
 		passed = passed && result
