@@ -108,7 +108,7 @@ func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 		createdWithTenant := TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfsConfigurationRecord.Name)
 		updatedWithTenant := TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfsConfigurationRecord.Name)
 		deletedWithTenant := TestCFSConfigurationDeleteUsingDifferentTenant(apiVersion, cfsConfigurationRecord.Name)
-		passed = createdWithTenant && updatedWithTenant && deletedWithTenant
+		passed = passed && createdWithTenant && updatedWithTenant && deletedWithTenant
 	}
 
 	if len(cfsConfigurationRecord.Name) != 0 {
@@ -168,7 +168,7 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 		common.Infof("CFS configuration %s not successfully deleted with Admin: %s", cfgName)
 	}
 
-	passed = passed && !updated && !deleted && !get && !getAll && success
+	passed = passed && updated && deleted && get && getAll && success
 	common.Infof("TestCFSConfigurationsCRUDOperationWithDummyTenant: passed: %t", passed)
 	// Setting the tenant back to the original tenant
 	common.SetTenantName(existingTenant)
