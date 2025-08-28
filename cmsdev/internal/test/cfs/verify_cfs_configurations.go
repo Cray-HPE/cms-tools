@@ -163,6 +163,7 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 
 	// Delete the configuration using admin
 	common.SetTenantName("")
+	common.Infof("Deleting CFS configuration %s using Admin.", cfsConfigurationRecord.Name)
 	success = DeleteCFSConfigurationRecordAPI(cfgName, apiVersion, http.StatusNoContent)
 	if !success {
 		common.Infof("CFS configuration %s not successfully deleted with Admin: %s", cfgName)

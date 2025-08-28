@@ -416,7 +416,7 @@ func GetAnotherTenantFromList(currentTenant string) string {
 	// Set the tenant name to be used in the tests
 	tenantName, err := common.GetRandomStringFromListExcept(tenantList, currentTenant)
 	if err != nil {
-		common.Errorf("Error getting random tenant from list excluding %s: %s", currentTenant, err.Error())
+		common.Warnf("Error getting random tenant from list excluding %s: %s", currentTenant, err.Error())
 		return ""
 	}
 	common.Infof("Using another tenant: %s", tenantName)
