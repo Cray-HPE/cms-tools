@@ -31,7 +31,6 @@ package cfs
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"sort"
 
 	resty "gopkg.in/resty.v1"
@@ -173,7 +172,7 @@ func CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, payload string, 
 		common.Error(err)
 		return CFSConfiguration{}, false
 	}
-	common.Infof("CFS configuration record: %+v", cfsConfig)
+
 	ok = true
 	return
 }
@@ -203,7 +202,7 @@ func GetCFSConfigurationRecordAPI(cfgName, apiVersion string, httpStatus int) (c
 	return
 }
 
-func GetCFSConfigurationsListAPIV2(apiVersion string) (cfsConfigurations []CFSConfiguration, ok bool) {
+func GetCFSConfigurationsListAPIV2(apiVersion string, expectedHttpStatus int) (cfsConfigurations []CFSConfiguration, ok bool) {
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		common.Error(fmt.Errorf("Unable to get access token params"))
@@ -211,7 +210,7 @@ func GetCFSConfigurationsListAPIV2(apiVersion string) (cfsConfigurations []CFSCo
 	}
 
 	url := constructCFSURL("configurations", apiVersion)
-	resp, err := VerifyRestStatusWithTenant("GET", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, expectedHttpStatus)
 
 	if err != nil {
 		common.Error(err)
@@ -228,7 +227,7 @@ func GetCFSConfigurationsListAPIV2(apiVersion string) (cfsConfigurations []CFSCo
 	return
 }
 
-func GetCFSConfigurationsListAPI(apiVersion string) (cfsConfigurations CFSConfigurationsList, ok bool) {
+func GetCFSConfigurationsListAPI(apiVersion string, expectedHttpStatus int) (cfsConfigurations CFSConfigurationsList, ok bool) {
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		common.Error(fmt.Errorf("Unable to get access token params"))
@@ -236,7 +235,7 @@ func GetCFSConfigurationsListAPI(apiVersion string) (cfsConfigurations CFSConfig
 	}
 
 	url := constructCFSURL("configurations", apiVersion)
-	resp, err := VerifyRestStatusWithTenant("GET", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, expectedHttpStatus)
 
 	if err != nil {
 		common.Error(err)
@@ -253,17 +252,17 @@ func GetCFSConfigurationsListAPI(apiVersion string) (cfsConfigurations CFSConfig
 	return
 }
 
-func GetAPIBasedCFSConfigurationRecordList(apiVersion string) (cfsConfig []CFSConfiguration, ok bool) {
+func GetAPIBasedCFSConfigurationRecordList(apiVersion string, expectedHttpStatus int) (cfsConfig []CFSConfiguration, ok bool) {
 	// Get the CFS configurations list based on the API version. The response will be different for v2 and v3.
 	// For v3, the response will be a list of CFSConfigurationsList, while for v2, it will be a CFSConfigurations struct.
 	if apiVersion == "v3" {
-		cfsConfigV3, ok := GetCFSConfigurationsListAPI(apiVersion)
+		cfsConfigV3, ok := GetCFSConfigurationsListAPI(apiVersion, expectedHttpStatus)
 		if !ok {
 			return []CFSConfiguration{}, false
 		}
 		cfsConfig = cfsConfigV3.Configurations
 	} else {
-		cfsConfig, ok = GetCFSConfigurationsListAPIV2(apiVersion)
+		cfsConfig, ok = GetCFSConfigurationsListAPIV2(apiVersion, expectedHttpStatus)
 		if !ok {
 			return []CFSConfiguration{}, false
 		}
@@ -372,21 +371,8 @@ func VerifyRestStatusWithTenant(method, uri string, params common.Params, expect
 	if len(tenantName) == 0 {
 		return test.RestfulVerifyStatus(method, uri, params, expectedStatus)
 	} else {
-		if common.IsDummyTenant(tenantName) {
-			// If the tenant name is a dummy tenant, we can skip the verification
-			return test.TenantRestfulVerifyStatus(method, uri, tenantName, params, http.StatusBadRequest)
-		}
 		return test.TenantRestfulVerifyStatus(method, uri, tenantName, params, expectedStatus)
 	}
-}
-
-func GetExpectedHTTPStatusCode() int {
-	tenantName := common.GetTenantName()
-	if common.IsDummyTenant(tenantName) {
-		// If the tenant name is a dummy tenant, BadRequest is the expected status code
-		return http.StatusBadRequest
-	}
-	return http.StatusOK
 }
 
 func GetTenantFromList() string {

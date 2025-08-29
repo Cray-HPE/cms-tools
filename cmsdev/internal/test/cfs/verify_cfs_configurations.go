@@ -30,7 +30,6 @@ package cfs
 
 import (
 	"fmt"
-	"net/http"
 
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
@@ -76,7 +75,7 @@ func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 	} else {
 		common.PrintLog("Running CFS configurations tests without tenant")
 	}
-	cfsConfigurationRecord, success := TestCFSConfigurationCreate(apiVersion)
+	cfsConfigurationRecord, success := TestCFSConfigurationCreate(apiVersion, EXPECTED_CFS_CREATE_HTTP_STATUS)
 	if !success {
 		return false
 	}
@@ -92,11 +91,11 @@ func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 		NewTenant := GetAnotherTenantFromList(currentTenant)
 		if len(NewTenant) != 0 {
 			// Verify that the system admin is able to create a configuration of the same name, but belonging to tenant B
-			createdWithAdmin := TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cfsConfigurationRecord.Name, NewTenant)
+			createdWithAdmin := TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cfsConfigurationRecord.Name, NewTenant, EXPECTED_CFS_CREATE_HTTP_STATUS)
 			// Verify that the system admin is able to create a configuration of the same name, but that belongs to no tenant
-			createdWithNoTenant := TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cfsConfigurationRecord.Name, "")
+			createdWithNoTenant := TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cfsConfigurationRecord.Name, "", EXPECTED_CFS_CREATE_HTTP_STATUS)
 			// Verify that the system admin is able to create a configuration of the same name, but belonging to tenant A
-			createdWithOldTenant := TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cfsConfigurationRecord.Name, currentTenant)
+			createdWithOldTenant := TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cfsConfigurationRecord.Name, currentTenant, EXPECTED_CFS_CREATE_HTTP_STATUS)
 			passed = passed && createdWithAdmin && createdWithNoTenant && createdWithOldTenant
 			// Seeting the tenant back to the original tenant
 			common.SetTenantName(currentTenant)
@@ -105,18 +104,18 @@ func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 
 	// Testing CFS configuration CRUD operation that does not belong to the same tenant
 	if len(cfsConfigurationRecord.Name) != 0 && !common.IsDummyTenant(common.GetTenantName()) && apiVersion != "v2" {
-		createdWithTenant := TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfsConfigurationRecord.Name)
-		updatedWithTenant := TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfsConfigurationRecord.Name)
-		deletedWithTenant := TestCFSConfigurationDeleteUsingDifferentTenant(apiVersion, cfsConfigurationRecord.Name)
-		passed = passed && createdWithTenant && updatedWithTenant && deletedWithTenant
+		notCreatedWithTenant := TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfsConfigurationRecord.Name, EXPECTED_CFS_FORBIDDEN_HTTP_STATUS)
+		notUpdatedWithTenant := TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfsConfigurationRecord.Name, EXPECTED_CFS_FORBIDDEN_HTTP_STATUS)
+		notDeletedWithTenant := TestCFSConfigurationDeleteUsingDifferentTenant(apiVersion, cfsConfigurationRecord.Name, EXPECTED_CFS_FORBIDDEN_HTTP_STATUS)
+		passed = passed && notCreatedWithTenant && notUpdatedWithTenant && notDeletedWithTenant
 	}
 
 	if len(cfsConfigurationRecord.Name) != 0 {
-		updated := TestCFSConfigurationUpdate(cfsConfigurationRecord.Name, apiVersion)
+		updated := TestCFSConfigurationUpdate(cfsConfigurationRecord.Name, apiVersion, EXPECTED_CFS_UPDATE_HTTP_STATUS)
 
-		deleted := TestCFSConfigurationDelete(cfsConfigurationRecord.Name, apiVersion)
+		deleted := TestCFSConfigurationDelete(cfsConfigurationRecord.Name, apiVersion, EXPECTED_CFS_DELETE_HTTP_STATUS)
 
-		getAll := TestCFSConfigurationGetAll(apiVersion)
+		getAll := TestCFSConfigurationGetAll(apiVersion, EXPECTED_CFS_GET_HTTP_STATUS)
 
 		return passed && updated && deleted && getAll
 	}
@@ -140,7 +139,7 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 	common.SetTenantName("")
 
 	// Attempt to create CFS configuration with the same name in a different tenant
-	cfsConfigurationRecord, success := CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, http.StatusOK)
+	cfsConfigurationRecord, success := CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, EXPECTED_CFS_CREATE_HTTP_STATUS)
 	if !success {
 		common.Errorf("CFS configuration %s not successfully created with Admin: %s, skipping other tests.", cfgName, common.GetTenantName())
 		return false
@@ -150,25 +149,23 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 
 	// Run CRUD operations with dummy tenant
 	common.PrintLog(fmt.Sprintf("Running GET CFS configuration: %s test", cfsConfigurationRecord.Name))
-	_, get := GetCFSConfigurationRecordAPI(cfsConfigurationRecord.Name, apiVersion, http.StatusOK)
+	_, getFailed := GetCFSConfigurationRecordAPI(cfsConfigurationRecord.Name, apiVersion, EXPECTED_CFS_BAD_REQUEST_HTTP_STATUS)
 
-	getAll := TestCFSConfigurationGetAll(apiVersion)
+	getAllFailed := TestCFSConfigurationGetAll(apiVersion, EXPECTED_CFS_BAD_REQUEST_HTTP_STATUS)
 
-	updated := TestCFSConfigurationUpdate(cfsConfigurationRecord.Name, apiVersion)
-	common.Infof("Update value: %t", updated)
+	notUpdated := TestCFSConfigurationUpdate(cfsConfigurationRecord.Name, apiVersion, EXPECTED_CFS_BAD_REQUEST_HTTP_STATUS)
 
-	deleted := TestCFSConfigurationDelete(cfsConfigurationRecord.Name, apiVersion)
-	common.Infof("Delete value: %t", deleted)
+	notDeleted := TestCFSConfigurationDelete(cfsConfigurationRecord.Name, apiVersion, EXPECTED_CFS_BAD_REQUEST_HTTP_STATUS)
 
 	// Delete the configuration using admin
 	common.SetTenantName("")
 	common.Infof("Deleting CFS configuration %s using Admin.", cfsConfigurationRecord.Name)
-	success = DeleteCFSConfigurationRecordAPI(cfgName, apiVersion, http.StatusNoContent)
+	success = DeleteCFSConfigurationRecordAPI(cfgName, apiVersion, EXPECTED_CFS_DELETE_HTTP_STATUS)
 	if !success {
 		common.Infof("CFS configuration %s not successfully deleted with Admin: %s", cfgName)
 	}
 
-	passed = passed && updated && deleted && get && getAll && success
+	passed = passed && notUpdated && notDeleted && getFailed && getAllFailed && success
 	common.Infof("TestCFSConfigurationsCRUDOperationWithDummyTenant: passed: %t", passed)
 	// Setting the tenant back to the original tenant
 	common.SetTenantName(existingTenant)
@@ -176,7 +173,7 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 	return
 }
 
-func TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cfgName, newTenant string) (success bool) {
+func TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cfgName, newTenant string, expectedHttpStatus int) (success bool) {
 	common.PrintLog(fmt.Sprintf("Admin Creating CFS configuration with same name %s and different tenant.", cfgName))
 	var addTenant bool
 
@@ -201,7 +198,7 @@ func TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cf
 	// Unsetting the tenant name to create a configuration that belongs to the new tenant using admin
 	common.SetTenantName("")
 	// Attempt to create CFS configuration with the same name in a different tenant
-	cfsConfigurationRecord, success := CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, http.StatusOK)
+	cfsConfigurationRecord, success := CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, expectedHttpStatus)
 	if !success {
 		return false
 	}
@@ -209,14 +206,14 @@ func TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cf
 	// Set the new tenant for GET call to work
 	common.SetTenantName(newTenant)
 	// verify Cfs configuration record
-	_, success = GetCFSConfigurationRecordAPI(cfgName, apiVersion, http.StatusOK)
+	_, success = GetCFSConfigurationRecordAPI(cfgName, apiVersion, EXPECTED_CFS_GET_HTTP_STATUS)
 	if !success {
 		common.Errorf("Unable to get CFS configuration record: %s", cfgName)
 		return false
 	}
 
 	// Verify cfs configurations in the list of configurations
-	cfsConfigurations, success := GetAPIBasedCFSConfigurationRecordList(apiVersion)
+	cfsConfigurations, success := GetAPIBasedCFSConfigurationRecordList(apiVersion, EXPECTED_CFS_GET_HTTP_STATUS)
 	if !success {
 		common.Errorf("Unable to get CFS configurations list")
 		return false
@@ -235,7 +232,7 @@ func TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cf
 	return true
 }
 
-func TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfgName string) (success bool) {
+func TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfgName string, expectedHttpStatus int) (success bool) {
 
 	common.PrintLog(fmt.Sprintf("Creating CFS configuration with same name %s and different tenant", cfgName))
 
@@ -257,7 +254,7 @@ func TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfgName s
 
 	common.SetTenantName(newTenant)
 	// Attempt to create CFS configuration with the same name in a different tenant
-	_, success = CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, http.StatusForbidden)
+	_, success = CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, expectedHttpStatus)
 	// Reset tenant name to the original tenant
 	common.SetTenantName(currentTenant)
 
@@ -269,7 +266,7 @@ func TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfgName s
 	return true
 }
 
-func TestCFSConfigurationCreate(apiVersion string) (cfsConfigurationRecord CFSConfiguration, success bool) {
+func TestCFSConfigurationCreate(apiVersion string, expectedHttpStatus int) (cfsConfigurationRecord CFSConfiguration, success bool) {
 	cfgName := "CFS_Configuration_" + string(common.GetRandomString(10))
 
 	common.PrintLog(fmt.Sprintf("Creating CFS configuration: %s", cfgName))
@@ -281,26 +278,27 @@ func TestCFSConfigurationCreate(apiVersion string) (cfsConfigurationRecord CFSCo
 	}
 
 	// create CFS configuration
-	cfsConfigurationRecord, success = CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, http.StatusOK)
+	cfsConfigurationRecord, success = CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, expectedHttpStatus)
 	if !success {
 		return CFSConfiguration{}, false
 	}
 
-	// If the create operation is performed using dummy tenant, we expect the status code not to be 200.
-	if GetExpectedHTTPStatusCode() != http.StatusOK {
+	// If the create operation is performed using dummy tenant, we expect the status code not to be 2XX. Returning here
+	// As further verification is not required if the create was not successful.
+	if expectedHttpStatus > 299 || expectedHttpStatus < 200 {
 		common.Infof("CFS configuration %s not successfully created with dummy tenant: %s", cfgName, common.GetTenantName())
 		return CFSConfiguration{}, true
 	}
 
 	// verify Cfs configuration record
-	_, success = GetCFSConfigurationRecordAPI(cfgName, apiVersion, http.StatusOK)
+	_, success = GetCFSConfigurationRecordAPI(cfgName, apiVersion, EXPECTED_CFS_GET_HTTP_STATUS)
 	if !success {
 		common.Errorf("Unable to get CFS configuration record: %s", cfgName)
 		return CFSConfiguration{}, false
 	}
 
 	// Verify cfs configurations in the list of configurations
-	cfsConfigurations, success := GetAPIBasedCFSConfigurationRecordList(apiVersion)
+	cfsConfigurations, success := GetAPIBasedCFSConfigurationRecordList(apiVersion, EXPECTED_CFS_GET_HTTP_STATUS)
 	if !success {
 		common.Errorf("Unable to get CFS configurations list")
 		return CFSConfiguration{}, false
@@ -320,7 +318,7 @@ func TestCFSConfigurationCreate(apiVersion string) (cfsConfigurationRecord CFSCo
 	return cfsConfigurationRecord, true
 }
 
-func TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfgName string) (success bool) {
+func TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfgName string, expectedHttpStatus int) (success bool) {
 	common.PrintLog(fmt.Sprintf("Updating CFS configuration %s with a non owner tenant.", cfgName))
 
 	// get CFS configuration payload
@@ -341,7 +339,7 @@ func TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfgName string) (
 
 	common.SetTenantName(newTenant)
 	// Attempt to update CFS configuration with the same name in a different tenant
-	_, success = CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, http.StatusForbidden)
+	_, success = CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, expectedHttpStatus)
 	// Reset tenant name to the original tenant
 	common.SetTenantName(currentTenant)
 
@@ -354,7 +352,15 @@ func TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfgName string) (
 	return true
 }
 
-func TestCFSConfigurationUpdate(cfgName, apiVersion string) (success bool) {
+// TestCFSConfigurationUpdate updates an existing CFS configuration
+// with the given name and apiVersion. it returns true for following cases otherwise false:
+// - If the update was successful and following verifications are successful
+//   - The updated configuration can be retrieved using GET operation
+//   - The updated configuration is present in the list of configurations
+//   - The updated configuration matches the payload used for update operation
+//
+// - If the update operation is performed using dummy tenant
+func TestCFSConfigurationUpdate(cfgName, apiVersion string, expectedHttpStatus int) (success bool) {
 	common.PrintLog(fmt.Sprintf("Updating CFS configuration: %s", cfgName))
 	// get CFS configuration payload
 	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion, false)
@@ -363,27 +369,26 @@ func TestCFSConfigurationUpdate(cfgName, apiVersion string) (success bool) {
 	}
 
 	// Update CFS configuration record
-	cfsConfigurationRecord, success := CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, http.StatusOK)
+	cfsConfigurationRecord, success := CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, expectedHttpStatus)
 	if !success {
 		return false
 	}
 
-	common.Infof("cfg conf record after update: %+v and status %t", cfsConfigurationRecord, success)
-
-	// If the update operation is performed using dummy tenant, we expect the status code not to be 200.
-	if GetExpectedHTTPStatusCode() != http.StatusOK {
+	// If the update operation is performed using dummy tenant, we expect the status code not to be 2XX. Returning here
+	// As further verification is not required if the update was not successful.
+	if expectedHttpStatus > 299 || expectedHttpStatus < 200 {
 		common.Infof("CFS configuration %s not successfully updated with dummy tenant: %s", cfgName, common.GetTenantName())
 		return true
 	}
 
 	// Verify the CFS configuration record
-	_, success = GetCFSConfigurationRecordAPI(cfgName, apiVersion, http.StatusOK)
+	_, success = GetCFSConfigurationRecordAPI(cfgName, apiVersion, EXPECTED_CFS_GET_HTTP_STATUS)
 	if !success {
 		return false
 	}
 
 	// Verify cfs configurations in the list of configurations
-	cfsConfigurations, success := GetAPIBasedCFSConfigurationRecordList(apiVersion)
+	cfsConfigurations, success := GetAPIBasedCFSConfigurationRecordList(apiVersion, EXPECTED_CFS_GET_HTTP_STATUS)
 	if !success {
 		return false
 	}
@@ -400,7 +405,7 @@ func TestCFSConfigurationUpdate(cfgName, apiVersion string) (success bool) {
 	return true
 }
 
-func TestCFSConfigurationDeleteUsingDifferentTenant(apiVersion, cfgName string) (success bool) {
+func TestCFSConfigurationDeleteUsingDifferentTenant(apiVersion, cfgName string, expectedHttpStatus int) (success bool) {
 	common.PrintLog(fmt.Sprintf("Deleting CFS configuration %s using a different tenant", cfgName))
 
 	// Get another tenant
@@ -416,7 +421,7 @@ func TestCFSConfigurationDeleteUsingDifferentTenant(apiVersion, cfgName string) 
 
 	common.SetTenantName(newTenant)
 	// Attempt to delete CFS configuration with the same name in a different tenant
-	success = DeleteCFSConfigurationRecordAPI(cfgName, apiVersion, http.StatusForbidden)
+	success = DeleteCFSConfigurationRecordAPI(cfgName, apiVersion, expectedHttpStatus)
 	// Reset tenant name to the original tenant
 	common.SetTenantName(currentTenant)
 
@@ -429,28 +434,29 @@ func TestCFSConfigurationDeleteUsingDifferentTenant(apiVersion, cfgName string) 
 	return true
 }
 
-func TestCFSConfigurationDelete(cfgName string, apiVersion string) (success bool) {
+func TestCFSConfigurationDelete(cfgName string, apiVersion string, expectedHttpStatus int) (success bool) {
 	common.PrintLog(fmt.Sprintf("Deleting CFS configuration: %s", cfgName))
 	// Delete CFS configuration record
-	success = DeleteCFSConfigurationRecordAPI(cfgName, apiVersion, http.StatusNoContent)
+	success = DeleteCFSConfigurationRecordAPI(cfgName, apiVersion, expectedHttpStatus)
 	if !success {
 		return false
 	}
 
-	// / If the delete operation is performed using dummy tenant, we expect the status code not to be 204.
-	if GetExpectedHTTPStatusCode() != http.StatusNoContent {
-		common.Infof("CFS configuration %s not successfully deleted with dummy tenant: %s", cfgName, common.GetTenantName())
+	// If the delete operation is performed using dummy/non owner tenant, we expect the status code not to be 2XX. Returning here
+	// As further verification is not required if the delete was not successful.
+	if expectedHttpStatus > 299 || expectedHttpStatus < 200 {
+		common.Infof("CFS configuration %s not successfully created with dummy tenant: %s", cfgName, common.GetTenantName())
 		return true
 	}
 
 	// Verify CFS configuration record is deleted
-	_, success = GetCFSConfigurationRecordAPI(cfgName, apiVersion, http.StatusNotFound)
+	_, success = GetCFSConfigurationRecordAPI(cfgName, apiVersion, EXPECTED_CFS_NOT_FOUND_HTTP_STATUS)
 	if !success {
 		return false
 	}
 
 	// Verify cfs configurations is not in the list of configurations
-	cfsConfigurations, success := GetAPIBasedCFSConfigurationRecordList(apiVersion)
+	cfsConfigurations, success := GetAPIBasedCFSConfigurationRecordList(apiVersion, EXPECTED_CFS_GET_HTTP_STATUS)
 	if !success {
 		return false
 	}
@@ -463,10 +469,10 @@ func TestCFSConfigurationDelete(cfgName string, apiVersion string) (success bool
 	return true
 }
 
-func TestCFSConfigurationGetAll(apiVersion string) (success bool) {
+func TestCFSConfigurationGetAll(apiVersion string, expectedHttpStatus int) (success bool) {
 	common.PrintLog("Getting all CFS configurations")
 	// Get CFS configurations list
-	cfsConfigurations, success := GetAPIBasedCFSConfigurationRecordList(apiVersion)
+	cfsConfigurations, success := GetAPIBasedCFSConfigurationRecordList(apiVersion, expectedHttpStatus)
 	if !success {
 		return false
 	}
