@@ -317,9 +317,9 @@ func GetAPIBasedCFSConfigurationRecordList(apiVersion string, expectedHttpStatus
 
 // DeleteCFSConfigurationRecordAPI deletes a CFS configuration record by name
 // It takes cfs config name, apiVersion, and expected http status code as parameters
-// It returns true for following cases otherwise false:
-// - If the delete operation is successful and expectedHttpStatus matches the actual http status code
-// - If the delete operation is not successful and expectedHttpStatus matches the actual http status code
+// It returns true if the actual http status code from the API delete call matches the
+// expected http status code (whether or not the API call was successful). It returns
+// false otherwise.
 func DeleteCFSConfigurationRecordAPI(cfgName, apiVersion string, httpStatus int) (ok bool) {
 	params := test.GetAccessTokenParams()
 	if params == nil {

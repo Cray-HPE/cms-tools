@@ -315,9 +315,19 @@ func TestCFSConfigurationCreate(apiVersion string, expectedHttpStatus int) (cfsC
 		return CFSConfiguration{}, false
 	}
 
-	// If the create operation is performed using dummy tenant, we expect the status code not to be 2XX. Returning here
-	// As further verification is not required if the create was not successful.
+	// We need to determine if we should continue on to verify the configuration record,
+	// or if we should stop here.
+	//
+	// If the call to CreateUpdateCFSConfigurationRecordAPI returns success = false, then
+	// we never reach this point. That means that success = true. That function only returns
+	// success = true if the API call was made and its status code matched our expected
+	// status code.
+	//
+	// We want to verify the response in the case that the API call was successful. All
+	// successful API calls have status 2xx. So if our expected status was outside of this
+	// range, and we reached this point, then we know the API call must have failed.
 	if expectedHttpStatus > 299 || expectedHttpStatus < 200 {
+		// This means the API call failed, so we should not verify the response
 		common.Infof("CFS configuration %s not successfully created with dummy tenant: %s", cfgName, common.GetTenantName())
 		return CFSConfiguration{}, true
 	}
@@ -350,8 +360,8 @@ func TestCFSConfigurationCreate(apiVersion string, expectedHttpStatus int) (cfsC
 	return cfsConfigurationRecord, true
 }
 
-// TestCFSConfigurationUpdatewithDifferentTenant attempts to update an existing CFS configuration using a different Non owner tenant.
-// It takes cfs config name, apiVersion and expected http status code as parameters.
+// TestCFSConfigurationUpdatewithDifferentTenant attempts to update an existing CFS configuration using a different non-owner tenant.
+// It takes cfs config name, apiVersion, and expected http status code as parameters.
 // it returns true for following cases otherwise false:
 // - If the update operation is performed using Non owner tenant and update is not successful and
 // expectedHttpStatus matches the actual http status code
@@ -391,14 +401,14 @@ func TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfgName string, e
 }
 
 // TestCFSConfigurationUpdate updates an existing CFS configuration.
-// It takes cfs config name, apiVersion and expected http status code as parameters.
+// It takes cfs config name, apiVersion, and expected http status code as parameters.
 // it returns true for following cases otherwise false:
 // - If the update was successful and following verifications are successful
 //   - The updated configuration can be retrieved using GET operation
 //   - The updated configuration is present in the list of configurations
 //   - The updated configuration matches the payload used for update operation
 //
-// - If the update operation is performed using dummy/Non owner tenant and update is not successful and
+// - If the update operation is performed using dummy or non-owner tenant and update is not successful and
 // expectedHttpStatus matches the actual http status code
 func TestCFSConfigurationUpdate(cfgName, apiVersion string, expectedHttpStatus int) (success bool) {
 	common.PrintLog(fmt.Sprintf("Updating CFS configuration: %s", cfgName))
@@ -414,9 +424,19 @@ func TestCFSConfigurationUpdate(cfgName, apiVersion string, expectedHttpStatus i
 		return false
 	}
 
-	// If the update operation is performed using dummy tenant, we expect the status code not to be 2XX. Returning here
-	// As further verification is not required if the update was not successful.
+	// We need to determine if we should continue on to verify the configuration record,
+	// or if we should stop here.
+	//
+	// If the call to CreateUpdateCFSConfigurationRecordAPI returns success = false, then
+	// we never reach this point. That means that success = true. That function only returns
+	// success = true if the API call was made and its status code matched our expected
+	// status code.
+	//
+	// We want to verify the response in the case that the API call was successful. All
+	// successful API calls have status 2xx. So if our expected status was outside of this
+	// range, and we reached this point, then we know the API call must have failed.
 	if expectedHttpStatus > 299 || expectedHttpStatus < 200 {
+		// This means the API call failed, so we should not verify the response
 		common.Infof("CFS configuration %s not successfully updated with dummy tenant: %s", cfgName, common.GetTenantName())
 		return true
 	}
@@ -446,9 +466,9 @@ func TestCFSConfigurationUpdate(cfgName, apiVersion string, expectedHttpStatus i
 }
 
 // TestCFSConfigurationDeleteUsingDifferentTenant attempts to delete an existing CFS configuration using a different tenant.
-// It takes cfs config name, apiVersion and expected http status code as parameters.
+// It takes cfs config name, apiVersion, and expected http status code as parameters.
 // it returns true for following cases otherwise false:
-// - If the delete operation is performed using Non owner tenant and delete is not successful and
+// - If the delete operation is performed using non-owner tenant and delete is not successful and
 // expectedHttpStatus matches the actual http status code
 // - If new tenant is not found to perform the test
 func TestCFSConfigurationDeleteUsingDifferentTenant(apiVersion, cfgName string, expectedHttpStatus int) (success bool) {
@@ -481,14 +501,14 @@ func TestCFSConfigurationDeleteUsingDifferentTenant(apiVersion, cfgName string, 
 }
 
 // TestCFSConfigurationDelete deletes an existing CFS configuration.
-// It takes cfs config name, apiVersion and expected http status code as parameters.
+// It takes cfs config name, apiVersion, and expected http status code as parameters.
 // Delete operation is expected to succeed if performed using admin or the owner tenant
 // it returns true for following cases otherwise false:
 // - If the delete was successful and following verifications are successful
 //   - The deleted configuration cannot be retrieved using GET operation
 //   - The deleted configuration is not present in the list of configurations
 //
-// - If the delete operation is performed using dummy/Non owner tenant and delete is not successful and
+// - If the delete operation is performed using dummy or non-owner tenant and delete is not successful and
 // expectedHttpStatus matches the actual http status code
 func TestCFSConfigurationDelete(cfgName string, apiVersion string, expectedHttpStatus int) (success bool) {
 	common.PrintLog(fmt.Sprintf("Deleting CFS configuration: %s", cfgName))
@@ -498,9 +518,20 @@ func TestCFSConfigurationDelete(cfgName string, apiVersion string, expectedHttpS
 		return false
 	}
 
-	// If the delete operation is performed using dummy/non owner tenant, we expect the status code not to be 2XX. Returning here
-	// As further verification is not required if the delete was not successful.
+	// We need to determine if we should continue on to verify that the configuration,
+	//  record was actually deleted, or if we should stop here.
+	//
+	// If the call to DeleteCFSConfigurationRecordAPI returns success = false, then
+	// we never reach this point. That means that success = true. That function only returns
+	// success = true if the API call was made and its status code matched our expected
+	// status code.
+	//
+	// We want to verify that the delete actually happened in the case that the API call was
+	// successful. All successful API calls have status 2xx. So if our expected status was
+	// outside of this range, and we reached this point, then we know the API call must
+	// have failed.
 	if expectedHttpStatus > 299 || expectedHttpStatus < 200 {
+		// This means the API call failed, so we should not verify the delete
 		common.Infof("CFS configuration %s not successfully created with dummy tenant: %s", cfgName, common.GetTenantName())
 		return true
 	}
@@ -526,7 +557,7 @@ func TestCFSConfigurationDelete(cfgName string, apiVersion string, expectedHttpS
 }
 
 // TestCFSConfigurationGetAll gets all existing CFS configurations using the given apiVersion and expected http status code.
-// It returns true if the GET ALL API call's return code matches the expected http status code, otherwise false.
+// It returns true if the GET ALL API call's status code matches the expected http status code, otherwise false.
 func TestCFSConfigurationGetAll(apiVersion string, expectedHttpStatus int) (success bool) {
 	common.PrintLog("Getting all CFS configurations")
 	// Get CFS configurations list
