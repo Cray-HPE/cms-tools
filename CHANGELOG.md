@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - CASMCMS-8550: cmsdev: Add timeouts for CLI and API calls
 
+### Fixed
+- CASMCMS-9534: cmsdev: Corrected non-impactful but incorrect `kernel_parameters` value
+  for session template being created.
+
 ### Dependencies
 - Bump `github.com/go-openapi/jsonpointer` from 0.21.1 to 0.21.2 ([#296](https://github.com/Cray-HPE/cms-tools/pull/296))
 - Bump `github.com/spf13/pflag` from 1.0.6 to 1.0.7 ([#295](https://github.com/Cray-HPE/cms-tools/pull/295))
