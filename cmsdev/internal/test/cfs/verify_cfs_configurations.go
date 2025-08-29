@@ -70,12 +70,17 @@ func TestCFSConfigurationsCRUDOperationUsingAPIVersions() (passed bool) {
 
 func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 	passed = true
-	if len(common.GetTenantName()) != 0 {
-		common.PrintLog(fmt.Sprintf("Running CFS configurations tests with tenant: %s", common.GetTenantName()))
+	expectedCreateHttpStatus := EXPECTED_CFS_CREATE_HTTP_STATUS
+	tenantName := common.GetTenantName()
+	if len(tenantName) != 0 {
+		common.PrintLog(fmt.Sprintf("Running CFS configurations tests with tenant: %s", tenantName))
+		if common.IsDummyTenant(tenantName) {
+			expectedCreateHttpStatus = EXPECTED_CFS_BAD_REQUEST_HTTP_STATUS
+		}
 	} else {
 		common.PrintLog("Running CFS configurations tests without tenant")
 	}
-	cfsConfigurationRecord, success := TestCFSConfigurationCreate(apiVersion, EXPECTED_CFS_CREATE_HTTP_STATUS)
+	cfsConfigurationRecord, success := TestCFSConfigurationCreate(apiVersion, expectedCreateHttpStatus)
 	if !success {
 		return false
 	}
