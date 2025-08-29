@@ -28,9 +28,20 @@
  */
 package cfs
 
-import "stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+import (
+	"net/http"
+
+	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+)
 
 var DEFAULT_PLAYBOOK = "compute_nodes.yml"
+var EXPECTED_CFS_CREATE_HTTP_STATUS = http.StatusOK
+var EXPECTED_CFS_UPDATE_HTTP_STATUS = http.StatusOK
+var EXPECTED_CFS_DELETE_HTTP_STATUS = http.StatusNoContent
+var EXPECTED_CFS_GET_HTTP_STATUS = http.StatusOK
+var EXPECTED_CFS_BAD_REQUEST_HTTP_STATUS = http.StatusBadRequest
+var EXPECTED_CFS_NOT_FOUND_HTTP_STATUS = http.StatusNotFound
+var EXPECTED_CFS_FORBIDDEN_HTTP_STATUS = http.StatusForbidden
 
 type CfsLayer struct {
 	Clone_url string `json:"clone_url,omitempty"`
