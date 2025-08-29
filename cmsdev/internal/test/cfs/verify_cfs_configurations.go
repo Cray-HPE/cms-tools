@@ -127,6 +127,10 @@ func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 	return true
 }
 
+// TestCFSConfigurationsCRUDOperationWithDummyTenant runs update, delete, get and get all tests with a dummy tenant
+// after creating the configuration with admin (no tenant).
+// It takes apiVersion as parameter and returns true if all tests pass otherwise false.
+// Note: This test is not run for v2 as v2 does not support tenant in the payload.
 func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passed bool) {
 	passed = true
 	existingTenant := common.GetTenantName()
@@ -171,13 +175,21 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 	}
 
 	passed = passed && notUpdated && notDeleted && getFailed && getAllFailed && success
-	common.Infof("TestCFSConfigurationsCRUDOperationWithDummyTenant: passed: %t", passed)
+
 	// Setting the tenant back to the original tenant
 	common.SetTenantName(existingTenant)
 
 	return
 }
 
+// TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant verifies that the system admin is able to create a configuration of the same name,
+// but belonging to a different tenant or no tenant at all.
+// It takes apiVersion, cfs config name, new tenant name and expected http status code as parameters.
+// it returns true for following cases otherwise false:
+// - If the create was successful and following verifications are successful
+//   - The created configuration can be retrieved using GET operation
+//   - The created configuration is present in the list of configurations
+//   - The created configuration matches the payload used for create operation
 func TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cfgName, newTenant string, expectedHttpStatus int) (success bool) {
 	common.PrintLog(fmt.Sprintf("Admin Creating CFS configuration with same name %s and different tenant.", cfgName))
 	var addTenant bool
@@ -237,6 +249,11 @@ func TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cf
 	return true
 }
 
+// TestCFSConfigurationCreateWithSameNameDifferentTenant attempts to create a CFS configuration with the same name but belonging to a different tenant.
+// It takes apiVersion, cfs config name and expected http status code as parameters.
+// it returns true for following cases otherwise false:
+// - If the create operation is performed using Non owner tenant and create is not successful and
+// expectedHttpStatus matches the actual http status code
 func TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfgName string, expectedHttpStatus int) (success bool) {
 
 	common.PrintLog(fmt.Sprintf("Creating CFS configuration with same name %s and different tenant", cfgName))
@@ -271,6 +288,16 @@ func TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfgName s
 	return true
 }
 
+// TestCFSConfigurationCreate creates a new CFS configuration.
+// It takes apiVersion and expected http status code as parameters.
+// it returns true for following cases otherwise false:
+// - If the create was successful and following verifications are successful
+//   - The created configuration can be retrieved using GET operation
+//   - The created configuration is present in the list of configurations
+//   - The created configuration matches the payload used for create operation
+//
+// - If the create operation is performed using dummy/Non owner tenant and create is not successful
+// and expectedHttpStatus matches the actual http status code
 func TestCFSConfigurationCreate(apiVersion string, expectedHttpStatus int) (cfsConfigurationRecord CFSConfiguration, success bool) {
 	cfgName := "CFS_Configuration_" + string(common.GetRandomString(10))
 
@@ -323,6 +350,12 @@ func TestCFSConfigurationCreate(apiVersion string, expectedHttpStatus int) (cfsC
 	return cfsConfigurationRecord, true
 }
 
+// TestCFSConfigurationUpdatewithDifferentTenant attempts to update an existing CFS configuration using a different Non owner tenant.
+// It takes cfs config name, apiVersion and expected http status code as parameters.
+// it returns true for following cases otherwise false:
+// - If the update operation is performed using Non owner tenant and update is not successful and
+// expectedHttpStatus matches the actual http status code
+// - If new tenant is not found to perform the test
 func TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfgName string, expectedHttpStatus int) (success bool) {
 	common.PrintLog(fmt.Sprintf("Updating CFS configuration %s with a non owner tenant.", cfgName))
 
@@ -357,14 +390,16 @@ func TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfgName string, e
 	return true
 }
 
-// TestCFSConfigurationUpdate updates an existing CFS configuration
-// with the given name and apiVersion. it returns true for following cases otherwise false:
+// TestCFSConfigurationUpdate updates an existing CFS configuration.
+// It takes cfs config name, apiVersion and expected http status code as parameters.
+// it returns true for following cases otherwise false:
 // - If the update was successful and following verifications are successful
 //   - The updated configuration can be retrieved using GET operation
 //   - The updated configuration is present in the list of configurations
 //   - The updated configuration matches the payload used for update operation
 //
-// - If the update operation is performed using dummy tenant
+// - If the update operation is performed using dummy/Non owner tenant and update is not successful and
+// expectedHttpStatus matches the actual http status code
 func TestCFSConfigurationUpdate(cfgName, apiVersion string, expectedHttpStatus int) (success bool) {
 	common.PrintLog(fmt.Sprintf("Updating CFS configuration: %s", cfgName))
 	// get CFS configuration payload
@@ -410,6 +445,12 @@ func TestCFSConfigurationUpdate(cfgName, apiVersion string, expectedHttpStatus i
 	return true
 }
 
+// TestCFSConfigurationDeleteUsingDifferentTenant attempts to delete an existing CFS configuration using a different tenant.
+// It takes cfs config name, apiVersion and expected http status code as parameters.
+// it returns true for following cases otherwise false:
+// - If the delete operation is performed using Non owner tenant and delete is not successful and
+// expectedHttpStatus matches the actual http status code
+// - If new tenant is not found to perform the test
 func TestCFSConfigurationDeleteUsingDifferentTenant(apiVersion, cfgName string, expectedHttpStatus int) (success bool) {
 	common.PrintLog(fmt.Sprintf("Deleting CFS configuration %s using a different tenant", cfgName))
 
@@ -439,6 +480,16 @@ func TestCFSConfigurationDeleteUsingDifferentTenant(apiVersion, cfgName string, 
 	return true
 }
 
+// TestCFSConfigurationDelete deletes an existing CFS configuration.
+// It takes cfs config name, apiVersion and expected http status code as parameters.
+// Delete operation is expected to succeed if performed using admin or the owner tenant
+// it returns true for following cases otherwise false:
+// - If the delete was successful and following verifications are successful
+//   - The deleted configuration cannot be retrieved using GET operation
+//   - The deleted configuration is not present in the list of configurations
+//
+// - If the delete operation is performed using dummy/Non owner tenant and delete is not successful and
+// expectedHttpStatus matches the actual http status code
 func TestCFSConfigurationDelete(cfgName string, apiVersion string, expectedHttpStatus int) (success bool) {
 	common.PrintLog(fmt.Sprintf("Deleting CFS configuration: %s", cfgName))
 	// Delete CFS configuration record
@@ -474,6 +525,8 @@ func TestCFSConfigurationDelete(cfgName string, apiVersion string, expectedHttpS
 	return true
 }
 
+// TestCFSConfigurationGetAll gets all existing CFS configurations using the given apiVersion and expected http status code.
+// It returns true if the GET ALL API call's return code matches the expected http status code, otherwise false.
 func TestCFSConfigurationGetAll(apiVersion string, expectedHttpStatus int) (success bool) {
 	common.PrintLog("Getting all CFS configurations")
 	// Get CFS configurations list

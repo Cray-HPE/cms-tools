@@ -432,7 +432,7 @@ func GetTenantFromList() string {
 	// Set the tenant name to be used in the tests
 	tenantName, err := common.GetRandomStringFromList(tenantList)
 	if err != nil {
-		common.Errorf("Error getting random tenant from list: %s", err.Error())
+		common.Warnf("Error getting random tenant from list: %s", err.Error())
 		return ""
 	}
 	common.Infof("Using tenant: %s", tenantName)
