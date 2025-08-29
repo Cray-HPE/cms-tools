@@ -158,7 +158,7 @@ func GetCreateCFGConfigurationPayload(apiVersion string, addTenant bool) (payloa
 }
 
 // CreateUpdateCFSConfigurationRecordAPI creates or updates a CFS configuration record using the provided payload
-// It takes cfs config name, apiVersion, payload and expected http status code as parameters
+// It takes cfs config name, apiVersion, payload, and expected http status code as parameters
 // It returns true and CFSConfiguration struct with data for following cases:
 // - If the create/update operation is successful and expectedHttpStatus matches the actual http status code
 // It returns true and empty CFSConfiguration struct for following cases:
@@ -195,7 +195,7 @@ func CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, payload string, 
 }
 
 // GetCFSConfigurationRecordAPI retrieves a CFS configuration record by name
-// It takes cfs config name, apiVersion and expected http status code as parameters
+// It takes cfs config name, apiVersion, and expected http status code as parameters
 // It returns true and CFSConfiguration struct with data for following cases:
 // - If the get operation is successful and expectedHttpStatus matches the actual http status code
 // It returns true and empty CFSConfiguration struct for following cases:
@@ -316,7 +316,7 @@ func GetAPIBasedCFSConfigurationRecordList(apiVersion string, expectedHttpStatus
 }
 
 // DeleteCFSConfigurationRecordAPI deletes a CFS configuration record by name
-// It takes cfs config name, apiVersion and expected http status code as parameters
+// It takes cfs config name, apiVersion, and expected http status code as parameters
 // It returns true for following cases otherwise false:
 // - If the delete operation is successful and expectedHttpStatus matches the actual http status code
 // - If the delete operation is not successful and expectedHttpStatus matches the actual http status code

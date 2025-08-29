@@ -184,7 +184,7 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 
 // TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant verifies that the system admin is able to create a configuration of the same name,
 // but belonging to a different tenant or no tenant at all.
-// It takes apiVersion, cfs config name, new tenant name and expected http status code as parameters.
+// It takes apiVersion, cfs config name, new tenant name, and expected http status code as parameters.
 // it returns true for following cases otherwise false:
 // - If the create was successful and following verifications are successful
 //   - The created configuration can be retrieved using GET operation
@@ -250,9 +250,9 @@ func TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cf
 }
 
 // TestCFSConfigurationCreateWithSameNameDifferentTenant attempts to create a CFS configuration with the same name but belonging to a different tenant.
-// It takes apiVersion, cfs config name and expected http status code as parameters.
+// It takes apiVersion, cfs config name, and expected http status code as parameters.
 // it returns true for following cases otherwise false:
-// - If the create operation is performed using Non owner tenant and create is not successful and
+// - If the create operation is performed using non-owner tenant and create is not successful and
 // expectedHttpStatus matches the actual http status code
 func TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfgName string, expectedHttpStatus int) (success bool) {
 
@@ -296,7 +296,7 @@ func TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfgName s
 //   - The created configuration is present in the list of configurations
 //   - The created configuration matches the payload used for create operation
 //
-// - If the create operation is performed using dummy/Non owner tenant and create is not successful
+// - If the create operation is performed using dummy or non-owner tenant and create is not successful
 // and expectedHttpStatus matches the actual http status code
 func TestCFSConfigurationCreate(apiVersion string, expectedHttpStatus int) (cfsConfigurationRecord CFSConfiguration, success bool) {
 	cfgName := "CFS_Configuration_" + string(common.GetRandomString(10))
