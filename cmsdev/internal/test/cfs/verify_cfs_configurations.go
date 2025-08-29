@@ -127,7 +127,7 @@ func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 	return true
 }
 
-// TestCFSConfigurationsCRUDOperationWithDummyTenant runs update, delete, get and get all tests with a dummy tenant
+// TestCFSConfigurationsCRUDOperationWithDummyTenant runs update, delete, get, and get all tests with a dummy tenant
 // after creating the configuration with admin (no tenant).
 // It takes apiVersion as parameter and returns true if all tests pass otherwise false.
 // Note: This test is not run for v2 as v2 does not support tenant in the payload.
