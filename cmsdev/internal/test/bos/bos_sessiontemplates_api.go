@@ -171,8 +171,8 @@ func GetCreateBOSSessionTemplatePayload(cfsConfigName string, enableCFS bool, ar
 			"modprobe.blacklist=amdgpu numa_interleave_omit=headless oops=panic pageblock_order=14 " +
 			"rd.neednet=1 rd.retry=10 rd.shell split_lock_detect=off " +
 			"systemd.unified_cgroup_hierarchy=1 ip=dhcp quiet spire_join_token=${SPIRE_JOIN_TOKEN} " +
-			fmt.Sprintf("root=live:s3://boot-images/%s/rootfs ", imageRecord.Name) +
-			fmt.Sprintf("nmd_data=url=s3://boot-images/%s/rootfs,etag=%s", imageRecord.Name, imageRecord.Link.S3_Etag)
+			fmt.Sprintf("root=live:s3://boot-images/%s/rootfs ", imageRecord.ImageID) +
+			fmt.Sprintf("nmd_data=url=s3://boot-images/%s/rootfs,etag=%s", imageRecord.ImageID, imageRecord.Link.S3_Etag)
 
 	computeSet := map[string]interface{}{
 		"etag":              imageRecord.Link.S3_Etag,
@@ -432,7 +432,7 @@ func GetTenantFromList() string {
 	// Set the tenant name to be used in the tests
 	tenantName, err := common.GetRandomStringFromList(tenantList)
 	if err != nil {
-		common.Errorf("Error getting random tenant from list: %s", err.Error())
+		common.Debugf("Unable to get random tenant from list: %s", err.Error())
 		return ""
 	}
 	common.Infof("Using tenant: %s", tenantName)
