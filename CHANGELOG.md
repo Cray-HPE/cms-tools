@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - CASMCMS-9534: cmsdev: Corrected non-impactful but incorrect `kernel_parameters` value
   for session template being created.
+- CASMCMS-9537: cmsdev: Remove misleading error message in BOS test
 
 ### Dependencies
 - Bump `github.com/go-openapi/jsonpointer` from 0.21.1 to 0.21.2 ([#296](https://github.com/Cray-HPE/cms-tools/pull/296))
