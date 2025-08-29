@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - CASMCMS-9472: cmsdev: Add multitenancy BOS CRUD tests
 - CASMCMS-9471: cmsdev: Add multitenancy CFS CRUD tests
+- CASMCMS-9470: cmsdev: Add read-only multitenancy CFS tests
 
 ### Changed
 - CASMCMS-8550: cmsdev: Add timeouts for CLI and API calls
