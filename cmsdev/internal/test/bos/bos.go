@@ -29,10 +29,11 @@ package bos
  */
 
 import (
+	"strings"
+
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
-	"strings"
 )
 
 // For tests which need a tenant name, if they can work even with a nonexistent tenant, use the
@@ -90,6 +91,8 @@ func IsBOSRunning() (passed bool) {
 			} else {
 				numMigrationPodsNotSucceeded += 1
 			}
+		} else if status == "Succeeded" {
+			common.Infof("Pod %s has status %s", podName, status)
 		} else if status != "Running" {
 			common.VerboseFailedf("Pod %s has status %s, but we expect it to be Running", podName, status)
 			passed = false
