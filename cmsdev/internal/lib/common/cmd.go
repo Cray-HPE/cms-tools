@@ -108,12 +108,12 @@ func (cmdResult *CommandResult) SetEnvVars() string {
 func (cmdResult *CommandResult) RunWithRetry() (err error) {
 	maxRetries := 3
 	retryDelay := 5 * time.Second
-	for attempt := 0; attempt <= maxRetries; attempt++ {
+	for attempt := 0; attempt < maxRetries; attempt++ {
 		err = cmdResult.Run()
 		if strings.Contains(cmdResult.OutString(), "503 Service Unavailable") ||
 			strings.Contains(cmdResult.ErrString(), "503 Service Unavailable") {
 			if attempt < maxRetries {
-				Debugf("Retrying command due to '503 Service Unavailable' (attempt %d/%d)", attempt+1, maxRetries+1)
+				Infof("Retrying command due to '503 Service Unavailable' (attempt %d/%d)", attempt+1, maxRetries)
 				time.Sleep(retryDelay)
 			}
 		} else {
@@ -121,7 +121,7 @@ func (cmdResult *CommandResult) RunWithRetry() (err error) {
 		}
 
 	}
-	return fmt.Errorf("Command failed after %d retries: %v", maxRetries+1, err)
+	return fmt.Errorf("Command failed after %d retries: %v", maxRetries, err)
 }
 
 // The command returning non-0 does NOT constitute an error -- that
@@ -174,7 +174,12 @@ func (cmdResult *CommandResult) Run() (err error) {
 		Debugf("Command stdout:\n%s", cmdResult.OutString())
 		// If STDOUT contains "503 Service Unavailable", then appending this to the error
 		if strings.Contains(cmdResult.OutString(), "503 Service Unavailable") {
-			err = fmt.Errorf(("%v, 503 Service Unavailable"), err)
+			Infof("Command stdout contains '503 Service Unavailable'")
+			if err != nil {
+				err = fmt.Errorf(("%v, 503 Service Unavailable"), err)
+			} else {
+				err = fmt.Errorf(("503 Service Unavailable"))
+			}
 		}
 	} else {
 		Debugf("No stdout from command")
@@ -183,7 +188,12 @@ func (cmdResult *CommandResult) Run() (err error) {
 		Debugf("Command stderr:\n%s", cmdResult.ErrString())
 		// If STDERR contains "503 Service Unavailable", then appending this to the error
 		if strings.Contains(cmdResult.ErrString(), "503 Service Unavailable") {
-			err = fmt.Errorf(("%v, 503 Service Unavailable"), err)
+			Infof("Command stderr contains '503 Service Unavailable'")
+			if err != nil {
+				err = fmt.Errorf(("%v, 503 Service Unavailable"), err)
+			} else {
+				err = fmt.Errorf(("503 Service Unavailable"))
+			}
 		}
 	} else {
 		Debugf("No stderr from command")
