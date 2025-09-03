@@ -179,7 +179,6 @@ func (cmdResult *CommandResult) Run() (err error) {
 		Debugf("Command stderr:\n%s", cmdResult.ErrString())
 		// If STDERR contains "503 Service Unavailable", then appending this to the error
 		if strings.Contains(cmdResult.ErrString(), "503 Service Unavailable") {
-			Infof("Command stderr contains '503 Service Unavailable'")
 			if err != nil {
 				err = fmt.Errorf(("%v, 503 Service Unavailable"), err)
 			} else {
