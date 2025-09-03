@@ -102,81 +102,91 @@ func (cmdResult *CommandResult) SetEnvVars() string {
 	return envVarNames.String()
 }
 
+// RunWithRetry executes the command and retries if output contains "503 Service Unavailable".
+// maxRetries specifies how many times to retry (not counting the first attempt).
+// retryDelay specifies the delay between retries.
+func (cmdResult *CommandResult) RunWithRetry() (err error) {
+	maxRetries := 3
+	retryDelay := 5 * time.Second
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		err = cmdResult.Run()
+		if strings.Contains(cmdResult.OutString(), "503 Service Unavailable") ||
+			strings.Contains(cmdResult.ErrString(), "503 Service Unavailable") {
+			if attempt < maxRetries {
+				Debugf("Retrying command due to '503 Service Unavailable' (attempt %d/%d)", attempt+1, maxRetries+1)
+				time.Sleep(retryDelay)
+			}
+		} else {
+			return
+		}
+
+	}
+	return fmt.Errorf("Command failed after %d retries: %v", maxRetries+1, err)
+}
+
 // The command returning non-0 does NOT constitute an error -- that
 // is communicated back via the command return code, and the calling
 // function is responsible for determining how to handle that
 func (cmdResult *CommandResult) Run() (err error) {
 	var stdout, stderr bytes.Buffer
-	maxRetries := 3
-	retryDelay := 5 * time.Second
 
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		// Create a context for CLI command.
-		ctx, cancel := context.WithTimeout(context.Background(), CLI_TIMEOUT_SECONDS)
-		defer cancel()
+	// Create a context for CLI command.
+	ctx, cancel := context.WithTimeout(context.Background(), CLI_TIMEOUT_SECONDS)
+	defer cancel()
 
-		cmdResult.ExecCmd = exec.CommandContext(ctx, cmdResult.CmdPath, cmdResult.CmdArgs...)
-		cmdResult.CmdString = fmt.Sprintf("%s", cmdResult.ExecCmd)
-		envVarNames := cmdResult.SetEnvVars()
-		if len(envVarNames) > 0 {
-			Debugf("Running command: %s", cmdResult.CmdString)
-			Debugf("The following additional environment variables are set for the command: %s", envVarNames)
+	cmdResult.ExecCmd = exec.CommandContext(ctx, cmdResult.CmdPath, cmdResult.CmdArgs...)
+	cmdResult.CmdString = fmt.Sprintf("%s", cmdResult.ExecCmd)
+	envVarNames := cmdResult.SetEnvVars()
+	if len(envVarNames) > 0 {
+		Debugf("Running command: %s", cmdResult.CmdString)
+		Debugf("The following additional environment variables are set for the command: %s", envVarNames)
+	} else {
+		Debugf("Running command with no additional environment variables set: %s", cmdResult.CmdString)
+	}
+	cmdResult.ExecCmd.Stdout = &stdout
+	cmdResult.ExecCmd.Stderr = &stderr
+
+	cmdResult.CmdErr = cmdResult.ExecCmd.Run()
+	cmdResult.Ran = true
+
+	// Check for timeout first
+	if ctx.Err() == context.DeadlineExceeded {
+		cmdResult.Rc = CmdRcCannotGet
+		Error(fmt.Errorf("CLI command timed out"))
+		err = fmt.Errorf("CLI command timed out")
+	} else if cmdResult.CmdErr != nil {
+		if exitError, ok := cmdResult.CmdErr.(*exec.ExitError); ok {
+			cmdResult.Rc = exitError.ExitCode()
 		} else {
-			Debugf("Running command with no additional environment variables set: %s", cmdResult.CmdString)
-		}
-		cmdResult.ExecCmd.Stdout = &stdout
-		cmdResult.ExecCmd.Stderr = &stderr
-
-		cmdResult.CmdErr = cmdResult.ExecCmd.Run()
-		cmdResult.Ran = true
-
-		// Check for timeout first
-		if ctx.Err() == context.DeadlineExceeded {
 			cmdResult.Rc = CmdRcCannotGet
-			Error(fmt.Errorf("CLI command timed out"))
-			err = fmt.Errorf("CLI command timed out")
-		} else if cmdResult.CmdErr != nil {
-			if exitError, ok := cmdResult.CmdErr.(*exec.ExitError); ok {
-				cmdResult.Rc = exitError.ExitCode()
-			} else {
-				cmdResult.Rc = CmdRcCannotGet
-				Error(cmdResult.CmdErr)
-				err = fmt.Errorf("Unable to determine command return code")
-			}
-		} else {
-			cmdResult.Rc = 0
+			Error(cmdResult.CmdErr)
+			err = fmt.Errorf("Unable to determine command return code")
 		}
+	} else {
+		cmdResult.Rc = 0
+	}
 
-		cmdResult.OutBytes, cmdResult.ErrBytes = stdout.Bytes(), stderr.Bytes()
-		if cmdResult.Rc != CmdRcCannotGet {
-			Debugf("Command return code: %d", cmdResult.Rc)
-		}
-		if len(cmdResult.OutString()) > 0 {
-			Debugf("Command stdout:\n%s", cmdResult.OutString())
-		} else {
-			Debugf("No stdout from command")
-		}
-		if len(cmdResult.ErrString()) > 0 {
-			Debugf("Command stderr:\n%s", cmdResult.ErrString())
-		} else {
-			Debugf("No stderr from command")
-		}
-
-		// Check for "503 Service Unavailable" in the output
+	cmdResult.OutBytes, cmdResult.ErrBytes = stdout.Bytes(), stderr.Bytes()
+	if cmdResult.Rc != CmdRcCannotGet {
+		Debugf("Command return code: %d", cmdResult.Rc)
+	}
+	if len(cmdResult.OutString()) > 0 {
+		Debugf("Command stdout:\n%s", cmdResult.OutString())
+		// If STDOUT contains "503 Service Unavailable", then appending this to the error
 		if strings.Contains(cmdResult.OutString(), "503 Service Unavailable") {
-			if attempt < maxRetries {
-				Debugf("Attempt %d failed with '503 Service Unavailable'. Retrying in %v seconds", attempt, retryDelay)
-				time.Sleep(retryDelay)
-				stdout.Reset()
-				stderr.Reset()
-				continue
-			} else {
-				err = fmt.Errorf("Command failed after %d attempts due to '503 Service Unavailable'", maxRetries)
-			}
-		} else {
-			// Exit the retry loop if no "503 Service Unavailable" is found
-			break
+			err = fmt.Errorf(("%v, 503 Service Unavailable"), err)
 		}
+	} else {
+		Debugf("No stdout from command")
+	}
+	if len(cmdResult.ErrString()) > 0 {
+		Debugf("Command stderr:\n%s", cmdResult.ErrString())
+		// If STDERR contains "503 Service Unavailable", then appending this to the error
+		if strings.Contains(cmdResult.ErrString(), "503 Service Unavailable") {
+			err = fmt.Errorf(("%v, 503 Service Unavailable"), err)
+		}
+	} else {
+		Debugf("No stderr from command")
 	}
 	return
 }
@@ -211,7 +221,7 @@ func RunPathWithEnv(cmdEnv map[string]string, cmdPath string, cmdArgs ...string)
 	if err != nil {
 		return
 	}
-	err = cmdResult.Run()
+	err = cmdResult.RunWithRetry()
 	return
 }
 
