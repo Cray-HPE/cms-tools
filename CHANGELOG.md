@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Dependencies
 - Bump `github.com/go-openapi/jsonpointer` from 0.21.1 to 0.21.2 ([#296](https://github.com/Cray-HPE/cms-tools/pull/296))
-- Bump `github.com/spf13/pflag` from 1.0.6 to 1.0.7 ([#295](https://github.com/Cray-HPE/cms-tools/pull/295))
+- Bump `github.com/spf13/pflag` from 1.0.6 to 1.0.10 ([#295](https://github.com/Cray-HPE/cms-tools/pull/295), [#309](https://github.com/Cray-HPE/cms-tools/pull/309))
 - Bump `github.com/go-openapi/jsonpointer` from 0.21.1 to 0.21.2 ([#296](https://github.com/Cray-HPE/cms-tools/pull/296))
 - Bump `actions/checkout` from 4 to 5 ([#297](https://github.com/Cray-HPE/cms-tools/pull/297))
 
