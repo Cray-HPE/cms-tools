@@ -102,26 +102,29 @@ func (cmdResult *CommandResult) SetEnvVars() string {
 	return envVarNames.String()
 }
 
-// RunWithRetry executes the command and retries if output contains "503 Service Unavailable".
+// RunWithRetry executes the command and retries if Error contains "503 Service Unavailable".
 // maxRetries specifies how many times to retry (not counting the first attempt).
 // retryDelay specifies the delay between retries.
-func (cmdResult *CommandResult) RunWithRetry() (err error) {
+func RunNameWithRetry(cmdName string, cmdArgs ...string) (*CommandResult, error) {
 	maxRetries := 3
 	retryDelay := 5 * time.Second
-	for attempt := 0; attempt < maxRetries; attempt++ {
-		err = cmdResult.Run()
-		if strings.Contains(cmdResult.OutString(), "503 Service Unavailable") ||
-			strings.Contains(cmdResult.ErrString(), "503 Service Unavailable") {
-			if attempt < maxRetries {
+	var cmdResult *CommandResult
+	var err error
+	for attempt := 0; attempt < maxRetries+1; attempt++ {
+		cmdResult, err = RunName(cmdName, cmdArgs...)
+		// If the error was not "503 Service Unavailable", return
+		// immediately
+		if !strings.Contains(cmdResult.ErrString(), "503 Service Unavailable") {
+			return cmdResult, err
+		}
+		if strings.Contains(cmdResult.ErrString(), "503 Service Unavailable") && cmdResult.Rc == 2 {
+			if attempt < maxRetries+1 {
 				Infof("Retrying command due to '503 Service Unavailable' (attempt %d/%d)", attempt+1, maxRetries)
 				time.Sleep(retryDelay)
 			}
-		} else {
-			return
 		}
-
 	}
-	return fmt.Errorf("Command failed after %d retries: %v", maxRetries, err)
+	return cmdResult, fmt.Errorf("Command failed after %d retries: %v", maxRetries, err)
 }
 
 // The command returning non-0 does NOT constitute an error -- that
@@ -177,14 +180,6 @@ func (cmdResult *CommandResult) Run() (err error) {
 	}
 	if len(cmdResult.ErrString()) > 0 {
 		Debugf("Command stderr:\n%s", cmdResult.ErrString())
-		// If STDERR contains "503 Service Unavailable", then appending this to the error
-		if strings.Contains(cmdResult.ErrString(), "503 Service Unavailable") {
-			if err != nil {
-				err = fmt.Errorf(("%v, 503 Service Unavailable"), err)
-			} else {
-				err = fmt.Errorf(("503 Service Unavailable"))
-			}
-		}
 	} else {
 		Debugf("No stderr from command")
 	}
@@ -221,7 +216,7 @@ func RunPathWithEnv(cmdEnv map[string]string, cmdPath string, cmdArgs ...string)
 	if err != nil {
 		return
 	}
-	err = cmdResult.RunWithRetry()
+	err = cmdResult.Run()
 	return
 }
 
