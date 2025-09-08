@@ -111,17 +111,21 @@ func RunNameWithRetry(cmdName string, cmdArgs ...string) (*CommandResult, error)
 	var cmdResult *CommandResult
 	var err error
 	for attempt := 0; attempt <= maxRetries; attempt++ {
-		cmdResult, err = RunName(cmdName, cmdArgs...)
-		// If the error was not "503 Service Unavailable",or return code was not 2 return
-		// immediately
-		if !strings.Contains(cmdResult.ErrString(), "503 Service Unavailable") || cmdResult.Rc != 2 {
-			return cmdResult, err
-		}
-		// If we are here, we had a "503 Service Unavailable" error and return code 2
-		if attempt <= maxRetries {
-			Infof("Retrying command due to '503 Service Unavailable' (attempt %d/%d)", attempt+1, maxRetries)
+		// If this is not our first attempt, then, print a message that we are retrying, and sleep
+		// before the retry.
+		if attempt > 1 {
+			Infof("Retrying command due to '503 Service Unavailable' (retry attempt %d/%d)", attempt+1, maxRetries)
 			time.Sleep(retryDelay)
 		}
+		cmdResult, err = RunName(cmdName, cmdArgs...)
+		// If the error was "503 Service Unavailable" and return code was 2, go to the next
+		// iteration of the loop (or end the loop, if retries are exhausted)
+		if strings.Contains(cmdResult.ErrString(), "503 Service Unavailable") && cmdResult.Rc == 2 {
+			continue
+		}
+		// If we are here, we had a return code other than 2, or the output did not contain
+		// "503 Service Unavailable" (or both). In this case, return the results
+		return cmdResult, err
 	}
 	return cmdResult, fmt.Errorf("Command failed after %d retries: %v", maxRetries, err)
 }
