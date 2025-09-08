@@ -114,7 +114,7 @@ func RunNameWithRetry(cmdName string, cmdArgs ...string) (*CommandResult, error)
 		cmdResult, err = RunName(cmdName, cmdArgs...)
 		// If the error was not "503 Service Unavailable", return
 		// immediately
-		if !strings.Contains(cmdResult.ErrString(), "503 Service Unavailable") {
+		if !strings.Contains(cmdResult.ErrString(), "503 Service Unavailable") || cmdResult.Rc != 2 {
 			return cmdResult, err
 		}
 		if cmdResult.Rc == 2 {
