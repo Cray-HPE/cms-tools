@@ -110,7 +110,7 @@ func RunNameWithRetry(cmdName string, cmdArgs ...string) (*CommandResult, error)
 	retryDelay := 5 * time.Second
 	var cmdResult *CommandResult
 	var err error
-	for attempt := 0; attempt < maxRetries+1; attempt++ {
+	for attempt := 0; attempt <= maxRetries; attempt++ {
 		cmdResult, err = RunName(cmdName, cmdArgs...)
 		// If the error was not "503 Service Unavailable", return
 		// immediately
@@ -118,7 +118,7 @@ func RunNameWithRetry(cmdName string, cmdArgs ...string) (*CommandResult, error)
 			return cmdResult, err
 		}
 		if strings.Contains(cmdResult.ErrString(), "503 Service Unavailable") && cmdResult.Rc == 2 {
-			if attempt < maxRetries+1 {
+			if attempt <= maxRetries {
 				Infof("Retrying command due to '503 Service Unavailable' (attempt %d/%d)", attempt+1, maxRetries)
 				time.Sleep(retryDelay)
 			}
