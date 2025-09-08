@@ -113,7 +113,7 @@ func RunNameWithRetry(cmdName string, cmdArgs ...string) (*CommandResult, error)
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		// If this is not our first attempt, then, print a message that we are retrying, and sleep
 		// before the retry.
-		if attempt > 1 {
+		if attempt > 0 {
 			Infof("Retrying command due to '503 Service Unavailable' (retry attempt %d/%d)", attempt+1, maxRetries)
 			time.Sleep(retryDelay)
 		}
