@@ -34,6 +34,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	resty "gopkg.in/resty.v1"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
@@ -140,9 +141,19 @@ func vcsRequest(requestType, requestUri, jsonString string, expectedStatusCode i
 
 	client := resty.New()
 	client.SetTimeout(common.API_TIMEOUT_SECONDS)
+	client.SetRetryCount(common.API_RETRY_COUNT)
+	client.SetRetryWaitTime(common.API_RETRY_WAIT_SECONDS * time.Second)
 	client.SetHeader("Content-Type", "application/json")
 	client.SetBasicAuth(vcsUser, vcsPass)
 
+	// Add retry condition for HTTP 503 status code
+	client.AddRetryCondition(func(r *resty.Response) (bool, error) {
+		if r.StatusCode() == 503 {
+			fmt.Printf("Received HTTP code 503 from server, Waiting for: %d seconds before retry\n", common.API_RETRY_WAIT_SECONDS)
+			return true, nil
+		}
+		return false, nil
+	})
 	requestUrl := VCSURL + requestUri
 
 	for true {

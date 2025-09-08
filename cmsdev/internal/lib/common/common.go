@@ -49,6 +49,8 @@ const LOCALHOST = "http://localhost:5000"
 const NAMESPACE string = "services"
 const CSMPRODCATALOGCMNAME string = "cray-product-catalog"
 const API_TIMEOUT_SECONDS = 120 * time.Second // Timeout for API calls setting it to 2 minutes
+const API_RETRY_COUNT = 3                     // Number of times to retry API calls
+const API_RETRY_WAIT_SECONDS = 5              // Number of seconds to wait between retries
 
 // List of API versions supported by the IMS service
 var IMSAPIVERSIONS = []string{
@@ -585,12 +587,22 @@ func doRest(method, url string, params Params, client *resty.Client) (*resty.Res
 func Restful(method, url string, params Params) (*resty.Response, error) {
 	client := resty.New()
 	client.SetTimeout(API_TIMEOUT_SECONDS)
+	client.SetRetryCount(API_RETRY_COUNT)
+	client.SetRetryWaitTime(API_RETRY_WAIT_SECONDS * time.Second)
 	client.SetHeaders(map[string]string{
 		"Accept":       "application/json",
 		"User-Agent":   "cmsdev",
 		"Content-Type": "application/json",
 	})
 	client.SetAuthToken(params.Token)
+	// Add retry condition for HTTP 503 status code
+	client.AddRetryCondition(func(r *resty.Response) (bool, error) {
+		if r.StatusCode() == 503 {
+			fmt.Printf("Received HTTP code 503 from server, Waiting for: %d seconds before retry\n", API_RETRY_WAIT_SECONDS)
+			return true, nil
+		}
+		return false, nil
+	})
 	return doRest(method, url, params, client)
 }
 
@@ -598,6 +610,8 @@ func Restful(method, url string, params Params) (*resty.Response, error) {
 func RestfulTenant(method, url, tenant string, params Params) (*resty.Response, error) {
 	client := resty.New()
 	client.SetTimeout(API_TIMEOUT_SECONDS)
+	client.SetRetryCount(API_RETRY_COUNT)
+	client.SetRetryWaitTime(API_RETRY_WAIT_SECONDS * time.Second)
 	client.SetHeaders(map[string]string{
 		"Accept":           "application/json",
 		"User-Agent":       "cmsdev",
@@ -605,6 +619,14 @@ func RestfulTenant(method, url, tenant string, params Params) (*resty.Response, 
 		"Cray-Tenant-Name": tenant,
 	})
 	client.SetAuthToken(params.Token)
+	// Add retry condition for HTTP 503 status code
+	client.AddRetryCondition(func(r *resty.Response) (bool, error) {
+		if r.StatusCode() == 503 {
+			fmt.Printf("Received HTTP code 503 from server, Waiting for: %d seconds before retry\n", API_RETRY_WAIT_SECONDS)
+			return true, nil
+		}
+		return false, nil
+	})
 	return doRest(method, url, params, client)
 }
 
