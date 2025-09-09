@@ -56,7 +56,7 @@ func getAnyTenant(tenantList []string) string {
 func IsBOSRunning() (passed bool) {
 	var err error
 	var tenantList []string
-
+	artifactsCollected := false
 	passed = true
 
 	// Look for at least 3 bos pods, although we know there are more.
@@ -102,6 +102,14 @@ func IsBOSRunning() (passed bool) {
 		passed = false
 	}
 
+	if !passed {
+		common.ArtifactsKubernetes()
+		if len(podNames) > 0 {
+			common.ArtifactDescribeNamespacePods(common.NAMESPACE, podNames)
+		}
+		artifactsCollected = true
+	}
+
 	// Get list of defined tenants on the system (if any)
 	tenantList, err = k8s.GetTenants()
 	if err != nil {
@@ -121,7 +129,7 @@ func IsBOSRunning() (passed bool) {
 		passed = false
 	}
 
-	if !passed {
+	if !passed && !artifactsCollected {
 		common.ArtifactsKubernetes()
 		if len(podNames) > 0 {
 			common.ArtifactDescribeNamespacePods(common.NAMESPACE, podNames)
