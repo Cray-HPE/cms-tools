@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - CASMCMS-8550: cmsdev: Add timeouts for CLI and API calls
 - CASMCMS-9518: cmsdev: Retry 503s limited number of times for API and CLI calls
+- CASMCMS-9529: added -q option to Only print output from the remote session during kubectl exec
 
 ### Fixed
 - CASMCMS-9534: cmsdev: Corrected non-impactful but incorrect `kernel_parameters` value
