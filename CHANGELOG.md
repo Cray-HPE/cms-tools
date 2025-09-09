@@ -15,12 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - CASMCMS-8550: cmsdev: Add timeouts for CLI and API calls
 - CASMCMS-9518: cmsdev: Retry 503s limited number of times for API and CLI calls
+- CASMCMS-9529: added -q option to Only print output from the remote session during kubectl exec
 
 ### Fixed
 - CASMCMS-9534: cmsdev: Corrected non-impactful but incorrect `kernel_parameters` value
   for session template being created.
 - CASMCMS-9537: cmsdev: Remove misleading error messages in BOS and CFS tests
 - CASMCMS-9530: Capture K8s log after `bos` failure
+- CASMCMS-9529: added -q option to Only print output from the remote session during kubectl exec
 
 ### Dependencies
 - Bump `github.com/go-openapi/jsonpointer` from 0.21.1 to 0.21.2 ([#296](https://github.com/Cray-HPE/cms-tools/pull/296))
