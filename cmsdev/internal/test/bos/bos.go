@@ -29,10 +29,11 @@ package bos
  */
 
 import (
+	"strings"
+
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
-	"strings"
 )
 
 // For tests which need a tenant name, if they can work even with a nonexistent tenant, use the
@@ -55,7 +56,7 @@ func getAnyTenant(tenantList []string) string {
 func IsBOSRunning() (passed bool) {
 	var err error
 	var tenantList []string
-
+	artifactsCollected := false
 	passed = true
 
 	// Look for at least 3 bos pods, although we know there are more.
@@ -106,6 +107,7 @@ func IsBOSRunning() (passed bool) {
 		if len(podNames) > 0 {
 			common.ArtifactDescribeNamespacePods(common.NAMESPACE, podNames)
 		}
+		artifactsCollected = true
 	}
 
 	// Get list of defined tenants on the system (if any)
@@ -125,6 +127,13 @@ func IsBOSRunning() (passed bool) {
 	// Defined in bos_cli.go
 	if !cliTests(tenantList) {
 		passed = false
+	}
+
+	if !passed && !artifactsCollected {
+		common.ArtifactsKubernetes()
+		if len(podNames) > 0 {
+			common.ArtifactDescribeNamespacePods(common.NAMESPACE, podNames)
+		}
 	}
 
 	return
