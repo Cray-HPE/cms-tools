@@ -102,6 +102,34 @@ func (cmdResult *CommandResult) SetEnvVars() string {
 	return envVarNames.String()
 }
 
+// RunWithRetry executes the command and retries if Error contains "503 Service Unavailable".
+// maxRetries specifies how many times to retry (not counting the first attempt).
+// retryDelay specifies the delay between retries.
+func RunNameWithRetry(cmdName string, cmdArgs ...string) (*CommandResult, error) {
+	maxRetries := 3
+	retryDelay := 5 * time.Second
+	var cmdResult *CommandResult
+	var err error
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		// If this is not our first attempt, then, print a message that we are retrying, and sleep
+		// before the retry.
+		if attempt > 0 {
+			Infof("Retrying command due to '503 Service Unavailable' (retry attempt %d/%d)", attempt+1, maxRetries)
+			time.Sleep(retryDelay)
+		}
+		cmdResult, err = RunName(cmdName, cmdArgs...)
+		// If the error was "503 Service Unavailable" and return code was 2, go to the next
+		// iteration of the loop (or end the loop, if retries are exhausted)
+		if strings.Contains(cmdResult.ErrString(), "503 Service Unavailable") && cmdResult.Rc == 2 {
+			continue
+		}
+		// If we are here, we had a return code other than 2, or the output did not contain
+		// "503 Service Unavailable" (or both). In this case, return the results
+		return cmdResult, err
+	}
+	return cmdResult, fmt.Errorf("Command failed after %d retries: %v", maxRetries, err)
+}
+
 // The command returning non-0 does NOT constitute an error -- that
 // is communicated back via the command return code, and the calling
 // function is responsible for determining how to handle that

@@ -162,7 +162,7 @@ func TenantRunCLICommand(tenant string, cmdList ...string) []byte {
 	}
 	cmdStr = "CRAY_CONFIG=" + CliConfigFile + " " + baseCmdStr
 	common.Debugf("Running command%s: %s", tenantText, cmdStr)
-	cmdResult, err = common.RunName("bash", "-c", cmdStr)
+	cmdResult, err = common.RunNameWithRetry("bash", "-c", cmdStr)
 	if err != nil {
 		common.Error(err)
 		common.Errorf("Error running CLI command%s (%s)", strings.Join(cmdList, " "), tenantText)
