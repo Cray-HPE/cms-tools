@@ -138,7 +138,7 @@ func GetTenants() (tenantList []string, err error) {
 }
 
 func RunCommandInContainer(podName, namespace, containerName string, cmdStrings ...string) (string, error) {
-	k8sCmdList := [...]string{"exec", podName, "-n", namespace, "-c", containerName, "--stdin=false", "--"}
+	k8sCmdList := [...]string{"exec", "-q", podName, "-n", namespace, "-c", containerName, "--stdin=false", "--"}
 	cmdList := append(k8sCmdList[:], cmdStrings...)
 	path, err := GetKubectlPath()
 	if err != nil {
