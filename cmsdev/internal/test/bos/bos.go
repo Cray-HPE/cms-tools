@@ -92,7 +92,7 @@ func IsBOSRunning() (passed bool) {
 				numMigrationPodsNotSucceeded += 1
 			}
 		} else if status == "Succeeded" {
-			common.Infof("Pod %s has status %s", podName, status)
+			common.Warnf("Pod %s has status %s", podName, status)
 		} else if status != "Running" {
 			common.VerboseFailedf("Pod %s has status %s, but we expect it to be Running", podName, status)
 			passed = false

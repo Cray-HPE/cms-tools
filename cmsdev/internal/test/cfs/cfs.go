@@ -73,7 +73,7 @@ func IsCFSRunning() (passed bool) {
 		common.Infof("Pod status is %s", status)
 		if re.MatchString(podName) {
 			if status == "Succeeded" {
-				common.Infof("Pod %s has status %s", podName, status)
+				common.Warnf("Pod %s has status %s", podName, status)
 			} else if status != "Running" {
 				common.VerboseFailedf("expected status=Running, found status=%s for podName=%s", status, podName)
 				passed = false
