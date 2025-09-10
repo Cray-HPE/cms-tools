@@ -529,26 +529,27 @@ func GetPVCNames(namespace string, params ...string) ([]string, error) {
 func CheckContainerStatus(namespace, podName, podStatus string, pod *coreV1.Pod) (string, error) {
 	for _, cs := range pod.Status.ContainerStatuses {
 		common.Debugf("Container %s status is %v", cs.Name, cs.State)
-		if cs.State.Running == nil {
-			reason := "not 'running'"
-			if cs.State.Waiting != nil {
-				waitingReason := cs.State.Waiting.Reason
-				if waitingReason == "PodInitializing" || waitingReason == "ContainerCreating" {
-					// Allow retry loop to get the pod status again to make sure containers are running
-					return waitingReason, nil
-				}
-				reason = fmt.Sprintf("'waiting', reason: %s", waitingReason)
-				return "failed", fmt.Errorf("pod %s in namespace %s is 'Running' but container %s is %s", podName, namespace, cs.Name, reason)
-			} else if cs.State.Terminated != nil {
-				if cs.State.Terminated.ExitCode == 0 {
-					// Container completed successfully, treat as success
-					continue
-				}
-				reason = fmt.Sprintf("'terminated', reason: %s, exit code %d", cs.State.Terminated.Reason, cs.State.Terminated.ExitCode)
-				return "failed", fmt.Errorf("pod %s in namespace %s is 'Running' but container %s is %s", podName, namespace, cs.Name, reason)
+		if cs.State.Running != nil {
+			continue
+		}
+		reason := "not 'running'"
+		if cs.State.Waiting != nil {
+			waitingReason := cs.State.Waiting.Reason
+			if waitingReason == "PodInitializing" || waitingReason == "ContainerCreating" {
+				// Allow retry loop to get the pod status again to make sure containers are running
+				return waitingReason, nil
 			}
+			reason = fmt.Sprintf("'waiting', reason: %s", waitingReason)
+			return "failed", fmt.Errorf("pod %s in namespace %s is 'Running' but container %s is %s", podName, namespace, cs.Name, reason)
+		} else if cs.State.Terminated != nil {
+			if cs.State.Terminated.ExitCode == 0 {
+				// Container completed successfully, treat as success
+				continue
+			}
+			reason = fmt.Sprintf("'terminated', reason: %s, exit code %d", cs.State.Terminated.Reason, cs.State.Terminated.ExitCode)
 			return "failed", fmt.Errorf("pod %s in namespace %s is 'Running' but container %s is %s", podName, namespace, cs.Name, reason)
 		}
+		return "failed", fmt.Errorf("pod %s in namespace %s is 'Running' but container %s is %s", podName, namespace, cs.Name, reason)
 	}
 	return podStatus, nil
 }
