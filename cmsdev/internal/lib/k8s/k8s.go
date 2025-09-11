@@ -538,7 +538,7 @@ func GetPVCNames(namespace string, params ...string) ([]string, error) {
 // Otherwise (if all containers are running), it returns podStatus (Running) and nil error
 func determinePodStatus(namespace, podName string, pod *coreV1.Pod) (podStatus string, err error) {
 	podStatus = string(pod.Status.Phase)
-	if status != "Running" {
+	if podStatus != "Running" {
 		return
 	}
 	allContainersRunning := true
