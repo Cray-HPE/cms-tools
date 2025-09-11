@@ -31,80 +31,25 @@ package cfs
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
 
 	resty "gopkg.in/resty.v1"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
+	pcu "stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/prod-catalog-utils"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
-
-// GetCsmProductCatalogData is used to fetch the CSM product catalog config map data from Kubernetes
-// It returns the config map data as a map[string]interface{} and error if any
-// The config map data contains the CSM versions and their corresponding configuration and image details
-func GetCsmProductCatalogData() (data map[string]interface{}, err error) {
-	resp, err := k8s.GetConfigMapDataField(common.NAMESPACE, common.CSMPRODCATALOGCMNAME, "csm")
-	if err != nil {
-		return nil, err
-	}
-
-	//convert YAML
-	respMap, err := common.DecodeYAMLIntoStringMap(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	return respMap, nil
-}
-
-// GetCSMLatestVersion returns the latest CSM version from the product catalog config map data
-func GetCSMLatestVersion(prodCatlogData map[string]interface{}) (version string, err error) {
-	// Sort the keys in the JSON object to ensure consistent ordering
-	keys := make([]string, 0, len(prodCatlogData))
-	for key := range prodCatlogData {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	if len(keys) == 0 {
-		return "", fmt.Errorf("no keys found in the configuration map")
-	}
-	//Get the last key from the sorted keys where version has both configuration and images as keys
-	latestCSMVersion := ""
-	for i := len(keys) - 1; i >= 0; i-- {
-		key := keys[i]
-		if _, ok := prodCatlogData[key].(map[interface{}]interface{})["configuration"]; ok {
-			if _, ok := prodCatlogData[key].(map[interface{}]interface{})["images"]; ok {
-				latestCSMVersion = key
-				break
-			}
-		}
-	}
-
-	common.Infof("Latest CSM version: %s", latestCSMVersion)
-	return latestCSMVersion, nil
-}
 
 // GetProdCatalogConfigData fetches the CSM product catalog configuration layer data from the product catalog config map
 // It returns the CsmProductCatalogConfiguration struct and error if any
 func GetProdCatalogConfigData() (cfsConfigLayerData CsmProductCatalogConfiguration, err error) {
-	pordCatalogData, err := GetCsmProductCatalogData()
+	latestCSMData, err := pcu.GetLatestProdCatEntry()
 	if err != nil {
 		return CsmProductCatalogConfiguration{}, err
 	}
-
-	// Get the latest CSM version data
-	csmVersion, err := GetCSMLatestVersion(pordCatalogData)
-	if err != nil {
-		return CsmProductCatalogConfiguration{}, err
-	}
-	latestCSMDataRaw := pordCatalogData[csmVersion]
-	common.Infof("Latest CSM data: %v", latestCSMDataRaw)
-	latestCSMData := latestCSMDataRaw.(map[interface{}]interface{})
 	return CsmProductCatalogConfiguration{
-		Clone_url: latestCSMData["configuration"].(map[interface{}]interface{})["clone_url"].(string),
-		Commit:    latestCSMData["configuration"].(map[interface{}]interface{})["commit"].(string),
+		Clone_url: latestCSMData.Configuration.CloneURL,
+		Commit:    latestCSMData.Configuration.Commit,
 	}, nil
-
 }
 
 // GetCreateCFGConfigurationPayload returns the payload for creating a CFS configuration
