@@ -526,13 +526,22 @@ func GetPVCNames(namespace string, params ...string) ([]string, error) {
 	return names, err
 }
 
-// determinePodStatus determines the actual status of a pod that is in 'Running' phase
+// determinePodStatus gets the phase of the specified pod. If that phase is not 'Running',
+// then this function will return that phase and nil error.
+// If the phase is Running, then the rest of this function determines the actual status of the pod
 // by checking the status of each container in the pod
-// If all containers are running, it returns podStatus and nil error
-// If any container is waiting or terminated with non-zero exit code, it returns podStatus and an error
-// If any container is still initializing or creating, it returns empty podStatus and nil error to allow retry
+// If any container is waiting (for a reason other than initializing or creating), it returns podStatus (Running) and an error
+// If any container has terminated with non-zero exit code, it returns podStatus (Running) and an error
+// Otherwise, if any container is waiting because of initializing or creating, it returns empty podStatus and nil error, to
+// indicate that the true pod status cannot yet be determined (it may start up successfully, or it may be in CLBO);
+// the caller can choose to handle this accordingly (perhaps by waiting and retrying)
+// Otherwise (if all containers are running), it returns podStatus (Running) and nil error
 func determinePodStatus(namespace, podName string, pod *coreV1.Pod) (podStatus string, err error) {
 	podStatus = string(pod.Status.Phase)
+	if status != "Running" {
+		return
+	}
+	allContainersRunning := true
 
 	for _, cs := range pod.Status.ContainerStatuses {
 		common.Debugf("Container %s status is %v", cs.Name, cs.State)
@@ -541,21 +550,26 @@ func determinePodStatus(namespace, podName string, pod *coreV1.Pod) (podStatus s
 		} else if cs.State.Waiting != nil {
 			waitingReason := cs.State.Waiting.Reason
 			if waitingReason == "PodInitializing" || waitingReason == "ContainerCreating" {
-				// Allow retry loop to get the pod status again to make sure containers are running
-				return "", nil
+				allContainersRunning = false
+				continue
 			}
 			reason := fmt.Sprintf("'waiting', reason: %s", waitingReason)
 			return podStatus, fmt.Errorf("pod %s in namespace %s is %s but container %s is %s", podName, namespace, podStatus, cs.Name, reason)
-		} else if cs.State.Terminated != nil {
-			if cs.State.Terminated.ExitCode == 0 {
-				// Container completed successfully, treat as success
-				continue
-			}
-			reason := fmt.Sprintf("'terminated', reason: %s, exit code %d", cs.State.Terminated.Reason, cs.State.Terminated.ExitCode)
-			return podStatus, fmt.Errorf("pod %s in namespace %s is %s but container %s is %s", podName, namespace, podStatus, cs.Name, reason)
+		} else if cs.State.Terminated == nil {
+			// Container has not terminated
+			continue
+		} else if cs.State.Terminated.ExitCode == 0 {
+			// Container completed successfully, treat as success
+			continue
 		}
+		reason := fmt.Sprintf("'terminated', reason: %s, exit code %d", cs.State.Terminated.Reason, cs.State.Terminated.ExitCode)
+		return podStatus, fmt.Errorf("pod %s in namespace %s is %s but container %s is %s", podName, namespace, podStatus, cs.Name, reason)
 	}
-	return
+	if allContainersRunning {
+		return
+	}
+	// Return "" with no error, to indicate that we cannot yet determine the pod status
+	return "", nil
 }
 
 // returns phase for pods
@@ -576,17 +590,14 @@ func GetPodStatus(namespace, podName string) (string, error) {
 			return status, err
 		}
 
-		status = string(pod.Status.Phase)
-		if status == "Running" {
-			// Check that all containers are also running
-			podStatus, err := determinePodStatus(namespace, podName, pod)
-			if podStatus == "" && err == nil {
-				// Allow retry loop to get the pod status again to make sure containers are running
-				common.Infof("Pod %s in namespace %s true status cannot be determined. Retrying in %d seconds...", podName, namespace, podStatus, RetryIntervalSeconds)
-				time.Sleep(time.Duration(RetryIntervalSeconds) * time.Second)
-				continue
-			}
-			return podStatus, err
+		status, err := determinePodStatus(namespace, podName, pod)
+		if err != nil {
+			return status, err
+		} else if status == "" {
+			// Allow retry loop to get the pod status again to make sure containers are running
+			common.Infof("Pod %s in namespace %s true status cannot be determined. Retrying in %d seconds...", podName, namespace, RetryIntervalSeconds)
+			time.Sleep(time.Duration(RetryIntervalSeconds) * time.Second)
+			continue
 		} else if status != "Pending" {
 			return status, nil
 		}
