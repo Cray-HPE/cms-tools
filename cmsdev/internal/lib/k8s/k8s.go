@@ -545,14 +545,14 @@ func determinePodStatus(namespace, podName string, pod *coreV1.Pod) (podStatus s
 				return "", nil
 			}
 			reason := fmt.Sprintf("'waiting', reason: %s", waitingReason)
-			return podStatus, fmt.Errorf("pod %s in namespace %s is 'Running' but container %s is %s", podName, namespace, cs.Name, reason)
+			return podStatus, fmt.Errorf("pod %s in namespace %s is %s but container %s is %s", podName, namespace, podStatus, cs.Name, reason)
 		} else if cs.State.Terminated != nil {
 			if cs.State.Terminated.ExitCode == 0 {
 				// Container completed successfully, treat as success
 				continue
 			}
 			reason := fmt.Sprintf("'terminated', reason: %s, exit code %d", cs.State.Terminated.Reason, cs.State.Terminated.ExitCode)
-			return podStatus, fmt.Errorf("pod %s in namespace %s is 'Running' but container %s is %s", podName, namespace, cs.Name, reason)
+			return podStatus, fmt.Errorf("pod %s in namespace %s is %s but container %s is %s", podName, namespace, podStatus, cs.Name, reason)
 		}
 	}
 	return
