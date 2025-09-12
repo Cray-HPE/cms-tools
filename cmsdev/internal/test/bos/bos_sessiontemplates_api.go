@@ -60,11 +60,13 @@ func GetLatestImageIdFromCsmProductCatalog(arch string) (string, error) {
 	}
 
 	csmImages := latestCSMData.Images
-	common.Infof("CSM images: %v", csmImages)
-	for key := range csmImages {
-		if strings.Contains(key, archMap[arch]) {
-			common.Debugf("Found image ID for architecture %s: %s", archMap[arch], csmImages[key])
-			return csmImages[key].ID, nil
+	if len(csmImages) != 0 {
+		common.Infof("CSM images: %v", csmImages)
+		for key := range csmImages {
+			if strings.Contains(key, archMap[arch]) && csmImages[key].ID != "" {
+				common.Debugf("Found image ID for architecture %s: %s", archMap[arch], csmImages[key])
+				return csmImages[key].ID, nil
+			}
 		}
 	}
 	return "", fmt.Errorf("no image found in the latest CSM data")

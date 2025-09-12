@@ -46,6 +46,11 @@ func GetProdCatalogConfigData() (cfsConfigLayerData CsmProductCatalogConfigurati
 	if err != nil {
 		return CsmProductCatalogConfiguration{}, err
 	}
+
+	if latestCSMData.Configuration.CloneURL == "" || latestCSMData.Configuration.Commit == "" {
+		return CsmProductCatalogConfiguration{}, fmt.Errorf("CloneURL and/or Commit value not set: %v", latestCSMData.Configuration)
+	}
+
 	return CsmProductCatalogConfiguration{
 		Clone_url: latestCSMData.Configuration.CloneURL,
 		Commit:    latestCSMData.Configuration.Commit,
