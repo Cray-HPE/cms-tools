@@ -20,9 +20,9 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 /*
- * bos_sessiontemplates_api.go
+ * prod_catalog_utils.go
  *
- * BOS sessiontemplates API.
+ * CSM Product Catalog Utils
  *
  */
 package prod_catalog_utils
@@ -81,6 +81,44 @@ func GetCsmProductCatalogData() (data map[string]interface{}, err error) {
 }
 
 // Helper function to convert map[interface{}]interface{} to ProdCatalogEntry
+// Example input data:
+//
+//	configuration:
+//	  clone_url: https://vcs.cmn.wasp.hpc.amslabs.hpecorp.net/vcs/cray/csm-config-management.git
+//	  commit: f5e2ffc9560c19858c3dd4423708a70da80d4006
+//	  import_branch: cray/csm/1.48.0
+//	  import_date: 2025-08-19 10:56:34.133195
+//	  ssh_url: git@vcs.cmn.wasp.hpc.amslabs.hpecorp.net:cray/csm-config-management.git
+//	images:
+//	  compute-csm-1.7-7.1.37-aarch64:
+//	    id: 8ceeac2a-221e-470d-ae49-18e648b96371
+//	  compute-csm-1.7-7.1.37-x86_64:
+//	    id: 870d6bce-a626-48a2-98d3-4fe628e90585
+//	recipes:
+//	  cray-shasta-csm-sles15sp6-barebones-csm-1.7-aarch64:
+//	    id: 5e1d9136-49cd-4551-b359-7edc1f27061e
+//	  cray-shasta-csm-sles15sp6-barebones-csm-1.7-x86_64:
+//	    id: df002ba2-5ffc-40f0-b39b-d4e1d49e090e
+//
+// Example mapped ProdCatalogEntry:
+//
+//	ProdCatalogEntry{
+//	  Configuration: Configuration{
+//	    CloneURL:     "https://vcs.cmn.wasp.hpc.amslabs.hpecorp.net/vcs/cray/csm-config-management.git",
+//	    Commit:       "f5e2ffc9560c19858c3dd4423708a70da80d4006",
+//	    ImportBranch: "cray/csm/1.48.0",
+//	    ImportDate:   "2025-08-19 10:56:34.133195",
+//	    SSHURL:       "git@vcs.cmn.wasp.hpc.amslabs.hpecorp.net:cray/csm-config-management.git",
+//	  },
+//	  Images: map[string]Image{
+//	    "compute-csm-1.7-7.1.37-aarch64": {ID: "8ceeac2a-221e-470d-ae49-18e648b96371"},
+//	    "compute-csm-1.7-7.1.37-x86_64":  {ID: "870d6bce-a626-48a2-98d3-4fe628e90585"},
+//	  },
+//	  Recipes: map[string]Recipe{
+//	    "cray-shasta-csm-sles15sp6-barebones-csm-1.7-aarch64": {ID: "5e1d9136-49cd-4551-b359-7edc1f27061e"},
+//	    "cray-shasta-csm-sles15sp6-barebones-csm-1.7-x86_64":  {ID: "df002ba2-5ffc-40f0-b39b-d4e1d49e090e"},
+//	  },
+//	}
 func MapToProdCatalogEntry(data map[interface{}]interface{}) (ProdCatalogEntry, error) {
 	var entry ProdCatalogEntry
 
@@ -122,7 +160,10 @@ func MapToProdCatalogEntry(data map[interface{}]interface{}) (ProdCatalogEntry, 
 	return entry, nil
 }
 
-// GetCSMLatestVersion returns the latest CSM version from the product catalog config map data
+// GetCSMLatestVersion returns the latest valid CSM version string from the product catalog config map data.
+// For testing purposes, both configuration and images must be present.
+// It sorts all available version keys, checks for the presence of both "configuration" and "images" fields,
+// and selects the highest version that meets these criteria. Returns the version string and an error if not found.
 func GetCSMLatestVersion(prodCatlogData map[string]interface{}) (version string, err error) {
 	// Sort the keys in the JSON object to ensure consistent ordering
 	keys := make([]string, 0, len(prodCatlogData))
@@ -149,8 +190,10 @@ func GetCSMLatestVersion(prodCatlogData map[string]interface{}) (version string,
 	return latestCSMVersion, nil
 }
 
-// GetAndCacheLatestCSMVersionData fetches and caches the latest CSM version and its data.
-// It only fetches and initializes if LatestCSMVersionData is nil or LatestCSMVersion is empty.
+// GetLatestCSMProductCatalogEntry fetches the latest CSM version entry from the product catalog config map
+// and caches it in LatestProdCatEntry. It retrieves the config map data from Kubernetes, determines the
+// latest valid CSM version, converts its data to a ProdCatalogEntry, and stores it for future use.
+// Returns an error if fetching or conversion fails.
 func GetLatestCSMProductCatalogEntry() error {
 	prodCatalogData, err := GetCsmProductCatalogData()
 	if err != nil {
@@ -174,7 +217,10 @@ func GetLatestCSMProductCatalogEntry() error {
 	return nil
 }
 
-// Helper function to check if ProdCatalogEntry is empty
+// Helper function to check if ProdCatalogEntry is empty.
+//
+// Returns true if all Configuration fields are empty strings and both Images and Recipes maps are empty.
+// This is used to determine if the ProdCatalogEntry struct has been initialized with valid data.
 func isProdCatalogEntryEmpty(entry ProdCatalogEntry) bool {
 	return entry.Configuration.CloneURL == "" &&
 		entry.Configuration.Commit == "" &&
@@ -185,10 +231,12 @@ func isProdCatalogEntryEmpty(entry ProdCatalogEntry) bool {
 		len(entry.Recipes) == 0
 }
 
-// GetLatestProdCatEntry returns the ProdCatalogEntry for latest CSM version.
-// Returns cached LatestProdCatEntry if available.
-// It returns an error if prodCatError is not nil or if fetching fails.
-// Fetches and caches the latest entry if not already cached and returns it.
+// GetLatestProdCatEntry returns the ProdCatalogEntry for the latest CSM version.
+// If a cached entry is available, it is returned immediately.
+// If a previous error occurred, that error is returned.
+// Otherwise, the function fetches and caches the latest entry from the product catalog config map.
+// Returns the latest ProdCatalogEntry and an error if fetching fails.
+// Caches the error in prodCatError to avoid repeated fetch attempts in future calls.
 func GetLatestProdCatEntry() (ProdCatalogEntry, error) {
 	if !isProdCatalogEntryEmpty(LatestProdCatEntry) {
 		common.Infof("Using cached product catalog data")
