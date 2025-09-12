@@ -55,6 +55,7 @@ type ProdCatalogEntry struct {
 	Configuration Configuration     `json:"configuration"`
 	Images        map[string]Image  `json:"images"`
 	Recipes       map[string]Recipe `json:"recipes"`
+	Initialized   bool              `json:"-"` // internal use only to indicate if this struct has been initialized
 }
 
 var prodCatError error
@@ -156,7 +157,7 @@ func MapToProdCatalogEntry(data map[interface{}]interface{}) (ProdCatalogEntry, 
 			}
 		}
 	}
-
+	entry.Initialized = true
 	return entry, nil
 }
 
@@ -217,20 +218,6 @@ func GetLatestCSMProductCatalogEntry() error {
 	return nil
 }
 
-// Helper function to check if ProdCatalogEntry is empty.
-//
-// Returns true if all Configuration fields are empty strings and both Images and Recipes maps are empty.
-// This is used to determine if the ProdCatalogEntry struct has been initialized with valid data.
-func isProdCatalogEntryEmpty(entry ProdCatalogEntry) bool {
-	return entry.Configuration.CloneURL == "" &&
-		entry.Configuration.Commit == "" &&
-		entry.Configuration.ImportBranch == "" &&
-		entry.Configuration.ImportDate == "" &&
-		entry.Configuration.SSHURL == "" &&
-		len(entry.Images) == 0 &&
-		len(entry.Recipes) == 0
-}
-
 // GetLatestProdCatEntry returns the ProdCatalogEntry for the latest CSM version.
 // If a cached entry is available, it is returned immediately.
 // If a previous error occurred, that error is returned.
@@ -238,7 +225,7 @@ func isProdCatalogEntryEmpty(entry ProdCatalogEntry) bool {
 // Returns the latest ProdCatalogEntry and an error if fetching fails.
 // Caches the error in prodCatError to avoid repeated fetch attempts in future calls.
 func GetLatestProdCatEntry() (ProdCatalogEntry, error) {
-	if !isProdCatalogEntryEmpty(LatestProdCatEntry) {
+	if LatestProdCatEntry.Initialized {
 		common.Infof("Using cached product catalog data")
 		return LatestProdCatEntry, nil
 	}
