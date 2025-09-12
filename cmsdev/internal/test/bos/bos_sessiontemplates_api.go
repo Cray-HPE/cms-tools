@@ -31,12 +31,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sort"
 	"strings"
 
 	resty "gopkg.in/resty.v1"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
+	pcu "stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/prod-catalog-utils"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
@@ -53,76 +53,20 @@ var archMap = map[string]string{
 	"ARM": "aarch64",
 }
 
-func GetCsmProductCatalogData() (data map[string]interface{}, err error) {
-	resp, err := k8s.GetConfigMapDataField(common.NAMESPACE, common.CSMPRODCATALOGCMNAME, "csm")
-	if err != nil {
-		return nil, err
-	}
-
-	//convert YAML
-	respMap, err := common.DecodeYAMLIntoStringMap(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	return respMap, nil
-}
-
-func GetCSMLatestVersion(prodCatlogData map[string]interface{}) (version string, err error) {
-	// Sort the keys in the JSON object to ensure consistent ordering
-	keys := make([]string, 0, len(prodCatlogData))
-	for key := range prodCatlogData {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	if len(keys) == 0 {
-		return "", fmt.Errorf("no keys found in the configuration map")
-	}
-	//Get the last key from the sorted keys where version has both configuration and images as keys
-	latestCSMVersion := ""
-	for i := len(keys) - 1; i >= 0; i-- {
-		key := keys[i]
-		if _, ok := prodCatlogData[key].(map[interface{}]interface{})["configuration"]; ok {
-			if _, ok := prodCatlogData[key].(map[interface{}]interface{})["images"]; ok {
-				latestCSMVersion = key
-				break
-			}
-		}
-	}
-
-	common.Infof("Latest CSM version: %s", latestCSMVersion)
-	return latestCSMVersion, nil
-}
-
 func GetLatestImageIdFromCsmProductCatalog(arch string) (string, error) {
-	csmProductCatalogData, err := GetCsmProductCatalogData()
+	latestCSMData, err := pcu.GetLatestProdCatEntry()
 	if err != nil {
 		return "", err
 	}
 
-	// Get the latest CSM version data
-	csmVersion, err := GetCSMLatestVersion(csmProductCatalogData)
-	if err != nil {
-		return "", err
-	}
-
-	lastestCSMDataRaw := csmProductCatalogData[csmVersion]
-
-	common.Debugf("Latest CSM data: %v", lastestCSMDataRaw)
-
-	latestCSMData := lastestCSMDataRaw.(map[interface{}]interface{})
-
-	// Access the "images" field from the unmarshaled map
-	csmImages, ok := latestCSMData["images"].(map[interface{}]interface{})
-	if !ok {
-		return "", fmt.Errorf("failed to retrieve 'images' field from latest CSM data")
-	}
-	common.Infof("CSM images: %v", csmImages)
-	for key := range csmImages {
-		// Return the first key found
-		if strings.Contains(key.(string), archMap[arch]) {
-			common.Debugf("Found image ID for architecture %s: %s", archMap[arch], csmImages[key])
-			return csmImages[key].(map[interface{}]interface{})["id"].(string), nil
+	csmImages := latestCSMData.Images
+	if len(csmImages) != 0 {
+		common.Infof("CSM images: %v", csmImages)
+		for key := range csmImages {
+			if strings.Contains(key, archMap[arch]) && csmImages[key].ID != "" {
+				common.Debugf("Found image ID for architecture %s: %s", archMap[arch], csmImages[key])
+				return csmImages[key].ID, nil
+			}
 		}
 	}
 	return "", fmt.Errorf("no image found in the latest CSM data")
@@ -153,14 +97,6 @@ func GetImageRecord(imageID string) (imagerecord ImsImage, ok bool) {
 }
 
 func GetCreateBOSSessionTemplatePayload(cfsConfigName string, enableCFS bool, arch string, imageId string) (bosSessionTemplatePayload string, ok bool) {
-	// Get the latest image ID from the CSM product catalog
-	// and the image record from the IMS API based on architecture
-	// imageId, err := GetLatestImageIdFromCsmProductCatalog(arch)
-	// if err != nil {
-	// 	common.Error(err)
-	// 	return "", false
-	// }
-	// common.Infof("Using image ID %s with arch: %s", imageId, arch)
 	imageRecord, ok := GetImageRecord(imageId)
 	if !ok {
 		return "", false
