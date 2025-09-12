@@ -215,6 +215,7 @@ func GetLatestCSMProductCatalogEntry() error {
 		return fmt.Errorf("failed to convert version data: %v", err)
 	} else if !entry.Initialized {
 		return fmt.Errorf("Programming logic error: No error raised parsing product catalog data, but it is not properly initialized")
+	}
 	LatestProdCatEntry = entry
 	return nil
 }
