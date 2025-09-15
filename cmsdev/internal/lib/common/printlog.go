@@ -351,7 +351,7 @@ func Failure() {
 
 // create log file and directory provided by path if one does not exist
 // if no path is provided, use DEFAULT_LOG_FILE_DIR
-func CreateLogFile(path, version string, logs, retry, quiet, verbose bool) {
+func CreateLogFile(path, version string, logs, retry, quiet, verbose, includeCLI, noCleanup bool) {
 	var err error
 
 	if verbose {
@@ -392,6 +392,12 @@ func CreateLogFile(path, version string, logs, retry, quiet, verbose bool) {
 	}
 	if verbose {
 		args = append(args, "verbose")
+	}
+	if includeCLI {
+		args = append(args, "include-cli")
+	}
+	if noCleanup {
+		args = append(args, "no-cleanup")
 	}
 	runTag = strings.Join(runTags, "-")
 	testLog = logFile.WithFields(logrus.Fields{"version": version, "args": strings.Join(args, ",")})

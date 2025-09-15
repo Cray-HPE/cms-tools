@@ -285,7 +285,7 @@ var testCmd = &cobra.Command{
 
 		// create log file if logs, ignore logsDir if !logs
 		// cmsdevVersion is found in version.go
-		common.CreateLogFile(logsDir, cmsdevVersion, logs, retry, quiet, verbose)
+		common.CreateLogFile(logsDir, cmsdevVersion, logs, retry, quiet, verbose, includeCLI, noCleanup)
 
 		// Initialize variables related to saving CT test artifacts
 		common.InitArtifacts()
