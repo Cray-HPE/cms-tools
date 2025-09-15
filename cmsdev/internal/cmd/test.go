@@ -246,7 +246,7 @@ var testCmd = &cobra.Command{
 		if listTests {
 			// --list was passed
 			if noCleanup || noLogs || logsDir != "" || retry || quiet || verbose || includeCLI {
-				common.Usagef("--no-cleanup, --no-log, --log-dir, --retry, --quiet, and --verbose are not valid with --list")
+				common.Usagef("--include-cli, --no-cleanup, --no-log, --log-dir, --retry, --quiet, and --verbose are not valid with --list")
 			} else if len(args) > 0 {
 				common.Usagef("Invalid arguments specified with --list: %s", strings.Join(args, " "))
 			}
