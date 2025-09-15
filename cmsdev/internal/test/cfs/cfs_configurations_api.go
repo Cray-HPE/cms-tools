@@ -58,11 +58,17 @@ func GetProdCatalogConfigData() (cfsConfigLayerData CsmProductCatalogConfigurati
 }
 
 // GetCreateCFGConfigurationPayload returns the payload for creating a CFS configuration
-func GetCreateCFGConfigurationPayload(apiVersion string, addTenant bool) (payload string, ok bool) {
+func GetCreateCFGConfigurationPayload(apiVersion string, addTenant bool) (payload string, ok, hasFakePayload bool) {
 	common.Infof("Getting product catalog configuration layer data")
 	configData, err := GetProdCatalogConfigData()
 	if err != nil {
-		return "", false
+		common.Error(fmt.Errorf("Failed to get product catalog config data: %v. Using fake data for testing.", err))
+		// Use fake data for testing
+		configData = CsmProductCatalogConfiguration{
+			Clone_url: "https://fake.repo.url/fake.git",
+			Commit:    "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+		}
+		hasFakePayload = true
 	}
 
 	cfgLayerName := "Configuration_Layer_" + string(common.GetRandomString(10))
@@ -88,7 +94,7 @@ func GetCreateCFGConfigurationPayload(apiVersion string, addTenant bool) (payloa
 	layers, ok := cfsPayload["layers"].([]map[string]string)
 	if !ok {
 		common.Error(fmt.Errorf("failed to type-assert layers as []map[string]string"))
-		return "", false
+		return "", false, hasFakePayload
 	}
 
 	if apiVersion == "v3" {
@@ -100,11 +106,11 @@ func GetCreateCFGConfigurationPayload(apiVersion string, addTenant bool) (payloa
 	jsonPayload, err := json.Marshal(cfsPayload)
 	if err != nil {
 		common.Error(err)
-		return "", false
+		return "", false, hasFakePayload
 	}
 
 	common.Infof("CFS configuration payload: %s", string(jsonPayload))
-	return string(jsonPayload), true
+	return string(jsonPayload), true, hasFakePayload
 }
 
 // CreateUpdateCFSConfigurationRecordAPI creates or updates a CFS configuration record using the provided payload
