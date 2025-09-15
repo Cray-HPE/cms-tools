@@ -53,7 +53,7 @@ func getAnyTenant(tenantList []string) string {
 	return defaultTenantName
 }
 
-func IsBOSRunning() (passed bool) {
+func IsBOSRunning(includeCLI bool) (passed bool) {
 	var err error
 	var tenantList []string
 	artifactsCollected := false
@@ -124,9 +124,12 @@ func IsBOSRunning() (passed bool) {
 		passed = false
 	}
 
-	// Defined in bos_cli.go
-	if !cliTests(tenantList) {
-		passed = false
+	// CLI tests will be run only if requested using the include-cli flag
+	if includeCLI {
+		// Defined in bos_cli.go
+		if !cliTests(tenantList) {
+			passed = false
+		}
 	}
 
 	if !passed && !artifactsCollected {
