@@ -30,10 +30,11 @@ package conman
 
 import (
 	"regexp"
+	"strings"
+
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
-	"strings"
 )
 
 var allPvcNames = []string{
