@@ -62,16 +62,16 @@ var TestTimeouts = map[string]int64{
 const DefaultTestTimeout int64 = 120
 
 // Run the specified test
-func RunTest(service string) bool {
+func RunTest(service string, includeCLI bool) bool {
 	switch service {
 	case "bos":
-		return bos.IsBOSRunning()
+		return bos.IsBOSRunning(includeCLI)
 	case "cfs":
-		return cfs.IsCFSRunning()
+		return cfs.IsCFSRunning(includeCLI)
 	case "conman":
 		return con.IsConmanRunning()
 	case "ims":
-		return ims.IsIMSRunning()
+		return ims.IsIMSRunning(includeCLI)
 	case "ipxe", "tftp":
 		return ipxe_tftp.AreTheyRunning()
 	case "vcs", "gitea":
@@ -112,7 +112,7 @@ func GetSleepDuration(attempt int, stopTime, timeout int64) time.Duration {
 	return time.Duration(sleepSeconds) * time.Second
 }
 
-func DoTestWithRetry(service string) bool {
+func DoTestWithRetry(service string, includeCLI bool) bool {
 	testPassed, finalTry := false, false
 	timeout := GetTimeout(service)
 	common.Infof("Test retry timeout for this service test is %d seconds", timeout)
@@ -125,7 +125,7 @@ func DoTestWithRetry(service string) bool {
 			common.Infof("Attempt #%d", n)
 		}
 		common.SetRunSubTag(strconv.Itoa(n))
-		testPassed = RunTest(service)
+		testPassed = RunTest(service, includeCLI)
 		common.UnsetRunSubTag()
 		if testPassed {
 			return true
@@ -143,11 +143,11 @@ func DoTestWithRetry(service string) bool {
 	return false
 }
 
-func DoTest(service string, retry bool) bool {
+func DoTest(service string, retry, includeCLI bool) bool {
 	if retry {
-		return DoTestWithRetry(service)
+		return DoTestWithRetry(service, includeCLI)
 	} else {
-		return RunTest(service)
+		return RunTest(service, includeCLI)
 	}
 }
 
@@ -174,7 +174,7 @@ func GetTestNamesString(excludeAliases bool) string {
 	return strings.Join(GetTestNamesList(excludeAliases), " ")
 }
 
-func RunTests(services []string, retry bool, noclean bool) (passed, failed []string) {
+func RunTests(services []string, retry, noclean, includeCLI bool) (passed, failed []string) {
 	var s string
 
 	// Create temporary directory
@@ -190,7 +190,7 @@ func RunTests(services []string, retry bool, noclean bool) (passed, failed []str
 
 	for _, s = range services {
 		common.SetTestService(s)
-		if DoTest(s, retry) {
+		if DoTest(s, retry, includeCLI) {
 			passed = append(passed, s)
 		} else {
 			failed = append(failed, s)
@@ -237,6 +237,7 @@ var testCmd = &cobra.Command{
 		verbose, _ := cmd.Flags().GetBool("verbose")
 		listTests, _ := cmd.Flags().GetBool("list")
 		excludeAliases, _ := cmd.Flags().GetBool("exclude-aliases")
+		includeCLI, _ := cmd.Flags().GetBool("include-cli")
 
 		if quiet && verbose {
 			common.Usagef("--quiet and --verbose are mutually exclusive")
@@ -244,8 +245,8 @@ var testCmd = &cobra.Command{
 
 		if listTests {
 			// --list was passed
-			if noCleanup || noLogs || logsDir != "" || retry || quiet || verbose {
-				common.Usagef("--no-cleanup, --no-log, --log-dir, --retry, --quiet, and --verbose are not valid with --list")
+			if noCleanup || noLogs || logsDir != "" || retry || quiet || verbose || includeCLI {
+				common.Usagef("--include-cli, --no-cleanup, --no-log, --log-dir, --retry, --quiet, and --verbose are not valid with --list")
 			} else if len(args) > 0 {
 				common.Usagef("Invalid arguments specified with --list: %s", strings.Join(args, " "))
 			}
@@ -284,12 +285,12 @@ var testCmd = &cobra.Command{
 
 		// create log file if logs, ignore logsDir if !logs
 		// cmsdevVersion is found in version.go
-		common.CreateLogFile(logsDir, cmsdevVersion, logs, retry, quiet, verbose)
+		common.CreateLogFile(logsDir, cmsdevVersion, logs, retry, quiet, verbose, includeCLI, noCleanup)
 
 		// Initialize variables related to saving CT test artifacts
 		common.InitArtifacts()
 
-		passed, failed := RunTests(services, retry, noCleanup)
+		passed, failed := RunTests(services, retry, noCleanup, includeCLI)
 
 		if len(failed) == 0 {
 			common.Successf("All %d service tests passed: %s", len(passed), strings.Join(passed, ", "))
@@ -314,4 +315,5 @@ func init() {
 	testCmd.Flags().BoolP("verbose", "v", false, "verbose mode")
 	testCmd.Flags().BoolP("list", "l", false, "list valid service tests")
 	testCmd.Flags().BoolP("exclude-aliases", "", false, "exclude aliases from list of valid service tests")
+	testCmd.Flags().BoolP("include-cli", "", false, "run both CLI and API tests")
 }
