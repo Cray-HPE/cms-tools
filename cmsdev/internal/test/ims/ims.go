@@ -40,7 +40,7 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
-func IsIMSRunning() (passed bool) {
+func IsIMSRunning(includeCLI bool) (passed bool) {
 	var ok, found, artifactsCollected bool
 	var expectedRecipes []Recipe
 	passed = true
@@ -205,33 +205,36 @@ func IsIMSRunning() (passed bool) {
 		passed = false
 	}
 
-	if !TestImageCRUDOperationUsingCLI() {
-		passed = false
-	}
+	// CLI tests will be run only if requested using the include-cli flag
+	if includeCLI {
+		if !TestImageCRUDOperationUsingCLI() {
+			passed = false
+		}
 
-	imsJobList, ok = getIMSJobRecordsCLI()
-	if !ok {
-		passed = false
-	} else {
-		common.Infof("Found %d IMS job records via CLI", len(imsJobList))
-		if len(imsJobList) > 0 {
-			if imsJobId := imsJobList[0].Id; len(imsJobId) == 0 {
-				common.Errorf("First IMS job record in list has 0-length ID field")
-				passed = false
-			} else if _, getOk := getIMSJobRecordCLI(imsJobId); !getOk {
-				passed = false
+		imsJobList, ok = getIMSJobRecordsCLI()
+		if !ok {
+			passed = false
+		} else {
+			common.Infof("Found %d IMS job records via CLI", len(imsJobList))
+			if len(imsJobList) > 0 {
+				if imsJobId := imsJobList[0].Id; len(imsJobId) == 0 {
+					common.Errorf("First IMS job record in list has 0-length ID field")
+					passed = false
+				} else if _, getOk := getIMSJobRecordCLI(imsJobId); !getOk {
+					passed = false
+				}
 			}
 		}
-	}
 
-	// Verify that we can perform CRUD operation on public key via CLI
-	if !TestPublicKeyCRUDOperationUsingCLI() {
-		passed = false
-	}
+		// Verify that we can perform CRUD operation on public key via CLI
+		if !TestPublicKeyCRUDOperationUsingCLI() {
+			passed = false
+		}
 
-	// Verify that we can perform CRUD operation on recipes via CLI
-	if !TestRecipeCRUDOperationUsingCLI() {
-		passed = false
+		// Verify that we can perform CRUD operation on recipes via CLI
+		if !TestRecipeCRUDOperationUsingCLI() {
+			passed = false
+		}
 	}
 
 	if !signingkeysTest() {
