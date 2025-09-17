@@ -37,7 +37,7 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
-func IsCFSRunning() (passed bool) {
+func IsCFSRunning(includeCLI bool) (passed bool) {
 	passed = true
 	// 2 pods minimum since we expect both an api and operator pod
 	podNames, ok := test.GetPodNamesByPrefixKey("cfs", 2, -1)
@@ -99,14 +99,18 @@ func IsCFSRunning() (passed bool) {
 	if !TestCFSSourcesCRUDOperation() {
 		passed = false
 	}
-	if !testCFSCLI() {
-		passed = false
-	}
-	if !TestCFSConfigurationsCRUDOperationWithTenantsUsingCLI() {
-		passed = false
-	}
-	if !TestCFSSourcesCRUDOperationUsingCLI() {
-		passed = false
+
+	// CLI tests will be run only if requested using the include-cli flag
+	if includeCLI {
+		if !testCFSCLI() {
+			passed = false
+		}
+		if !TestCFSConfigurationsCRUDOperationWithTenantsUsingCLI() {
+			passed = false
+		}
+		if !TestCFSSourcesCRUDOperationUsingCLI() {
+			passed = false
+		}
 	}
 	if !passed {
 		common.ArtifactsKubernetes()
