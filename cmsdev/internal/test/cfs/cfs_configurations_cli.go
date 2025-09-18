@@ -47,11 +47,11 @@ func RunVersionedCFSCommand(cliVersion string, cmdArgs ...string) []byte {
 	return test.TenantRunCLICommandJSON(common.GetTenantName(), "cfs", newArgs...)
 }
 
-func CreateCFSConfigurationFile(cfgName, cliVersion string, addTenant bool) (fileName string, payload string, ok bool) {
+func CreateCFSConfigurationFile(cfgName, cliVersion string, addTenant bool) (fileName string, payload string, ok, hasDummyData bool) {
 	fileName = "cfs_configuration"
-	payload, success := GetCreateCFGConfigurationPayload(cliVersion, addTenant)
+	payload, success, hasDummyData := GetCreateCFGConfigurationPayload(cliVersion, addTenant)
 	if !success {
-		return "", "", false
+		return "", "", false, hasDummyData
 	}
 
 	dir, err := os.Getwd()
@@ -65,10 +65,10 @@ func CreateCFSConfigurationFile(cfgName, cliVersion string, addTenant bool) (fil
 	err = os.WriteFile(fileName, []byte(payload), 0644)
 	if err != nil {
 		common.Errorf("Unable to write payload to file %s: %v", fileName, err)
-		return "", "", false
+		return "", "", false, hasDummyData
 	}
 
-	return fileName, payload, true
+	return fileName, payload, true, hasDummyData
 }
 
 func CreateUpdateCFSConfigurationCLI(cfgName, fileName, cliVersion string) (cfsConfig CFSConfiguration, passed bool) {

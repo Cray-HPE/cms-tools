@@ -83,7 +83,7 @@ func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 	cfsConfigurationRecord, success := TestCFSConfigurationCreate(apiVersion, expectedCreateHttpStatus)
 	// Create operation completes with dummy product catalog data but it is flagged as failure
 	// By design first test with dummy product catalog data should fail but rest of the tests should run
-	if !success && len(cfsConfigurationRecord.Name) != 0 {
+	if !success && len(cfsConfigurationRecord.Name) == 0 {
 		return false
 	}
 
@@ -141,7 +141,7 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 	common.PrintLog(fmt.Sprintf("Running CFS configurations update, Delete tests with dummy tenant: %s after creating with Admin.", common.GetTenantName()))
 
 	// get CFS configuration payload with tenane_name set in the payload
-	cfsConfigurationPayload, success, _ := GetCreateCFGConfigurationPayload(apiVersion, true)
+	cfsConfigurationPayload, success, hasDummyPayload := GetCreateCFGConfigurationPayload(apiVersion, true)
 	if !success {
 		common.Infof("Unable to get CFS configuration payload, skippinhg the test.")
 		return true
@@ -151,10 +151,16 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 	common.SetTenantName("")
 
 	// Attempt to create CFS configuration with the same name in a different tenant
-	cfsConfigurationRecord, success := CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, EXPECTED_CFS_CREATE_HTTP_STATUS)
-	if !success {
+	cfsConfigurationRecord, createSuccess := CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, EXPECTED_CFS_CREATE_HTTP_STATUS)
+	if !createSuccess {
 		common.Errorf("CFS configuration %s not successfully created with Admin: %s, skipping other tests.", cfgName, common.GetTenantName())
 		return false
+	}
+
+	// Check if GetCreateCFGConfigurationPayload returned paylaod with fake data in it and set the value of createSuccess to false
+	//to make sure that the test case fails
+	if hasDummyPayload {
+		createSuccess = false
 	}
 
 	common.SetTenantName(existingTenant)
@@ -177,7 +183,7 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 		common.Infof("CFS configuration %s not successfully deleted with Admin: %s", cfgName)
 	}
 
-	passed = passed && notUpdated && notDeleted && getFailed && getAllFailed && success
+	passed = passed && notUpdated && notDeleted && getFailed && getAllFailed && success && createSuccess
 
 	// Setting the tenant back to the original tenant
 	common.SetTenantName(existingTenant)
@@ -208,7 +214,7 @@ func TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cf
 	}
 
 	// get CFS configuration payload with tenane_name set in the payload
-	cfsConfigurationPayload, success, _ := GetCreateCFGConfigurationPayload(apiVersion, addTenant)
+	cfsConfigurationPayload, success, hasDummyPayload := GetCreateCFGConfigurationPayload(apiVersion, addTenant)
 	if !success {
 		return false
 	}
@@ -249,6 +255,13 @@ func TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cf
 		return false
 	}
 	common.Infof("Admin successfully updated CFS configuration %s tenant %s -> tenant %s", cfgName, currentTenant, newTenant)
+
+	// Check if GetCreateCFGConfigurationPayload returned paylaod with fake data in it, return false
+	//to make sure that the test case fails
+	if hasDummyPayload {
+		return false
+	}
+
 	return true
 }
 
@@ -307,7 +320,7 @@ func TestCFSConfigurationCreate(apiVersion string, expectedHttpStatus int) (cfsC
 	common.PrintLog(fmt.Sprintf("Creating CFS configuration: %s", cfgName))
 
 	// get CFS configuration payload
-	cfsConfigurationPayload, success, hasFakePayload := GetCreateCFGConfigurationPayload(apiVersion, false)
+	cfsConfigurationPayload, success, hasDummyPayload := GetCreateCFGConfigurationPayload(apiVersion, false)
 	if !success {
 		return CFSConfiguration{}, false
 	}
@@ -362,7 +375,7 @@ func TestCFSConfigurationCreate(apiVersion string, expectedHttpStatus int) (cfsC
 
 	// Check if GetCreateCFGConfigurationPayload returned paylaod with fake data in it and set the value of success to false
 	//to make sure that the test case fails
-	if hasFakePayload {
+	if hasDummyPayload {
 		success = false
 	}
 
@@ -379,7 +392,7 @@ func TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfgName string, e
 	common.PrintLog(fmt.Sprintf("Updating CFS configuration %s with a non owner tenant.", cfgName))
 
 	// get CFS configuration payload
-	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion, false)
+	cfsConfigurationPayload, success, _ := GetCreateCFGConfigurationPayload(apiVersion, false)
 	if !success {
 		return false
 	}
@@ -422,7 +435,7 @@ func TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfgName string, e
 func TestCFSConfigurationUpdate(cfgName, apiVersion string, expectedHttpStatus int) (success bool) {
 	common.PrintLog(fmt.Sprintf("Updating CFS configuration: %s", cfgName))
 	// get CFS configuration payload
-	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion, false)
+	cfsConfigurationPayload, success, hasDummyPayload := GetCreateCFGConfigurationPayload(apiVersion, false)
 	if !success {
 		return false
 	}
@@ -470,6 +483,12 @@ func TestCFSConfigurationUpdate(cfgName, apiVersion string, expectedHttpStatus i
 		return false
 	}
 	common.Infof("CFS configuration record updated successfully: %s", cfsConfigurationRecord.Name)
+
+	// Check if GetCreateCFGConfigurationPayload returned paylaod with fake data in it , return false
+	//to make sure that the test case fails
+	if hasDummyPayload {
+		return false
+	}
 
 	return true
 }

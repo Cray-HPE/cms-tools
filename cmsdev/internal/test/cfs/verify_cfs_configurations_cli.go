@@ -86,8 +86,8 @@ func TestCFSConfigurationsCRUDOperationUsingCLI() (passed bool) {
 func TestCFSConfigurationsCRUDOperationCLI(cliVersion string) (passed bool) {
 	passed = true
 	// Create a CFS configuration using CLI
-	cfsConfigurationRecord, success := TestCLICFSConfigurationCreate(cliVersion)
-	if !success {
+	cfsConfigurationRecord, createSuccess := TestCLICFSConfigurationCreate(cliVersion)
+	if !createSuccess && len(cfsConfigurationRecord.Name) == 0 {
 		return false
 	}
 
@@ -124,7 +124,9 @@ func TestCFSConfigurationsCRUDOperationCLI(cliVersion string) (passed bool) {
 		// Get all CFS configurations using CLI
 		getAll := TestCLICFSConfigurationGetAll(cliVersion)
 
-		return passed && updated && deleted && getAll
+		passed = passed && updated && deleted && getAll && createSuccess
+
+		return passed
 	}
 	return true
 }
@@ -145,7 +147,7 @@ func TestCLICFSConfigurationCreateByAdminWithSameNameDifferentTenant(cfgName, cl
 	common.Infof("Creating CFS configuration %s belonging to tenant %s using new tenant %s", cfgName, currentTenant, newTenant)
 
 	// Create CFS configuration payload
-	fileName, payload, success := CreateCFSConfigurationFile(cfgName, cliVersion, addTenant)
+	fileName, payload, success, hasDummyData := CreateCFSConfigurationFile(cfgName, cliVersion, addTenant)
 	if !success {
 		return false
 	}
@@ -192,6 +194,12 @@ func TestCLICFSConfigurationCreateByAdminWithSameNameDifferentTenant(cfgName, cl
 	}
 
 	common.Infof("Admin successfully updated CFS configuration %s tenant %s -> tenant %s", cfgName, currentTenant, newTenant)
+
+	// if CreateCFSConfigurationFile has returned paylaod with fake data in it , return false
+	if hasDummyData {
+		return false
+	}
+
 	return true
 }
 
@@ -210,7 +218,7 @@ func TestCLICFSConfigurationCreateWithSameNameDifferentTenant(cfgName, cliVersio
 	common.Infof("Creating CFS configuration %s belonging to tenant %s using new tenant %s", cfgName, currentTenant, newTenant)
 
 	// Create CFS configuration payload
-	fileName, _, success := CreateCFSConfigurationFile(cfgName, cliVersion, false)
+	fileName, _, success, _ := CreateCFSConfigurationFile(cfgName, cliVersion, false)
 	if !success {
 		return false
 	}
@@ -241,11 +249,12 @@ func TestCLICFSConfigurationCreateWithSameNameDifferentTenant(cfgName, cliVersio
 
 func TestCLICFSConfigurationCreate(cliVersion string) (cfsConfigurationRecord CFSConfiguration, passed bool) {
 	cfgName := "CFS_Configuration_" + string(common.GetRandomString(10))
+	passed = true
 
 	common.PrintLog(fmt.Sprintf("Creating CFS configuration: %s", cfgName))
 
 	// Get CFS configuration payload
-	fileName, payload, success := CreateCFSConfigurationFile(cfgName, cliVersion, false)
+	fileName, payload, success, hasDummyData := CreateCFSConfigurationFile(cfgName, cliVersion, false)
 	if !success {
 		return CFSConfiguration{}, false
 	}
@@ -301,7 +310,12 @@ func TestCLICFSConfigurationCreate(cliVersion string) (cfsConfigurationRecord CF
 	}
 
 	common.Infof("CFS configuration created successfully: %s", cfgName)
-	return cfsConfigurationRecord, true
+	// if CreateCFSConfigurationFile has returned paylaod with fake data in it , set the value of success to false
+	// to make sure that the test case fails
+	if hasDummyData {
+		passed = false
+	}
+	return
 }
 
 func TestCLICFSConfigurationUpdateWithDifferentTenant(cfgName, cliVersion string) (passed bool) {
@@ -319,7 +333,7 @@ func TestCLICFSConfigurationUpdateWithDifferentTenant(cfgName, cliVersion string
 	common.Infof("Updating CFS configuration %s belonging to tenant %s using new tenant %s", cfgName, currentTenant, newTenant)
 
 	// Get CFS configuration payload
-	fileName, _, success := CreateCFSConfigurationFile(cfgName, cliVersion, false)
+	fileName, _, success, _ := CreateCFSConfigurationFile(cfgName, cliVersion, false)
 	if !success {
 		return false
 	}
@@ -352,7 +366,7 @@ func TestCLICFSConfigurationUpdate(cfgName, cliVersion string) (passed bool) {
 	common.PrintLog(fmt.Sprintf("Updating CFS configuration: %s", cfgName))
 
 	// Get CFS configuration payload
-	fileName, payload, success := CreateCFSConfigurationFile(cfgName, cliVersion, false)
+	fileName, payload, success, hasDummyData := CreateCFSConfigurationFile(cfgName, cliVersion, false)
 	if !success {
 		return false
 	}
@@ -393,6 +407,12 @@ func TestCLICFSConfigurationUpdate(cfgName, cliVersion string) (passed bool) {
 	}
 
 	common.Infof("CFS configuration updated successfully: %s", cfgName)
+
+	// if CreateCFSConfigurationFile has returned paylaod with fake data in it , return false
+	if hasDummyData {
+		return false
+	}
+
 	return true
 }
 

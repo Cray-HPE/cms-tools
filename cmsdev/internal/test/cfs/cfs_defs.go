@@ -66,6 +66,7 @@ type CsmProductCatalogConfiguration struct {
 	Import_branch string `json:"import_branch"`
 	Import_Date   string `json:"import_date"`
 	Ssh_url       string `json:"ssh_url"`
+	DummyData     bool   `json:"-"` // internal use only to indicate if this struct was initialized with dummy data
 }
 
 type CFSSourceCredentials struct {

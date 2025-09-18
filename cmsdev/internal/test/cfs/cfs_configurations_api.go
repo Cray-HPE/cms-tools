@@ -43,7 +43,9 @@ import (
 // It returns the CsmProductCatalogConfiguration struct and error if any
 func GetProdCatalogConfigData() (cfsConfigLayerData CsmProductCatalogConfiguration, err error) {
 	latestCSMData, err := pcu.GetLatestProdCatEntry()
-	if err != nil {
+	// If there is an error fetching the latest product catalog entry and it is not initialized, return the error
+	// If it is initialized, it means dummy data is being used, so we can proceed
+	if err != nil && !latestCSMData.Initialized {
 		return CsmProductCatalogConfiguration{}, err
 	}
 
@@ -51,26 +53,29 @@ func GetProdCatalogConfigData() (cfsConfigLayerData CsmProductCatalogConfigurati
 		return CsmProductCatalogConfiguration{}, fmt.Errorf("CloneURL and/or Commit value not set: %v", latestCSMData.Configuration)
 	}
 
+	dummyDataFlag := latestCSMData.DummyData
+
+	// If Dummy data flag is set, then unset it so that it does not affect other tests
+	// This flag is used to fail the current test only
+	if dummyDataFlag {
+		pcu.SetDummyDataFlag(false)
+	}
+
 	return CsmProductCatalogConfiguration{
 		Clone_url: latestCSMData.Configuration.CloneURL,
 		Commit:    latestCSMData.Configuration.Commit,
+		DummyData: dummyDataFlag,
 	}, nil
 }
 
 // GetCreateCFGConfigurationPayload returns the payload for creating a CFS configuration
-func GetCreateCFGConfigurationPayload(apiVersion string, addTenant bool) (payload string, ok, hasFakePayload bool) {
+func GetCreateCFGConfigurationPayload(apiVersion string, addTenant bool) (payload string, ok, hasDummyPayload bool) {
 	common.Infof("Getting product catalog configuration layer data")
 	configData, err := GetProdCatalogConfigData()
 	if err != nil {
-		common.Error(fmt.Errorf("Failed to get product catalog config data: %v. Using fake data for testing.", err))
-		// Use fake data for testing
-		configData = CsmProductCatalogConfiguration{
-			Clone_url: "https://fake.repo.url/fake.git",
-			Commit:    "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-		}
-		hasFakePayload = true
+		return "", false, false
 	}
-
+	hasDummyPayload = configData.DummyData
 	cfgLayerName := "Configuration_Layer_" + string(common.GetRandomString(10))
 
 	// Create the CFS configuration payload
@@ -94,7 +99,7 @@ func GetCreateCFGConfigurationPayload(apiVersion string, addTenant bool) (payloa
 	layers, ok := cfsPayload["layers"].([]map[string]string)
 	if !ok {
 		common.Error(fmt.Errorf("failed to type-assert layers as []map[string]string"))
-		return "", false, hasFakePayload
+		return "", false, hasDummyPayload
 	}
 
 	if apiVersion == "v3" {
@@ -106,11 +111,11 @@ func GetCreateCFGConfigurationPayload(apiVersion string, addTenant bool) (payloa
 	jsonPayload, err := json.Marshal(cfsPayload)
 	if err != nil {
 		common.Error(err)
-		return "", false, hasFakePayload
+		return "", false, hasDummyPayload
 	}
 
 	common.Infof("CFS configuration payload: %s", string(jsonPayload))
-	return string(jsonPayload), true, hasFakePayload
+	return string(jsonPayload), true, hasDummyPayload
 }
 
 // CreateUpdateCFSConfigurationRecordAPI creates or updates a CFS configuration record using the provided payload
