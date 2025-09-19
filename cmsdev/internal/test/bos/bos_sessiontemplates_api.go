@@ -122,16 +122,18 @@ func GenerateFakeImsImage(imageId, arch string) (ImsImage, bool) {
 	}, true
 }
 
-func GetCreateBOSSessionTemplatePayload(cfsConfigName string, enableCFS bool, arch string, imageId string) (bosSessionTemplatePayload string, ok bool) {
+func GetCreateBOSSessionTemplatePayload(cfsConfigName string, enableCFS bool, arch string, imageId string) (bosSessionTemplatePayload string, ok, hasDummyData bool) {
 	var imageRecord ImsImage
+	hasDummyData = false
 	imageRecord, ok = GetImageRecord(imageId)
 	if !ok {
 		// If unable to get image record, create a dummy image record to proceed with the tests
 		common.Warnf("Unable to get image record for image ID %s. Creating a dummy image record to proceed with the tests.", imageId)
 		imageRecord, ok = GenerateFakeImsImage(imageId, arch)
 		if !ok {
-			return "", false
+			return "", false, false
 		}
+		hasDummyData = true
 	}
 	kernelParameters :=
 		"console=ttyS0,115200 bad_page=panic crashkernel=512M hugepagelist=2m-2g " +
@@ -166,10 +168,10 @@ func GetCreateBOSSessionTemplatePayload(cfsConfigName string, enableCFS bool, ar
 	jsonPayload, err := json.Marshal(bosParams)
 	if err != nil {
 		common.Error(err)
-		return "", false
+		return "", hasDummyData, false
 	}
 
-	return string(jsonPayload), true
+	return string(jsonPayload), hasDummyData, true
 }
 
 func CreateUpdateBOSSessiontemplatesAPI(bosSessionTemplatePayload string, sessionTemplateName string, method string) (bosSessionTemplate BOSSessionTemplate, ok bool) {

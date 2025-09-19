@@ -117,7 +117,7 @@ func TestCLISessionTemplatesCreate(arch, imageId, cliVersion string) (sessionTem
 
 	cfgName := "CFS_Configuration_" + string(common.GetRandomString(10))
 	// create sessiontemplates payload
-	fileName, payload, success := GetCreateBOSSessionTemplatePayloadCLI(cfgName, false, arch, imageId)
+	fileName, payload, hasDummyData, success := GetCreateBOSSessionTemplatePayloadCLI(cfgName, false, arch, imageId)
 	if !success {
 		return BOSSessionTemplate{}, false
 	}
@@ -168,9 +168,15 @@ func TestCLISessionTemplatesCreate(arch, imageId, cliVersion string) (sessionTem
 		return BOSSessionTemplate{}, false
 	}
 
-	// Validate session template
-	if !ValidateBOSSessionTemplateCLI(sessionTemplateRecord.Name, cliVersion) {
-		return BOSSessionTemplate{}, false
+	// Validating session template will only work if the session template was created using a valid image
+	// If the session template was created using dummy image data, then skip the validation
+	if !hasDummyData {
+		// Validate session template
+		if !ValidateBOSSessionTemplateCLI(sessionTemplateRecord.Name, cliVersion) {
+			return BOSSessionTemplate{}, false
+		}
+	} else {
+		common.Warnf("Skipping validation of session template %s as it was created using dummy image data", sessionTemplateRecord.Name)
 	}
 
 	return sessionTemplateRecord, true
@@ -189,7 +195,7 @@ func TestCLISessionTemplatesUpdate(templateName, imageId, cliVersion string) (pa
 	}
 
 	// create sessiontemplates payload
-	fileName, payload, success := GetCreateBOSSessionTemplatePayloadCLI(cfgName, true, sessionTemplate.Boot_sets.Compute.Arch, imageId)
+	fileName, payload, hasDummyData, success := GetCreateBOSSessionTemplatePayloadCLI(cfgName, true, sessionTemplate.Boot_sets.Compute.Arch, imageId)
 	if !success {
 		return false
 	}
@@ -228,9 +234,15 @@ func TestCLISessionTemplatesUpdate(templateName, imageId, cliVersion string) (pa
 		return false
 	}
 
-	// Validate session template
-	if !ValidateBOSSessionTemplateCLI(sessionTemplateRecord.Name, cliVersion) {
-		return false
+	// Validating session template will only work if the session template was created using a valid image
+	// If the session template was created using dummy image data, then skip the validation
+	if !hasDummyData {
+		// Validate session template
+		if !ValidateBOSSessionTemplateCLI(sessionTemplateRecord.Name, cliVersion) {
+			return false
+		}
+	} else {
+		common.Warnf("Skipping validation of session template %s as it was created using dummy image data", sessionTemplateRecord.Name)
 	}
 
 	common.Infof("BOS Session template %s updated successfully", sessionTemplateRecord.Name)

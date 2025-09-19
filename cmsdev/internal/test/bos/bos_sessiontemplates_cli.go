@@ -51,11 +51,11 @@ func RunVersionedBOSCommand(cliVersion string, cmdArgs ...string) []byte {
 	return runTenantBosCLI(common.GetTenantName(), newArgs...)
 }
 
-func GetCreateBOSSessionTemplatePayloadCLI(cfsConfigName string, enableCFS bool, arch string, imageId string) (fileName string, payload string, ok bool) {
+func GetCreateBOSSessionTemplatePayloadCLI(cfsConfigName string, enableCFS bool, arch string, imageId string) (fileName string, payload string, hasDummyData, ok bool) {
 	fileName = "bos_sessiontemplate_create_payload"
-	payload, success := GetCreateBOSSessionTemplatePayload(cfsConfigName, enableCFS, arch, imageId)
+	payload, hasDummyData, success := GetCreateBOSSessionTemplatePayload(cfsConfigName, enableCFS, arch, imageId)
 	if !success {
-		return "", "", false
+		return "", "", false, false
 	}
 
 	dir, err := os.Getwd()
@@ -69,10 +69,10 @@ func GetCreateBOSSessionTemplatePayloadCLI(cfsConfigName string, enableCFS bool,
 	err = os.WriteFile(fileName, []byte(payload), 0644)
 	if err != nil {
 		common.Errorf("Unable to write payload to file %s: %v", fileName, err)
-		return "", "", false
+		return "", "", hasDummyData, false
 	}
 
-	return fileName, payload, true
+	return fileName, payload, hasDummyData, true
 }
 
 func UpdateBOSSessionTemplatesCLI(templateName, filename, cfgName, cliVersion string) (sessionTemplateRecord BOSSessionTemplate, passed bool) {

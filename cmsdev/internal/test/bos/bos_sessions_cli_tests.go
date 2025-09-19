@@ -130,7 +130,7 @@ func TestCLIBOSSessionsCreate(staged bool, arch, imageId, cliVersion string) (se
 	templateName := "BOS_SessionTemplate_" + string(common.GetRandomString(10))
 
 	// Create Bos session template payload needed for session creation
-	fileName, _, success := GetCreateBOSSessionTemplatePayloadCLI(cfgName, true, arch, imageId)
+	fileName, _, _, success := GetCreateBOSSessionTemplatePayloadCLI(cfgName, true, arch, imageId)
 	if !success {
 		return BOSSession{}, false
 	}

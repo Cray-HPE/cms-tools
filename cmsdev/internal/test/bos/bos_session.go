@@ -294,7 +294,7 @@ func listV2SessionDataCli(tenantName string, cmdArgs ...string) (sessionDataList
 func CreateBOSSessionPayload(sessionName, templateName string, staged bool, operation string, arch string, imageId string) (payload string, ok bool) {
 	cfgName := "CFS_Configuration_" + string(common.GetRandomString(10))
 
-	payload, ok = GetCreateBOSSessionTemplatePayload(cfgName, false, arch, imageId)
+	payload, _, ok = GetCreateBOSSessionTemplatePayload(cfgName, false, arch, imageId)
 	if !ok {
 		return "", false
 	}
