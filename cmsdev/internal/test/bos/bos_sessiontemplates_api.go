@@ -53,6 +53,29 @@ var archMap = map[string]string{
 	"ARM": "aarch64",
 }
 
+type BOSOptionsResponse struct {
+	BssReadTimeout             int    `json:"bss_read_timeout"`
+	CfsReadTimeout             int    `json:"cfs_read_timeout"`
+	CleanupCompletedSessionTTL string `json:"cleanup_completed_session_ttl"`
+	ClearStage                 bool   `json:"clear_stage"`
+	ComponentActualStateTTL    string `json:"component_actual_state_ttl"`
+	DefaultRetryPolicy         int    `json:"default_retry_policy"`
+	DiscoveryFrequency         int    `json:"discovery_frequency"`
+	HsmReadTimeout             int    `json:"hsm_read_timeout"`
+	ImsErrorsFatal             bool   `json:"ims_errors_fatal"`
+	ImsImagesMustExist         bool   `json:"ims_images_must_exist"`
+	ImsReadTimeout             int    `json:"ims_read_timeout"`
+	LoggingLevel               string `json:"logging_level"`
+	MaxBootWaitTime            int    `json:"max_boot_wait_time"`
+	MaxComponentBatchSize      int    `json:"max_component_batch_size"`
+	MaxPowerOffWaitTime        int    `json:"max_power_off_wait_time"`
+	MaxPowerOnWaitTime         int    `json:"max_power_on_wait_time"`
+	PcsReadTimeout             int    `json:"pcs_read_timeout"`
+	PollingFrequency           int    `json:"polling_frequency"`
+	RejectNids                 bool   `json:"reject_nids"`
+	SessionLimitRequired       bool   `json:"session_limit_required"`
+}
+
 func GetLatestImageIdFromCsmProductCatalog(arch string) (string, bool, error) {
 	latestCSMData, err := pcu.GetLatestProdCatEntry()
 	if err != nil && !latestCSMData.Initialized {
@@ -127,6 +150,11 @@ func GetCreateBOSSessionTemplatePayload(cfsConfigName string, enableCFS bool, ar
 	hasDummyData = false
 	imageRecord, ok = GetImageRecord(imageId)
 	if !ok {
+		// If IMS images must exist option is set to true, then return as BOS sessiontemplate creation will fail with dummy image
+		if BosOptionImagesMustExist() {
+			common.Errorf("Unable to get image record for image ID %s", imageId)
+			return "", false, false
+		}
 		// If unable to get image record, create a dummy image record to proceed with the tests
 		common.Warnf("Unable to get image record for image ID %s. Creating a dummy image record to proceed with the tests.", imageId)
 		imageRecord, ok = GenerateFakeImsImage(imageId, arch)
@@ -311,6 +339,31 @@ func GetAllBOSSessionTemplatesAPI() (bosSessionTemplates []BOSSessionTemplate, o
 
 	ok = true
 	return
+}
+
+func BosOptionImagesMustExist() bool {
+	params := test.GetAccessTokenParams()
+	if params == nil {
+		common.Errorf("Unable to get access token params")
+		return false
+	}
+
+	url := common.BASEURL + endpoints["bos"]["options"].Url +
+		"/" + endpoints["bos"]["sessiontemplates"].Version +
+		endpoints["bos"]["options"].Uri
+
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, http.StatusOK)
+	if err != nil {
+		common.Error(err)
+		return false
+	}
+
+	var options BOSOptionsResponse
+	if err := json.Unmarshal(resp.Body(), &options); err != nil {
+		common.Error(err)
+		return false
+	}
+	return options.ImsImagesMustExist
 }
 
 func BOSSessionTemplateExists(sessionTemplateName string, templateList []BOSSessionTemplate) (ok bool) {

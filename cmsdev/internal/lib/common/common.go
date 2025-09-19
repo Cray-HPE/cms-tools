@@ -503,6 +503,15 @@ func GetEndpoints() map[string]map[string]*Endpoint {
 		Version: "v2",
 	}
 
+	endpoints["bos"]["options"] = &Endpoint{
+		Methods: map[string]*endpointMethod{
+			"GET": newMethodEndpoint("", "Retrieve BOS options", []int{200}),
+		},
+		Url:     "/apis/bos",
+		Uri:     "/options",
+		Version: "v2",
+	}
+
 	return endpoints
 }
 
