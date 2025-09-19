@@ -67,12 +67,18 @@ func TestBOSSessionsCRUDOperations() (passed bool) {
 
 	// Range over archMap to create session templates with different architectures
 	for arch := range archMap {
-		imageId, err := GetLatestImageIdFromCsmProductCatalog(arch)
+		imageId, hasDummyData, err := GetLatestImageIdFromCsmProductCatalog(arch)
 		if err != nil {
 			common.Infof("Unable to get latest image id for architecture %s", archMap[arch])
 			common.Warnf("Skipping BOS session tests for architecture %s", archMap[arch])
 			continue
 		}
+
+		// If Dummy data flag is set, then mark the test as failed
+		if hasDummyData {
+			passed = false
+		}
+
 		testRan = true
 		common.PrintLog(fmt.Sprintf("Running BOS session tests for arch %s", archMap[arch]))
 		// Ruuning test suite for both staged and non-staged sessions
