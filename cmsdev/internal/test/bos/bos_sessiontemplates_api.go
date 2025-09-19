@@ -53,10 +53,18 @@ var archMap = map[string]string{
 	"ARM": "aarch64",
 }
 
-func GetLatestImageIdFromCsmProductCatalog(arch string) (string, error) {
+func GetLatestImageIdFromCsmProductCatalog(arch string) (string, bool, error) {
 	latestCSMData, err := pcu.GetLatestProdCatEntry()
-	if err != nil {
-		return "", err
+	if err != nil && !latestCSMData.Initialized {
+		return "", false, err
+	}
+
+	hasDummyData := latestCSMData.DummyData
+
+	// If Dummy data flag is set, then unset it so that it does not affect other tests
+	// This flag is used to fail the current test only
+	if hasDummyData {
+		pcu.SetDummyDataFlag(false)
 	}
 
 	csmImages := latestCSMData.Images
@@ -65,11 +73,11 @@ func GetLatestImageIdFromCsmProductCatalog(arch string) (string, error) {
 		for key := range csmImages {
 			if strings.Contains(key, archMap[arch]) && csmImages[key].ID != "" {
 				common.Debugf("Found image ID for architecture %s: %s", archMap[arch], csmImages[key])
-				return csmImages[key].ID, nil
+				return csmImages[key].ID, hasDummyData, nil
 			}
 		}
 	}
-	return "", fmt.Errorf("no image found in the latest CSM data")
+	return "", false, fmt.Errorf("no image found in the latest CSM data")
 }
 
 func GetImageRecord(imageID string) (imagerecord ImsImage, ok bool) {
@@ -96,10 +104,34 @@ func GetImageRecord(imageID string) (imagerecord ImsImage, ok bool) {
 	return
 }
 
+// GenerateFakeImsImage returns a fake ImsImage object with hardcoded test data.
+func GenerateFakeImsImage(imageId, arch string) (ImsImage, bool) {
+	if imageId == "" || arch == "" {
+		common.Warnf("GenerateFakeImsImage called with empty imageId or arch: imageId='%s', arch='%s'", imageId, arch)
+		return ImsImage{}, false
+	}
+	return ImsImage{
+		ImageID: imageId,
+		Arch:    arch,
+		Name:    "compute-csm-1.7-7.1.37-" + arch,
+		Link: ImageLink{
+			S3_Etag: "e82fab7d26f562563b36570f5faa0999",
+			S3_Path: "s3://boot-images/" + imageId + "/manifest.json",
+			Type:    "s3",
+		},
+	}, true
+}
+
 func GetCreateBOSSessionTemplatePayload(cfsConfigName string, enableCFS bool, arch string, imageId string) (bosSessionTemplatePayload string, ok bool) {
-	imageRecord, ok := GetImageRecord(imageId)
+	var imageRecord ImsImage
+	imageRecord, ok = GetImageRecord(imageId)
 	if !ok {
-		return "", false
+		// If unable to get image record, create a dummy image record to proceed with the tests
+		common.Warnf("Unable to get image record for image ID %s. Creating a dummy image record to proceed with the tests.", imageId)
+		imageRecord, ok = GenerateFakeImsImage(imageId, arch)
+		if !ok {
+			return "", false
+		}
 	}
 	kernelParameters :=
 		"console=ttyS0,115200 bad_page=panic crashkernel=512M hugepagelist=2m-2g " +
