@@ -63,17 +63,6 @@ var prodCatError error
 // var LatestProdCatEntry map[interface{}]interface{}
 var LatestProdCatEntry ProdCatalogEntry
 
-// Used to indicate if dummy data is being used for testing
-var prodCatalogDummyData = false
-
-func SetDummyDataFlag(value bool) {
-	prodCatalogDummyData = value
-}
-
-func IsUsingDummyData() bool {
-	return prodCatalogDummyData
-}
-
 // GetCsmProductCatalogData is used to fetch the CSM product catalog config map data from Kubernetes
 // It returns the config map data as a map[string]interface{} and error if any
 // The config map data contains the CSM versions and their corresponding configuration and image details
@@ -127,7 +116,6 @@ func UseProdCatalogEntryDummyData() error {
 		return fmt.Errorf("Dummy data not properly initialized")
 	}
 
-	SetDummyDataFlag(true)
 	LatestProdCatEntry = entry
 	return nil
 }
