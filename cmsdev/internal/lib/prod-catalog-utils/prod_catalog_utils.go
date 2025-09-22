@@ -56,7 +56,6 @@ type ProdCatalogEntry struct {
 	Images        map[string]Image  `json:"images"`
 	Recipes       map[string]Recipe `json:"recipes"`
 	Initialized   bool              `json:"-"` // internal use only to indicate if this struct has been initialized
-	DummyData     bool              `json:"-"` // internal use only to indicate if this struct was initialized with dummy data
 }
 
 var prodCatError error
@@ -64,10 +63,15 @@ var prodCatError error
 // var LatestProdCatEntry map[interface{}]interface{}
 var LatestProdCatEntry ProdCatalogEntry
 
+// Used to indicate if dummy data is being used for testing
+var prodCatalogDummyData = false
+
 func SetDummyDataFlag(value bool) {
-	if LatestProdCatEntry.Initialized {
-		LatestProdCatEntry.DummyData = value
-	}
+	prodCatalogDummyData = value
+}
+
+func IsUsingDummyData() bool {
+	return prodCatalogDummyData
 }
 
 // GetCsmProductCatalogData is used to fetch the CSM product catalog config map data from Kubernetes
@@ -123,7 +127,7 @@ func UseProdCatalogEntryDummyData() error {
 		return fmt.Errorf("Dummy data not properly initialized")
 	}
 
-	entry.DummyData = true
+	SetDummyDataFlag(true)
 	LatestProdCatEntry = entry
 	return nil
 }
@@ -276,7 +280,7 @@ func GetLatestCSMProductCatalogEntry() error {
 func GetLatestProdCatEntry() (ProdCatalogEntry, error) {
 	if LatestProdCatEntry.Initialized {
 		common.Infof("Using cached product catalog data")
-		return LatestProdCatEntry, prodCatError
+		return LatestProdCatEntry, nil
 	}
 	if prodCatError != nil {
 		return ProdCatalogEntry{}, fmt.Errorf("Product catalog data unavailable due to previous failure: %v", prodCatError)

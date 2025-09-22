@@ -32,6 +32,7 @@ import (
 	"fmt"
 
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+	pcu "stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/prod-catalog-utils"
 )
 
 func TestCFSConfigurationsCRUDOperationWithTenantsUsingAPIVersions() (passed bool) {
@@ -141,7 +142,7 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 	common.PrintLog(fmt.Sprintf("Running CFS configurations update, Delete tests with dummy tenant: %s after creating with Admin.", common.GetTenantName()))
 
 	// get CFS configuration payload with tenane_name set in the payload
-	cfsConfigurationPayload, success, hasDummyPayload := GetCreateCFGConfigurationPayload(apiVersion, true)
+	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion, true)
 	if !success {
 		common.Infof("Unable to get CFS configuration payload, skippinhg the test.")
 		return true
@@ -159,7 +160,9 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 
 	// Check if GetCreateCFGConfigurationPayload returned paylaod with fake data in it and set the value of createSuccess to false
 	//to make sure that the test case fails
-	if hasDummyPayload {
+	if pcu.IsUsingDummyData() {
+		// Resetting the dummy data flag to false so that the failure is only reported once
+		pcu.SetDummyDataFlag(false)
 		createSuccess = false
 	}
 
@@ -214,7 +217,7 @@ func TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cf
 	}
 
 	// get CFS configuration payload with tenane_name set in the payload
-	cfsConfigurationPayload, success, hasDummyPayload := GetCreateCFGConfigurationPayload(apiVersion, addTenant)
+	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion, addTenant)
 	if !success {
 		return false
 	}
@@ -258,7 +261,9 @@ func TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cf
 
 	// Check if GetCreateCFGConfigurationPayload returned paylaod with fake data in it, return false
 	//to make sure that the test case fails
-	if hasDummyPayload {
+	if pcu.IsUsingDummyData() {
+		// Resetting the dummy data flag to false so that the failure is only reported once
+		pcu.SetDummyDataFlag(false)
 		return false
 	}
 
@@ -275,7 +280,7 @@ func TestCFSConfigurationCreateWithSameNameDifferentTenant(apiVersion, cfgName s
 	common.PrintLog(fmt.Sprintf("Creating CFS configuration with same name %s and different tenant", cfgName))
 
 	// get CFS configuration payload
-	cfsConfigurationPayload, success, _ := GetCreateCFGConfigurationPayload(apiVersion, false)
+	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion, false)
 	if !success {
 		return false
 	}
@@ -320,7 +325,7 @@ func TestCFSConfigurationCreate(apiVersion string, expectedHttpStatus int) (cfsC
 	common.PrintLog(fmt.Sprintf("Creating CFS configuration: %s", cfgName))
 
 	// get CFS configuration payload
-	cfsConfigurationPayload, success, hasDummyPayload := GetCreateCFGConfigurationPayload(apiVersion, false)
+	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion, false)
 	if !success {
 		return CFSConfiguration{}, false
 	}
@@ -375,7 +380,9 @@ func TestCFSConfigurationCreate(apiVersion string, expectedHttpStatus int) (cfsC
 
 	// Check if GetCreateCFGConfigurationPayload returned paylaod with fake data in it and set the value of success to false
 	//to make sure that the test case fails
-	if hasDummyPayload {
+	if pcu.IsUsingDummyData() {
+		// Resetting the dummy data flag to false so that the failure is only reported once
+		pcu.SetDummyDataFlag(false)
 		success = false
 	}
 
@@ -392,7 +399,7 @@ func TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfgName string, e
 	common.PrintLog(fmt.Sprintf("Updating CFS configuration %s with a non owner tenant.", cfgName))
 
 	// get CFS configuration payload
-	cfsConfigurationPayload, success, _ := GetCreateCFGConfigurationPayload(apiVersion, false)
+	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion, false)
 	if !success {
 		return false
 	}
@@ -435,7 +442,7 @@ func TestCFSConfigurationUpdatewithDifferentTenant(apiVersion, cfgName string, e
 func TestCFSConfigurationUpdate(cfgName, apiVersion string, expectedHttpStatus int) (success bool) {
 	common.PrintLog(fmt.Sprintf("Updating CFS configuration: %s", cfgName))
 	// get CFS configuration payload
-	cfsConfigurationPayload, success, hasDummyPayload := GetCreateCFGConfigurationPayload(apiVersion, false)
+	cfsConfigurationPayload, success := GetCreateCFGConfigurationPayload(apiVersion, false)
 	if !success {
 		return false
 	}
@@ -486,7 +493,9 @@ func TestCFSConfigurationUpdate(cfgName, apiVersion string, expectedHttpStatus i
 
 	// Check if GetCreateCFGConfigurationPayload returned paylaod with fake data in it , return false
 	//to make sure that the test case fails
-	if hasDummyPayload {
+	if pcu.IsUsingDummyData() {
+		// Resetting the dummy data flag to false so that the failure is only reported once
+		pcu.SetDummyDataFlag(false)
 		return false
 	}
 

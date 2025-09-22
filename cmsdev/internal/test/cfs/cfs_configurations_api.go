@@ -53,29 +53,20 @@ func GetProdCatalogConfigData() (cfsConfigLayerData CsmProductCatalogConfigurati
 		return CsmProductCatalogConfiguration{}, fmt.Errorf("CloneURL and/or Commit value not set: %v", latestCSMData.Configuration)
 	}
 
-	dummyDataFlag := latestCSMData.DummyData
-
-	// If Dummy data flag is set, then unset it so that it does not affect other tests
-	// This flag is used to fail the current test only
-	if dummyDataFlag {
-		pcu.SetDummyDataFlag(false)
-	}
-
 	return CsmProductCatalogConfiguration{
 		Clone_url: latestCSMData.Configuration.CloneURL,
 		Commit:    latestCSMData.Configuration.Commit,
-		DummyData: dummyDataFlag,
 	}, nil
 }
 
 // GetCreateCFGConfigurationPayload returns the payload for creating a CFS configuration
-func GetCreateCFGConfigurationPayload(apiVersion string, addTenant bool) (payload string, ok, hasDummyPayload bool) {
+func GetCreateCFGConfigurationPayload(apiVersion string, addTenant bool) (payload string, ok bool) {
 	common.Infof("Getting product catalog configuration layer data")
 	configData, err := GetProdCatalogConfigData()
 	if err != nil {
-		return "", false, false
+		return "", false
 	}
-	hasDummyPayload = configData.DummyData
+
 	cfgLayerName := "Configuration_Layer_" + string(common.GetRandomString(10))
 
 	// Create the CFS configuration payload
@@ -99,7 +90,7 @@ func GetCreateCFGConfigurationPayload(apiVersion string, addTenant bool) (payloa
 	layers, ok := cfsPayload["layers"].([]map[string]string)
 	if !ok {
 		common.Error(fmt.Errorf("failed to type-assert layers as []map[string]string"))
-		return "", false, hasDummyPayload
+		return "", false
 	}
 
 	if apiVersion == "v3" {
@@ -111,11 +102,11 @@ func GetCreateCFGConfigurationPayload(apiVersion string, addTenant bool) (payloa
 	jsonPayload, err := json.Marshal(cfsPayload)
 	if err != nil {
 		common.Error(err)
-		return "", false, hasDummyPayload
+		return "", false
 	}
 
 	common.Infof("CFS configuration payload: %s", string(jsonPayload))
-	return string(jsonPayload), true, hasDummyPayload
+	return string(jsonPayload), true
 }
 
 // CreateUpdateCFSConfigurationRecordAPI creates or updates a CFS configuration record using the provided payload

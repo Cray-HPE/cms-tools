@@ -33,6 +33,7 @@ import (
 	"os"
 
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
+	pcu "stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/prod-catalog-utils"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
@@ -147,7 +148,7 @@ func TestCLICFSConfigurationCreateByAdminWithSameNameDifferentTenant(cfgName, cl
 	common.Infof("Creating CFS configuration %s belonging to tenant %s using new tenant %s", cfgName, currentTenant, newTenant)
 
 	// Create CFS configuration payload
-	fileName, payload, success, hasDummyData := CreateCFSConfigurationFile(cfgName, cliVersion, addTenant)
+	fileName, payload, success := CreateCFSConfigurationFile(cfgName, cliVersion, addTenant)
 	if !success {
 		return false
 	}
@@ -195,8 +196,10 @@ func TestCLICFSConfigurationCreateByAdminWithSameNameDifferentTenant(cfgName, cl
 
 	common.Infof("Admin successfully updated CFS configuration %s tenant %s -> tenant %s", cfgName, currentTenant, newTenant)
 
-	// if CreateCFSConfigurationFile has returned paylaod with fake data in it , return false
-	if hasDummyData {
+	// if CreateCFSConfigurationFile has returned paylaod with dummy data in it , return false
+	if pcu.IsUsingDummyData() {
+		// Resetting the dummy data flag to false so that the failure is only reported once
+		pcu.SetDummyDataFlag(false)
 		return false
 	}
 
@@ -218,7 +221,7 @@ func TestCLICFSConfigurationCreateWithSameNameDifferentTenant(cfgName, cliVersio
 	common.Infof("Creating CFS configuration %s belonging to tenant %s using new tenant %s", cfgName, currentTenant, newTenant)
 
 	// Create CFS configuration payload
-	fileName, _, success, _ := CreateCFSConfigurationFile(cfgName, cliVersion, false)
+	fileName, _, success := CreateCFSConfigurationFile(cfgName, cliVersion, false)
 	if !success {
 		return false
 	}
@@ -254,7 +257,7 @@ func TestCLICFSConfigurationCreate(cliVersion string) (cfsConfigurationRecord CF
 	common.PrintLog(fmt.Sprintf("Creating CFS configuration: %s", cfgName))
 
 	// Get CFS configuration payload
-	fileName, payload, success, hasDummyData := CreateCFSConfigurationFile(cfgName, cliVersion, false)
+	fileName, payload, success := CreateCFSConfigurationFile(cfgName, cliVersion, false)
 	if !success {
 		return CFSConfiguration{}, false
 	}
@@ -312,7 +315,9 @@ func TestCLICFSConfigurationCreate(cliVersion string) (cfsConfigurationRecord CF
 	common.Infof("CFS configuration created successfully: %s", cfgName)
 	// if CreateCFSConfigurationFile has returned paylaod with fake data in it , set the value of success to false
 	// to make sure that the test case fails
-	if hasDummyData {
+	if pcu.IsUsingDummyData() {
+		// Resetting the dummy data flag to false so that the failure is only reported once
+		pcu.SetDummyDataFlag(false)
 		passed = false
 	}
 	return
@@ -333,7 +338,7 @@ func TestCLICFSConfigurationUpdateWithDifferentTenant(cfgName, cliVersion string
 	common.Infof("Updating CFS configuration %s belonging to tenant %s using new tenant %s", cfgName, currentTenant, newTenant)
 
 	// Get CFS configuration payload
-	fileName, _, success, _ := CreateCFSConfigurationFile(cfgName, cliVersion, false)
+	fileName, _, success := CreateCFSConfigurationFile(cfgName, cliVersion, false)
 	if !success {
 		return false
 	}
@@ -366,7 +371,7 @@ func TestCLICFSConfigurationUpdate(cfgName, cliVersion string) (passed bool) {
 	common.PrintLog(fmt.Sprintf("Updating CFS configuration: %s", cfgName))
 
 	// Get CFS configuration payload
-	fileName, payload, success, hasDummyData := CreateCFSConfigurationFile(cfgName, cliVersion, false)
+	fileName, payload, success := CreateCFSConfigurationFile(cfgName, cliVersion, false)
 	if !success {
 		return false
 	}
@@ -409,7 +414,9 @@ func TestCLICFSConfigurationUpdate(cfgName, cliVersion string) (passed bool) {
 	common.Infof("CFS configuration updated successfully: %s", cfgName)
 
 	// if CreateCFSConfigurationFile has returned paylaod with fake data in it , return false
-	if hasDummyData {
+	if pcu.IsUsingDummyData() {
+		// Resetting the dummy data flag to false so that the failure is only reported once
+		pcu.SetDummyDataFlag(false)
 		return false
 	}
 
