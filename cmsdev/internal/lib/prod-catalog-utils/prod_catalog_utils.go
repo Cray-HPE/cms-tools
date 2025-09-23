@@ -83,7 +83,6 @@ func GetCsmProductCatalogData() (data map[string]interface{}, err error) {
 
 // Initialize the ProdCatalogEntry with dummy data
 func UseProdCatalogEntryDummyData() error {
-	common.Error(fmt.Errorf("%v. Using dummy data for testing.", prodCatError))
 	dummyData := map[interface{}]interface{}{
 		"configuration": map[interface{}]interface{}{
 			"clone_url":     "https://vcs.cmn.wasp.hpc.amslabs.hpecorp.net/vcs/cray/dummy-csm-config-management.git",

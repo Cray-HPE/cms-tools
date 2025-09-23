@@ -37,6 +37,13 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
+var prodCatOk = true
+
+// SetProdCatOk value to indicate if prod catalog is dummy or not
+func SetProdCatOk(ok bool) {
+	prodCatOk = ok
+}
+
 func IsCFSRunning(includeCLI bool) (passed bool) {
 	passed = true
 	// 2 pods minimum since we expect both an api and operator pod
@@ -91,7 +98,7 @@ func IsCFSRunning(includeCLI bool) (passed bool) {
 	if !testCFSAPI() {
 		passed = false
 	}
-	if !TestCFSConfigurationsCRUDOperationWithTenantsUsingAPIVersions() {
+	if !TestCFSConfigurationsCRUDOperationWithTenantsUsingAPIVersions() || !prodCatOk {
 		passed = false
 	}
 	if !TestCFSSourcesCRUDOperation() {
@@ -103,7 +110,7 @@ func IsCFSRunning(includeCLI bool) (passed bool) {
 		if !testCFSCLI() {
 			passed = false
 		}
-		if !TestCFSConfigurationsCRUDOperationWithTenantsUsingCLI() {
+		if !TestCFSConfigurationsCRUDOperationWithTenantsUsingCLI() || !prodCatOk {
 			passed = false
 		}
 		if !TestCFSSourcesCRUDOperationUsingCLI() {

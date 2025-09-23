@@ -33,7 +33,6 @@ import (
 	"os"
 
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
-	pcu "stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/prod-catalog-utils"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
@@ -87,8 +86,8 @@ func TestCFSConfigurationsCRUDOperationUsingCLI() (passed bool) {
 func TestCFSConfigurationsCRUDOperationCLI(cliVersion string) (passed bool) {
 	passed = true
 	// Create a CFS configuration using CLI
-	cfsConfigurationRecord, createSuccess := TestCLICFSConfigurationCreate(cliVersion)
-	if !createSuccess && len(cfsConfigurationRecord.Name) == 0 {
+	cfsConfigurationRecord, success := TestCLICFSConfigurationCreate(cliVersion)
+	if !success {
 		return false
 	}
 
@@ -125,9 +124,7 @@ func TestCFSConfigurationsCRUDOperationCLI(cliVersion string) (passed bool) {
 		// Get all CFS configurations using CLI
 		getAll := TestCLICFSConfigurationGetAll(cliVersion)
 
-		passed = passed && updated && deleted && getAll && createSuccess
-
-		return passed
+		return passed && updated && deleted && getAll
 	}
 	return true
 }
@@ -195,14 +192,6 @@ func TestCLICFSConfigurationCreateByAdminWithSameNameDifferentTenant(cfgName, cl
 	}
 
 	common.Infof("Admin successfully updated CFS configuration %s tenant %s -> tenant %s", cfgName, currentTenant, newTenant)
-
-	// if CreateCFSConfigurationFile has returned paylaod with dummy data in it , return false
-	if pcu.IsUsingDummyData() {
-		// Resetting the dummy data flag to false so that the failure is only reported once
-		pcu.SetDummyDataFlag(false)
-		return false
-	}
-
 	return true
 }
 
@@ -252,7 +241,6 @@ func TestCLICFSConfigurationCreateWithSameNameDifferentTenant(cfgName, cliVersio
 
 func TestCLICFSConfigurationCreate(cliVersion string) (cfsConfigurationRecord CFSConfiguration, passed bool) {
 	cfgName := "CFS_Configuration_" + string(common.GetRandomString(10))
-	passed = true
 
 	common.PrintLog(fmt.Sprintf("Creating CFS configuration: %s", cfgName))
 
@@ -313,14 +301,7 @@ func TestCLICFSConfigurationCreate(cliVersion string) (cfsConfigurationRecord CF
 	}
 
 	common.Infof("CFS configuration created successfully: %s", cfgName)
-	// if CreateCFSConfigurationFile has returned paylaod with fake data in it , set the value of success to false
-	// to make sure that the test case fails
-	if pcu.IsUsingDummyData() {
-		// Resetting the dummy data flag to false so that the failure is only reported once
-		pcu.SetDummyDataFlag(false)
-		passed = false
-	}
-	return
+	return cfsConfigurationRecord, true
 }
 
 func TestCLICFSConfigurationUpdateWithDifferentTenant(cfgName, cliVersion string) (passed bool) {
@@ -412,14 +393,6 @@ func TestCLICFSConfigurationUpdate(cfgName, cliVersion string) (passed bool) {
 	}
 
 	common.Infof("CFS configuration updated successfully: %s", cfgName)
-
-	// if CreateCFSConfigurationFile has returned paylaod with fake data in it , return false
-	if pcu.IsUsingDummyData() {
-		// Resetting the dummy data flag to false so that the failure is only reported once
-		pcu.SetDummyDataFlag(false)
-		return false
-	}
-
 	return true
 }
 

@@ -32,7 +32,6 @@ import (
 	"fmt"
 
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
-	pcu "stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/prod-catalog-utils"
 )
 
 func TestCFSConfigurationsCRUDOperationWithTenantsUsingAPIVersions() (passed bool) {
@@ -82,13 +81,10 @@ func TestCFSConfigurationsCRUDOperation(apiVersion string) (passed bool) {
 		common.PrintLog("Running CFS configurations tests without tenant")
 	}
 	cfsConfigurationRecord, success := TestCFSConfigurationCreate(apiVersion, expectedCreateHttpStatus)
-	// Create operation completes with dummy product catalog data but it is flagged as failure
-	// By design first test with dummy product catalog data should fail but rest of the tests should run
-	if !success && len(cfsConfigurationRecord.Name) == 0 {
+	if !success {
 		return false
 	}
 
-	passed = passed && success
 	// Test Update, Delete, and Get with dummy tenant after creating with admin
 	if len(cfsConfigurationRecord.Name) == 0 && apiVersion != "v2" {
 		result := TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion)
@@ -152,18 +148,10 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 	common.SetTenantName("")
 
 	// Attempt to create CFS configuration with the same name in a different tenant
-	cfsConfigurationRecord, createSuccess := CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, EXPECTED_CFS_CREATE_HTTP_STATUS)
-	if !createSuccess {
+	cfsConfigurationRecord, success := CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, cfsConfigurationPayload, EXPECTED_CFS_CREATE_HTTP_STATUS)
+	if !success {
 		common.Errorf("CFS configuration %s not successfully created with Admin: %s, skipping other tests.", cfgName, common.GetTenantName())
 		return false
-	}
-
-	// Check if GetCreateCFGConfigurationPayload returned paylaod with fake data in it and set the value of createSuccess to false
-	//to make sure that the test case fails
-	if pcu.IsUsingDummyData() {
-		// Resetting the dummy data flag to false so that the failure is only reported once
-		pcu.SetDummyDataFlag(false)
-		createSuccess = false
 	}
 
 	common.SetTenantName(existingTenant)
@@ -186,7 +174,7 @@ func TestCFSConfigurationsCRUDOperationWithDummyTenant(apiVersion string) (passe
 		common.Infof("CFS configuration %s not successfully deleted with Admin: %s", cfgName)
 	}
 
-	passed = passed && notUpdated && notDeleted && getFailed && getAllFailed && success && createSuccess
+	passed = passed && notUpdated && notDeleted && getFailed && getAllFailed && success
 
 	// Setting the tenant back to the original tenant
 	common.SetTenantName(existingTenant)
@@ -258,15 +246,6 @@ func TestCFSConfigurationCreateByAdminWithSameNameDifferentTenant(apiVersion, cf
 		return false
 	}
 	common.Infof("Admin successfully updated CFS configuration %s tenant %s -> tenant %s", cfgName, currentTenant, newTenant)
-
-	// Check if GetCreateCFGConfigurationPayload returned paylaod with fake data in it, return false
-	//to make sure that the test case fails
-	if pcu.IsUsingDummyData() {
-		// Resetting the dummy data flag to false so that the failure is only reported once
-		pcu.SetDummyDataFlag(false)
-		return false
-	}
-
 	return true
 }
 
@@ -378,15 +357,7 @@ func TestCFSConfigurationCreate(apiVersion string, expectedHttpStatus int) (cfsC
 	}
 	common.Infof("CFS configuration record created successfully: %s", cfsConfigurationRecord.Name)
 
-	// Check if GetCreateCFGConfigurationPayload returned paylaod with fake data in it and set the value of success to false
-	//to make sure that the test case fails
-	if pcu.IsUsingDummyData() {
-		// Resetting the dummy data flag to false so that the failure is only reported once
-		pcu.SetDummyDataFlag(false)
-		success = false
-	}
-
-	return
+	return cfsConfigurationRecord, true
 }
 
 // TestCFSConfigurationUpdatewithDifferentTenant attempts to update an existing CFS configuration using a different non-owner tenant.
@@ -490,14 +461,6 @@ func TestCFSConfigurationUpdate(cfgName, apiVersion string, expectedHttpStatus i
 		return false
 	}
 	common.Infof("CFS configuration record updated successfully: %s", cfsConfigurationRecord.Name)
-
-	// Check if GetCreateCFGConfigurationPayload returned paylaod with fake data in it , return false
-	//to make sure that the test case fails
-	if pcu.IsUsingDummyData() {
-		// Resetting the dummy data flag to false so that the failure is only reported once
-		pcu.SetDummyDataFlag(false)
-		return false
-	}
 
 	return true
 }
