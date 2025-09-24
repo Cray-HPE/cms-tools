@@ -81,6 +81,44 @@ func GetCsmProductCatalogData() (data map[string]interface{}, err error) {
 	return respMap, nil
 }
 
+// Initialize the ProdCatalogEntry with dummy data
+func UseProdCatalogEntryDummyData() error {
+	dummyData := map[interface{}]interface{}{
+		"configuration": map[interface{}]interface{}{
+			"clone_url":     "https://vcs.cmn.wasp.hpc.amslabs.hpecorp.net/vcs/cray/dummy-csm-config-management.git",
+			"commit":        "f5e2ffc9560c19858c3dd4423708a70da80d4999",
+			"import_branch": "cray/csm/1.48.0",
+			"import_date":   "2025-08-19 10:56:34.133195",
+			"ssh_url":       "",
+		},
+		"images": map[interface{}]interface{}{
+			"compute-csm-1.7-7.1.37-aarch64": map[interface{}]interface{}{
+				"id": "8ceeac2a-221e-470d-ae49-18e648b96999",
+			},
+			"compute-csm-1.7-7.1.37-x86_64": map[interface{}]interface{}{
+				"id": "870d6bce-a626-48a2-98d3-4fe628e90999",
+			},
+		},
+		"recipes": map[interface{}]interface{}{
+			"cray-shasta-csm-sles15sp6-barebones-csm-1.7-aarch64": map[interface{}]interface{}{
+				"id": "5e1d9136-49cd-4551-b359-7edc1f270999",
+			},
+			"cray-shasta-csm-sles15sp6-barebones-csm-1.7-x86_64": map[interface{}]interface{}{
+				"id": "df002ba2-5ffc-40f0-b39b-d4e1d49e0999",
+			},
+		},
+	}
+	entry, err := MapToProdCatalogEntry(dummyData)
+	if err != nil {
+		return fmt.Errorf("Failed to convert dummy data: %v", err)
+	} else if !entry.Initialized {
+		return fmt.Errorf("Dummy data not properly initialized")
+	}
+
+	LatestProdCatEntry = entry
+	return nil
+}
+
 // Helper function to convert map[interface{}]interface{} to ProdCatalogEntry
 // Example input data:
 //
@@ -173,7 +211,7 @@ func GetCSMLatestVersion(prodCatlogData map[string]interface{}) (version string,
 	}
 	sort.Strings(keys)
 	if len(keys) == 0 {
-		return "", fmt.Errorf("no keys found in the configuration map")
+		return "", fmt.Errorf("No keys found in the configuration map")
 	}
 	//Get the last key from the sorted keys where version has both configuration and images as keys
 	latestCSMVersion := ""
@@ -198,21 +236,21 @@ func GetCSMLatestVersion(prodCatlogData map[string]interface{}) (version string,
 func GetLatestCSMProductCatalogEntry() error {
 	prodCatalogData, err := GetCsmProductCatalogData()
 	if err != nil {
-		return fmt.Errorf("failed to get product catalog data: %v", err)
+		return fmt.Errorf("Failed to get product catalog data: %v", err)
 	}
 
 	latestVersion, err := GetCSMLatestVersion(prodCatalogData)
 	if err != nil {
-		return fmt.Errorf("failed to get latest CSM version: %v", err)
+		return fmt.Errorf("Failed to get latest CSM version: %v", err)
 	}
 
 	versionData, ok := prodCatalogData[latestVersion].(map[interface{}]interface{})
 	if !ok {
-		return fmt.Errorf("latest CSM version data not found or invalid format")
+		return fmt.Errorf("Latest CSM version data not found or invalid format")
 	}
 	entry, err := MapToProdCatalogEntry(versionData)
 	if err != nil {
-		return fmt.Errorf("failed to convert version data: %v", err)
+		return fmt.Errorf("Failed to convert version data: %v", err)
 	} else if !entry.Initialized {
 		return fmt.Errorf("Programming logic error: No error raised parsing product catalog data, but it is not properly initialized")
 	}
@@ -236,7 +274,13 @@ func GetLatestProdCatEntry() (ProdCatalogEntry, error) {
 	}
 	if err := GetLatestCSMProductCatalogEntry(); err != nil {
 		prodCatError = err
-		return ProdCatalogEntry{}, err
+		// On error, use dummy data for testing
+		errDummyData := UseProdCatalogEntryDummyData()
+		if errDummyData != nil {
+			// If dummy data creation fails, return a concatenated error, Also assign concatenated error to prodCatError
+			prodCatError = fmt.Errorf("%v; also failed to use dummy product catalog data: %v", prodCatError, errDummyData)
+			return ProdCatalogEntry{}, prodCatError
+		}
 	}
-	return LatestProdCatEntry, nil
+	return LatestProdCatEntry, prodCatError
 }
