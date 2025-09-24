@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,32 +21,24 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# Package info for barebones image boot test
 
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+"""
+IMS definitions
+"""
 
-[tool.setuptools.packages]
-find = {}
+from .api import API_BASE_URL
+from .defs import ARM_ARCH, X86_ARCH
 
-[project]
-name = "barebones_image_test"
-version = "@RPM_VERSION@"
-authors = [
-  { name="HPE Development LP", email="sps@cray.com" },
-]
-description = "Barebones image boot test"
-requires-python = ">=3.10"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "License :: OSI Approved :: MIT License",
-    "Topic :: System :: Systems Administration",
-]
+# IMS URLs
+IMS_URL = f"{API_BASE_URL}/ims"
+IMS_IMAGES_URL = f"{IMS_URL}/images"
 
-[project.scripts]
-barebones_image_test = "cmstools.test.barebones_image_test.__main__:main"
+# We use IMS v2 for deleting images because it gives the option to
+# also delete the S3 resources associated with them.
+IMS_V2_URL = f"{IMS_URL}/v2"
+IMS_V2_IMAGES_URL = f"{IMS_V2_URL}/images"
 
-[project.urls]
-Homepage = "https://github.com/Cray-HPE/cms-tools"
+# The strings IMS uses to identify image arch
+IMS_ARM_ARCH = "aarch64"
+IMS_X86_ARCH = "x86_64"
+IMS_ARCH_STRINGS = { ARM_ARCH: IMS_ARM_ARCH, X86_ARCH: IMS_X86_ARCH }

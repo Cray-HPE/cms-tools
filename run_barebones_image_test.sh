@@ -43,11 +43,11 @@ PYTHON3_BASE_VERSION=$(rpm -q --queryformat '%{VERSION}' python3-base | cut -d. 
 
 for PYVER in $(ls "${BB_BASE_DIR}" | grep -E '^[1-9][0-9]*[.](0|[1-9][0-9]*)$' | sort -t. -n -k1,1 -k2,2 -r); do
     if [[ ${PYVER} == "${PYTHON3_BASE_VERSION}" ]]; then
-        "${BB_BASE_DIR}/${PYVER}/barebones_image_test-venv/bin/barebones_image_test" "$@"
+        "${BB_BASE_DIR}/${PYVER}/cmstools-venv/bin/barebones_image_test" "$@"
         exit $?
     # Alternatively, see if pythonxxx-base is installed
     elif rpm -q "python${PYVER//.}-base" >/dev/null 2>&1; then
-        "${BB_BASE_DIR}/${PYVER}/barebones_image_test-venv/bin/barebones_image_test" "$@"
+        "${BB_BASE_DIR}/${PYVER}/cmstools-venv/bin/barebones_image_test" "$@"
         exit $?
     fi
 done

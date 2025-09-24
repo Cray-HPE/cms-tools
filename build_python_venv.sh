@@ -30,7 +30,7 @@ source ./vars.sh
 TEMPDIR=$(mktemp -d)
 
 # Copy the barebones test files over to TEMPDIR
-cp -pvr cms-tools-python/src/barebones_image_test \
+cp -pvr python-venv/cmstools \
         barebones_image_test-constraints.txt \
         barebones_image_test-requirements.txt \
         pyproject.toml \

@@ -35,7 +35,7 @@ export LOCAL_VENV_PYTHON_SUBDIR_NAME=venv-python
 export LOCAL_VENV_PYTHON_BASE_DIR=$(pwd)/${LOCAL_VENV_PYTHON_SUBDIR_NAME}
 export INSTALL_VENV_BASE_DIR=/usr/lib/cray-cmstools-crayctldeploy
 export INSTALL_VENV_PYTHON_BASE_DIR=${INSTALL_VENV_BASE_DIR}/python
-export BBIT_VENV_NAME=barebones_image_test-venv
+export BBIT_VENV_NAME=cmstools-venv
 export RPM_BUILD_SUBDIR=dist/rpmbuild
 export RPM_BUILD_DIR=$(pwd)/${RPM_BUILD_SUBDIR}
 

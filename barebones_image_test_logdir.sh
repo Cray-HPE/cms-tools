@@ -27,7 +27,7 @@
 # prints it. Prints an error to stderr and exits non-0 if there are
 # problems.
 
-SOURCEFILE="cms-tools-python/src/common/log.py"
+SOURCEFILE="python-venv/cmstools/lib/common/log.py"
 
 function err_exit
 {
