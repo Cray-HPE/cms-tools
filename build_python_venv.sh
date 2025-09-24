@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -30,7 +30,7 @@ source ./vars.sh
 TEMPDIR=$(mktemp -d)
 
 # Copy the barebones test files over to TEMPDIR
-cp -pvr barebones_image_test \
+cp -pvr cms-tools-python/src/barebones_image_test \
         barebones_image_test-constraints.txt \
         barebones_image_test-requirements.txt \
         pyproject.toml \
