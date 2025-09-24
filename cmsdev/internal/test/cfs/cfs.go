@@ -37,9 +37,12 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
+// This value indicates if the CFS test should fail
+// because of a problem with the product catalog.
 var prodCatOk = true
 
-// SetProdCatOk value to indicate if prod catalog is dummy or not
+// This setter function is called by a subtest if it
+// encounters an error getting product catalog data.
 func SetProdCatOk(ok bool) {
 	prodCatOk = ok
 }
@@ -98,7 +101,7 @@ func IsCFSRunning(includeCLI bool) (passed bool) {
 	if !testCFSAPI() {
 		passed = false
 	}
-	if !TestCFSConfigurationsCRUDOperationWithTenantsUsingAPIVersions() || !prodCatOk {
+	if !TestCFSConfigurationsCRUDOperationWithTenantsUsingAPIVersions() {
 		passed = false
 	}
 	if !TestCFSSourcesCRUDOperation() {
@@ -110,13 +113,19 @@ func IsCFSRunning(includeCLI bool) (passed bool) {
 		if !testCFSCLI() {
 			passed = false
 		}
-		if !TestCFSConfigurationsCRUDOperationWithTenantsUsingCLI() || !prodCatOk {
+		if !TestCFSConfigurationsCRUDOperationWithTenantsUsingCLI() {
 			passed = false
 		}
 		if !TestCFSSourcesCRUDOperationUsingCLI() {
 			passed = false
 		}
 	}
+
+	// Fail if any subtest got an error trying to get product catalog data.
+	// This is not covered by the subtest itself, because it may have been
+	// able to run successfully even without that data.
+	passed = passed && prodCatOk
+
 	if !passed {
 		common.ArtifactsKubernetes()
 		if len(podNames) > 0 {
