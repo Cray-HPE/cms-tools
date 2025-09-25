@@ -30,10 +30,12 @@ from typing import ClassVar
 
 from cmstools.lib.common.api import request_and_check_status
 from cmstools.test.barebones_image_test.ims import ImsImage
-from cmstools.lib.common.log import logger
+from cmstools.lib.common.log import get_test_logger
 from cmstools.test.barebones_image_test.test_resource import TestResource
 
-from cmstools.lib.common.bos_defs import BOS_TEMPLATES_URL
+from cmstools.lib.common.bos.defs import BOS_TEMPLATES_URL
+
+logger = get_test_logger("barebones_image_test")
 
 class BosTemplate(TestResource):
     """

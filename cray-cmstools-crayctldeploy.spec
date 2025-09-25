@@ -28,7 +28,7 @@
 %define local_venv_python_base_dir %(echo ${LOCAL_VENV_PYTHON_BASE_DIR})
 %define summary %(echo ${DESCRIPTION})
 %define num_py_versions %(echo ${NUM_PY_VERSIONS})
-%define bbit_venv_name %(echo ${BBIT_VENV_NAME})
+%define cmstools_venv_name %(echo ${CMSTOOLS_VENV_NAME})
 
 Name: %(echo ${RPM_NAME})
 License: MIT
@@ -90,7 +90,7 @@ echo /opt/cray/tests/integration/csm | tee -a INSTALLED_FILES
 # Otherwise we should use the run_barebones_image_test.sh script
 %if %{num_py_versions} == 1
 pushd %{buildroot}/opt/cray/tests/integration/csm
-ln -s ../../../../..%{install_venv_python_base_dir}/*/%{bbit_venv_name}/bin/barebones_image_test barebones_image_test
+ln -s ../../../../..%{install_venv_python_base_dir}/*/%{cmstools_venv_name}/bin/barebones_image_test barebones_image_test
 popd
 %else
 install -m 755 run_barebones_image_test.sh %{buildroot}/opt/cray/tests/integration/csm/barebones_image_test

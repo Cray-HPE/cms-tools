@@ -30,29 +30,46 @@ import logging
 import os
 import sys
 
-from cmstools.lib.common.defs import BB_TEST_TIMESTAMP
+from cmstools.lib.common.defs import TEST_TIMESTAMP
 
 # The following line is also used by the Makefile and RPM spec file in this repo. Any changes to it
 # should ensure that they do not break this.
-DEFAULT_LOG_DIR = "/opt/cray/tests/integration/logs/csm/barebones_image_test"
+DEFAULT_LOG_DIR = "/opt/cray/tests/integration/logs/csm/cmstools"
 
 # Set up the logger.  This is set up to log minimal information to the
 # console, but a full description to the file.
 DEFAULT_LOG_LEVEL = os.environ.get("LOG_LEVEL", logging.INFO)
-logger = logging.getLogger("cray.barebones-boot-test")
-logger.setLevel(logging.DEBUG)
+LOG_FILE_PATH = ""
+LOGGER = None
 
-# set up logging to file
-LOG_FILE_PATH = f'{DEFAULT_LOG_DIR}/{BB_TEST_TIMESTAMP}.log'
-file_handler = logging.FileHandler(filename=LOG_FILE_PATH, mode = 'w')
-file_handler.setLevel(os.environ.get("FILE_LOG_LEVEL", logging.DEBUG))
-formatter = logging.Formatter('%(asctime)s: %(levelname)-8s %(message)s')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
+def set_logger(logger):
+    global LOGGER
+    LOGGER = logger
 
-# set up logging to console
-console_handler = logging.StreamHandler(sys.stdout)
-console_handler.setLevel(os.environ.get("CONSOLE_LOG_LEVEL", DEFAULT_LOG_LEVEL))
-formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
-console_handler.setFormatter(formatter)
-logger.addHandler(console_handler)
+def set_log_file_path(path: str):
+    global LOG_FILE_PATH
+    LOG_FILE_PATH = path
+
+def get_test_logger(test_name: str):
+    log_dir = f"/opt/cray/tests/integration/logs/csm/cmstools/{test_name}"
+    os.makedirs(log_dir, exist_ok=True)
+    log_file_path = f"{log_dir}/{TEST_TIMESTAMP}.log"
+    set_log_file_path(log_file_path)
+    logger = logging.getLogger(f"cray.{test_name}")
+    logger.setLevel(logging.DEBUG)
+
+    # File handler
+    file_handler = logging.FileHandler(filename=log_file_path, mode='w')
+    file_handler.setLevel(os.environ.get("FILE_LOG_LEVEL", logging.DEBUG))
+    file_handler.setFormatter(logging.Formatter('%(asctime)s: %(levelname)-8s %(message)s'))
+    logger.addHandler(file_handler)
+
+    # Console handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(os.environ.get("CONSOLE_LOG_LEVEL", DEFAULT_LOG_LEVEL))
+    console_handler.setFormatter(logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s'))
+    logger.addHandler(console_handler)
+
+    # Setting the global logger so that it can be used in /lib/common modules
+    set_logger(logger)
+    return logger

@@ -28,8 +28,8 @@ Kubernetes module for barebones boot test
 
 from kubernetes import client, config
 
-from cmstools.lib.common.defs import BBException, JsonDict
-from cmstools.lib.common.log import logger
+from cmstools.lib.common.defs import TestException, JsonDict
+from cmstools.lib.common.log import LOGGER as logger
 
 
 def get_k8s_configmap_data(cm_name: str, cm_namespace: str = "default") -> JsonDict:
@@ -42,7 +42,7 @@ def get_k8s_configmap_data(cm_name: str, cm_namespace: str = "default") -> JsonD
     except Exception as exc:
         logger.exception("Error retrieving Kubernetes configmap '%s' from namespace '%s'",
                          cm_name, cm_namespace)
-        raise BBException from exc
+        raise TestException from exc
 
 
 def get_k8s_secret_data(secret_name: str, secret_namespace: str = "default") -> JsonDict:
@@ -55,7 +55,7 @@ def get_k8s_secret_data(secret_name: str, secret_namespace: str = "default") -> 
     except Exception as exc:
         logger.exception("Error retrieving Kubernetes secret '%s' from namespace '%s'",
                          secret_name, secret_namespace)
-        raise BBException from exc
+        raise TestException from exc
 
 
 # initialize k8s

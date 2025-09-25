@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -31,12 +31,12 @@ build-backend = "setuptools.build_meta"
 find = {}
 
 [project]
-name = "barebones_image_test"
+name = "cmstools"
 version = "@RPM_VERSION@"
 authors = [
   { name="HPE Development LP", email="sps@cray.com" },
 ]
-description = "Barebones image boot test"
+description = "cmstools python test package"
 requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3.10",

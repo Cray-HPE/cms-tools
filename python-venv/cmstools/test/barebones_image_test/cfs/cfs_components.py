@@ -22,10 +22,11 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 from dataclasses import dataclass
-from cmstools.lib.common.cfs_defs import CFS_COMPONENTS_URL
-from cmstools.lib.common.log import logger
+from cmstools.lib.common.cfs.defs import CFS_COMPONENTS_URL
+from cmstools.lib.common.log import get_test_logger
 from cmstools.lib.common.api import request_and_check_status
 
+logger = get_test_logger("barebones_image_test")
 
 @dataclass(frozen=True)
 class CfsComponentUpdateData:

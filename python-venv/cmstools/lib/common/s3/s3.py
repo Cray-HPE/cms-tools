@@ -34,7 +34,7 @@ from urllib3.exceptions import InsecureRequestWarning
 
 from cmstools.lib.common.defs import JsonDict
 from cmstools.lib.common.k8s import get_k8s_secret_data
-from cmstools.lib.common.log import logger
+from cmstools.lib.common.log import LOGGER as logger
 
 from .defs import S3_CREDS_SECRET_FIELDS, S3_CREDS_SECRET_NAME
 from .s3_url import S3Url

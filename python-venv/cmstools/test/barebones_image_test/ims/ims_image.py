@@ -29,12 +29,13 @@ ImsImage class
 from typing import ClassVar
 
 from cmstools.lib.common.api import request_and_check_status
-from cmstools.lib.common.defs import BBException
-from cmstools.lib.common.log import logger
+from cmstools.lib.common.defs import TestException as BBException
+from cmstools.lib.common.log import get_test_logger
 from cmstools.lib.common.s3 import S3Url, get_s3_artifact_etag
 from cmstools.test.barebones_image_test.test_resource import TestResource
+from cmstools.lib.common.ims.defs import IMS_ARCH_STRINGS, IMS_IMAGES_URL, IMS_V2_IMAGES_URL
 
-from cmstools.lib.common.ims_defs import IMS_ARCH_STRINGS, IMS_IMAGES_URL, IMS_V2_IMAGES_URL
+logger = get_test_logger("barebones_image_test")
 
 # Used to indicate an uninitialized values
 UNSET = object()

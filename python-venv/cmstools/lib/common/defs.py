@@ -28,10 +28,7 @@ Definitions and constants
 
 import datetime
 
-# names
-BB_TEST_PREFIX = "csm-barebones-boot-test"
-BB_TEST_TIMESTAMP = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-BB_TEST_RESOURCE_NAME = f"{BB_TEST_PREFIX}-{BB_TEST_TIMESTAMP}"
+TEST_TIMESTAMP = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 
 # Constants
 ARM_ARCH = "arm"
@@ -44,7 +41,7 @@ ARCH_LIST = [ X86_ARCH, ARM_ARCH ]
 JsonObject = str|int|float|list|dict|bool|None
 JsonDict = dict[str, JsonObject]
 
-class BBException(Exception):
+class TestException(Exception):
     """
     This is the base exception for all custom exceptions that can be raised from
     this application.

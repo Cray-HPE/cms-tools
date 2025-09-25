@@ -29,7 +29,7 @@ source ./vars.sh
 
 TEMPDIR=$(mktemp -d)
 
-# Copy the barebones test files over to TEMPDIR
+# Copy the cmstools package files over to TEMPDIR
 cp -pvr python-venv/cmstools \
         barebones_image_test-constraints.txt \
         barebones_image_test-requirements.txt \
@@ -38,15 +38,15 @@ cp -pvr python-venv/cmstools \
 
 cd "${TEMPDIR}"
 
-mkdir -pv "${BBIT_INSTALL_VENV_DIR}"
+mkdir -pv "${CMSTOOLS_INSTALL_VENV_DIR}"
 
 # Create our virtualenv
-"${PYTHON_BIN}" -m venv "${BBIT_INSTALL_VENV_DIR}"
+"${PYTHON_BIN}" -m venv "${CMSTOOLS_INSTALL_VENV_DIR}"
 
 which "${PYTHON_BIN}"
 
 # Activate virtual env
-source "${BBIT_INSTALL_VENV_BIN_DIR}/activate"
+source "${CMSTOOLS_INSTALL_VENV_BIN_DIR}/activate"
 
 which "${PYTHON_BIN}"
 
@@ -74,4 +74,4 @@ cd -
 rm -rvf "${TEMPDIR}"
 
 # Clean up __pycache__ folders, since we don't need to bundle them into the RPM
-find "${BBIT_INSTALL_VENV_DIR}" -type d -name __pycache__ -print | xargs rm -rvf
+find "${CMSTOOLS_INSTALL_VENV_DIR}" -type d -name __pycache__ -print | xargs rm -rvf

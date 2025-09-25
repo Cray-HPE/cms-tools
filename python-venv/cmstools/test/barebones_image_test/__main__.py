@@ -61,11 +61,12 @@ from cmstools.test.barebones_image_test.bos import BosSession, BosTemplate
 from cmstools.test.barebones_image_test.cfs import CfsConfigLayerData, CfsConfig, CfsSession, CfsComponents, CfsComponentUpdateData
 from cmstools.test.barebones_image_test.hsm import ComputeNode, find_compute_node, get_compute_node
 from cmstools.test.barebones_image_test.prodcat import CsmProductCatalogData
-from cmstools.lib.common.defs import ARCH_LIST, BBException
+from cmstools.lib.common.defs import ARCH_LIST, TestException as BBException
 from cmstools.test.barebones_image_test.ims import ImsImage
-from cmstools.lib.common.log import LOG_FILE_PATH, logger
+from cmstools.lib.common.log import LOG_FILE_PATH, get_test_logger
 from cmstools.test.barebones_image_test.test_resource import TestResource
 
+logger = get_test_logger("barebones_image_test")
 
 class HelpUrl:
     """

@@ -32,10 +32,11 @@ from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 import time
 
-from cmstools.lib.common.defs import BBException
-from cmstools.lib.common.log import logger
+from cmstools.lib.common.defs import  TestException as BBException
+from cmstools.lib.common.log import get_test_logger
 from cmstools.test.barebones_image_test.test_resource import TestResource
 
+logger = get_test_logger("barebones_image_test")
 
 @dataclass(frozen=True)
 class SessionStatusFields(ABC):

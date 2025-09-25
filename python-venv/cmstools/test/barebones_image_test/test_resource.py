@@ -31,9 +31,11 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from cmstools.lib.common.api import request_and_check_status
-from cmstools.lib.common.defs import BB_TEST_RESOURCE_NAME, JsonObject
-from cmstools.lib.common.log import logger
+from cmstools.lib.common.defs import JsonObject
+from defs import BB_TEST_RESOURCE_NAME
+from cmstools.lib.common.log import get_test_logger
 
+logger = get_test_logger("barebones_image_test")
 
 @dataclass(frozen=True)
 class TestResource(ABC):

@@ -30,10 +30,11 @@ ComputeNode class and related functions
 from __future__ import annotations
 from dataclasses import dataclass
 
-from cmstools.lib.common.defs import BBException, JsonDict
-from cmstools.lib.common.log import logger
+from cmstools.lib.common.defs import TestException as BBException, JsonDict
+from cmstools.lib.common.log import get_test_logger
+from cmstools.lib.common.hsm.defs import HSM_ARCH_STRINGS
 
-from cmstools.lib.common.hsm_defs import HSM_ARCH_STRINGS
+logger = get_test_logger("barebones_image_test")
 
 @dataclass(frozen=True)
 class ComputeNode:
