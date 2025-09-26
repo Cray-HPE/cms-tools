@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #
 # MIT License
 #
@@ -22,33 +23,6 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from dataclasses import dataclass
-from cmstools.lib.common.cfs.defs import CFS_COMPONENTS_URL
-from cmstools.test.barebones_image_test.log import logger
-from cmstools.lib.common.api import request_and_check_status
+from cmstools.lib.common.log import get_test_logger
 
-
-@dataclass(frozen=True)
-class CfsComponentUpdateData:
-    """
-    Data to update a CFS component
-    """
-    desired_config: str
-
-
-class CfsComponents:
-    """
-    CFS Components
-    """
-    @classmethod
-    def update_cfs_component(cls, cfs_component_name: str, data: CfsComponentUpdateData) -> None:
-        """
-        Update CFS components
-        """
-        url = f"{CFS_COMPONENTS_URL}/{cfs_component_name}"
-        update_data_json = {
-            "desired_config": data.desired_config
-        }
-        _ = request_and_check_status("patch", url, expected_status=200,
-                                             parse_json=True, json=update_data_json)
-        logger.info(f"Updated CFS component '{cfs_component_name}' with desired config '{data.desired_config}'")
+logger = get_test_logger("barebones_image_test")

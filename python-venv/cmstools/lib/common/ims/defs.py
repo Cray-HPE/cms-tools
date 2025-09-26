@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,33 +22,23 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from dataclasses import dataclass
-from cmstools.lib.common.cfs.defs import CFS_COMPONENTS_URL
-from cmstools.test.barebones_image_test.log import logger
-from cmstools.lib.common.api import request_and_check_status
+"""
+IMS definitions
+"""
 
+from cmstools.lib.common.api import API_BASE_URL
+from cmstools.lib.common.defs import ARM_ARCH, X86_ARCH
 
-@dataclass(frozen=True)
-class CfsComponentUpdateData:
-    """
-    Data to update a CFS component
-    """
-    desired_config: str
+# IMS URLs
+IMS_URL = f"{API_BASE_URL}/ims"
+IMS_IMAGES_URL = f"{IMS_URL}/images"
 
+# We use IMS v2 for deleting images because it gives the option to
+# also delete the S3 resources associated with them.
+IMS_V2_URL = f"{IMS_URL}/v2"
+IMS_V2_IMAGES_URL = f"{IMS_V2_URL}/images"
 
-class CfsComponents:
-    """
-    CFS Components
-    """
-    @classmethod
-    def update_cfs_component(cls, cfs_component_name: str, data: CfsComponentUpdateData) -> None:
-        """
-        Update CFS components
-        """
-        url = f"{CFS_COMPONENTS_URL}/{cfs_component_name}"
-        update_data_json = {
-            "desired_config": data.desired_config
-        }
-        _ = request_and_check_status("patch", url, expected_status=200,
-                                             parse_json=True, json=update_data_json)
-        logger.info(f"Updated CFS component '{cfs_component_name}' with desired config '{data.desired_config}'")
+# The strings IMS uses to identify image arch
+IMS_ARM_ARCH = "aarch64"
+IMS_X86_ARCH = "x86_64"
+IMS_ARCH_STRINGS = { ARM_ARCH: IMS_ARM_ARCH, X86_ARCH: IMS_X86_ARCH }

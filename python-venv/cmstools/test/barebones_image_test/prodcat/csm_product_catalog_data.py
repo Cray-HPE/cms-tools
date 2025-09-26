@@ -36,11 +36,10 @@ import packaging.version
 
 from cmstools.lib.common.defs import TestException as BBException, JsonDict
 from cmstools.lib.common.k8s import get_k8s_configmap_data
-from cmstools.lib.common.log import get_test_logger
+from cmstools.test.barebones_image_test.log import logger
 from cmstools.lib.common.prodcat.defs import PRODCAT_ARCH_STRINGS, PRODUCT_CATALOG_CONFIG_MAP_NAME, \
                   PRODUCT_CATALOG_CONFIG_MAP_NS, VCS_URL
 
-logger = get_test_logger("barebones_image_test")
 
 @dataclass(frozen=True)
 class CsmProductCatalogData:

@@ -34,11 +34,10 @@ from typing import ClassVar
 
 from cmstools.lib.common.api import request, request_and_check_status
 from cmstools.lib.common.defs import TestException as BBException
-from cmstools.lib.common.log import get_test_logger
+from cmstools.test.barebones_image_test.log import logger
 from cmstools.test.barebones_image_test.test_resource import TestResource
 from cmstools.lib.common.cfs.defs import CFS_CONFIGS_URL
 
-logger = get_test_logger("barebones_image_test")
 
 @dataclass(frozen=True)
 class CfsConfigLayerData:

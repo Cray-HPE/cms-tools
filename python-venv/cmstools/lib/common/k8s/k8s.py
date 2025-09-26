@@ -29,7 +29,7 @@ Kubernetes module for barebones boot test
 from kubernetes import client, config
 
 from cmstools.lib.common.defs import TestException, JsonDict
-from cmstools.lib.common.log import LOGGER as logger
+from cmstools.lib.common.common_logger import logger
 
 
 def get_k8s_configmap_data(cm_name: str, cm_namespace: str = "default") -> JsonDict:

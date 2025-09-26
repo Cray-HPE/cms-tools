@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,33 +22,23 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from dataclasses import dataclass
-from cmstools.lib.common.cfs.defs import CFS_COMPONENTS_URL
-from cmstools.test.barebones_image_test.log import logger
-from cmstools.lib.common.api import request_and_check_status
+"""
+ComputeNode class and related functions
+"""
 
+from cmstools.lib.common.api import API_BASE_URL
+from cmstools.lib.common.defs import ARM_ARCH, X86_ARCH
 
-@dataclass(frozen=True)
-class CfsComponentUpdateData:
-    """
-    Data to update a CFS component
-    """
-    desired_config: str
+# HSM URLs
+HSM_URL = f"{API_BASE_URL}/smd/hsm/v2"
+HSM_COMP_STATE_URL = f"{HSM_URL}/State/Components"
 
-
-class CfsComponents:
-    """
-    CFS Components
-    """
-    @classmethod
-    def update_cfs_component(cls, cfs_component_name: str, data: CfsComponentUpdateData) -> None:
-        """
-        Update CFS components
-        """
-        url = f"{CFS_COMPONENTS_URL}/{cfs_component_name}"
-        update_data_json = {
-            "desired_config": data.desired_config
-        }
-        _ = request_and_check_status("patch", url, expected_status=200,
-                                             parse_json=True, json=update_data_json)
-        logger.info(f"Updated CFS component '{cfs_component_name}' with desired config '{data.desired_config}'")
+# The strings HSM uses to identify node arch
+HSM_ARM_ARCH = "ARM"
+HSM_X86_ARCH = "X86"
+HSM_UNKNOWN_ARCH = "UNKNOWN"
+# For backwards compatability reasons, nodes with Unknown architecture in HSM are considered to be
+# X86_64 architecture
+HSM_ARCH_STRINGS = {
+    ARM_ARCH: [HSM_ARM_ARCH],
+    X86_ARCH: [HSM_X86_ARCH, HSM_UNKNOWN_ARCH]}

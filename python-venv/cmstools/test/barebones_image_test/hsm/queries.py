@@ -25,14 +25,12 @@
 """
 HSM query functions
 """
-
 from cmstools.lib.common.api import request_and_check_status
 from cmstools.lib.common.defs import TestException as BBException
-from cmstools.lib.common.log import get_test_logger
+from cmstools.test.barebones_image_test.log import logger
 from cmstools.lib.common.hsm.defs import HSM_ARCH_STRINGS, HSM_COMP_STATE_URL, HSM_UNKNOWN_ARCH
 from .compute_node import ComputeNode
 
-logger = get_test_logger("barebones_image_test")
 
 TARGET_FILTER = {
     "Type": "Node",

@@ -34,12 +34,11 @@ from cmstools.lib.common.api import request_and_check_status
 from cmstools.lib.common.defs import TestException as BBException
 from cmstools.test.barebones_image_test.defs import BB_TEST_RESOURCE_NAME
 from cmstools.test.barebones_image_test.ims import ImsImage
-from cmstools.lib.common.log import get_test_logger
+from cmstools.test.barebones_image_test.log import logger
 from cmstools.test.barebones_image_test.test_session import SessionStatusFields, TestSession
 from .cfs_config import CfsConfig
 from cmstools.lib.common.cfs.defs import CFS_SESSIONS_URL
 
-logger = get_test_logger("barebones_image_test")
 
 @dataclass(frozen=True)
 class CfsSessionStatusFields(SessionStatusFields):
