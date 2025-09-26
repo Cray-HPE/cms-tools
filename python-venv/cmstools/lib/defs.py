@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,32 +21,29 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# Info for cmstools Python package
 
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+"""
+Definitions and constants
+"""
 
-[tool.setuptools.packages]
-find = {}
+import datetime
 
-[project]
-name = "cmstools"
-version = "@RPM_VERSION@"
-authors = [
-  { name="HPE Development LP", email="sps@cray.com" },
-]
-description = "cmstools Python package"
-requires-python = ">=3.10"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "License :: OSI Approved :: MIT License",
-    "Topic :: System :: Systems Administration",
-]
+TEST_TIMESTAMP = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 
-[project.scripts]
-barebones_image_test = "cmstools.test.barebones_image_test.__main__:main"
+# Constants
+ARM_ARCH = "arm"
+X86_ARCH = "x86"
 
-[project.urls]
-Homepage = "https://github.com/Cray-HPE/cms-tools"
+# First in the list is the default for the test
+ARCH_LIST = [ X86_ARCH, ARM_ARCH ]
+
+# To help for type hinting
+JsonObject = str|int|float|list|dict|bool|None
+JsonDict = dict[str, JsonObject]
+
+
+class CmstoolsException(Exception):
+    """
+    This is the base exception for all custom exceptions that can be raised from
+    cmstools tests and applications.
+    """

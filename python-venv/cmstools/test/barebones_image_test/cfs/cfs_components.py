@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,32 +21,35 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# Info for cmstools Python package
 
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+from dataclasses import dataclass
 
-[tool.setuptools.packages]
-find = {}
+from cmstools.lib.cfs.defs import CFS_COMPONENTS_URL
+from cmstools.test.barebones_image_test.log import logger
+from cmstools.lib.api import request_and_check_status
 
-[project]
-name = "cmstools"
-version = "@RPM_VERSION@"
-authors = [
-  { name="HPE Development LP", email="sps@cray.com" },
-]
-description = "cmstools Python package"
-requires-python = ">=3.10"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "License :: OSI Approved :: MIT License",
-    "Topic :: System :: Systems Administration",
-]
 
-[project.scripts]
-barebones_image_test = "cmstools.test.barebones_image_test.__main__:main"
+@dataclass(frozen=True)
+class CfsComponentUpdateData:
+    """
+    Data to update a CFS component
+    """
+    desired_config: str
 
-[project.urls]
-Homepage = "https://github.com/Cray-HPE/cms-tools"
+
+class CfsComponents:
+    """
+    CFS Components
+    """
+    @classmethod
+    def update_cfs_component(cls, cfs_component_name: str, data: CfsComponentUpdateData) -> None:
+        """
+        Update CFS components
+        """
+        url = f"{CFS_COMPONENTS_URL}/{cfs_component_name}"
+        update_data_json = {
+            "desired_config": data.desired_config
+        }
+        _ = request_and_check_status("patch", url, expected_status=200,
+                                             parse_json=True, json=update_data_json)
+        logger.info(f"Updated CFS component '{cfs_component_name}' with desired config '{data.desired_config}'")

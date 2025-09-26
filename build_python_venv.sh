@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -29,24 +29,24 @@ source ./vars.sh
 
 TEMPDIR=$(mktemp -d)
 
-# Copy the barebones test files over to TEMPDIR
-cp -pvr barebones_image_test \
-        barebones_image_test-constraints.txt \
-        barebones_image_test-requirements.txt \
+# Copy the cmstools package files over to TEMPDIR
+cp -pvr python-venv/cmstools \
+        cmstools-constraints.txt \
+        cmstools-requirements.txt \
         pyproject.toml \
         "${TEMPDIR}"
 
 cd "${TEMPDIR}"
 
-mkdir -pv "${BBIT_INSTALL_VENV_DIR}"
+mkdir -pv "${CMSTOOLS_INSTALL_VENV_DIR}"
 
 # Create our virtualenv
-"${PYTHON_BIN}" -m venv "${BBIT_INSTALL_VENV_DIR}"
+"${PYTHON_BIN}" -m venv "${CMSTOOLS_INSTALL_VENV_DIR}"
 
 which "${PYTHON_BIN}"
 
 # Activate virtual env
-source "${BBIT_INSTALL_VENV_BIN_DIR}/activate"
+source "${CMSTOOLS_INSTALL_VENV_BIN_DIR}/activate"
 
 which "${PYTHON_BIN}"
 
@@ -54,15 +54,15 @@ which "${PYTHON_BIN}"
 "${PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
 
 # Upgrade install/build tools
-"${PYTHON_BIN}" -m pip install pip setuptools wheel -c barebones_image_test-constraints.txt --disable-pip-version-check --no-cache
+"${PYTHON_BIN}" -m pip install pip setuptools wheel -c cmstools-constraints.txt --disable-pip-version-check --no-cache
 "${PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
 
 # Install test preqrequisites
-"${PYTHON_BIN}" -m pip install -r barebones_image_test-requirements.txt --disable-pip-version-check --no-cache
+"${PYTHON_BIN}" -m pip install -r cmstools-requirements.txt --disable-pip-version-check --no-cache
 "${PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
 
 # Install the test itself
-"${PYTHON_BIN}" -m pip install . -c barebones_image_test-constraints.txt --disable-pip-version-check --no-cache
+"${PYTHON_BIN}" -m pip install . -c cmstools-constraints.txt --disable-pip-version-check --no-cache
 "${PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
 
 # Remove build tools to decrease the virtualenv size.
@@ -74,4 +74,4 @@ cd -
 rm -rvf "${TEMPDIR}"
 
 # Clean up __pycache__ folders, since we don't need to bundle them into the RPM
-find "${BBIT_INSTALL_VENV_DIR}" -type d -name __pycache__ -print | xargs rm -rvf
+find "${CMSTOOLS_INSTALL_VENV_DIR}" -type d -name __pycache__ -print | xargs rm -rvf
