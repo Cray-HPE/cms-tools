@@ -33,7 +33,8 @@ from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 import time
 
-from cmstools.lib.defs import  CmstoolsException as BBException
+from cmstools.lib.defs import CmstoolsException as BBException
+
 from .log import logger
 from .test_resource import TestResource
 

@@ -32,6 +32,7 @@ from typing import ClassVar
 
 from cmstools.lib.api import request_and_check_status
 from cmstools.lib.defs import JsonObject
+
 from .defs import BB_TEST_RESOURCE_NAME
 from .log import logger
 

@@ -65,6 +65,7 @@ from cmstools.lib.defs import ARCH_LIST, CmstoolsException as BBException
 from cmstools.test.barebones_image_test.ims import ImsImage
 from cmstools.test.barebones_image_test.test_resource import TestResource
 from cmstools.lib.log import LOG_FILE_PATH
+
 from .log import logger
 
 

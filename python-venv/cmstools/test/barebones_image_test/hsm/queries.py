@@ -29,6 +29,7 @@ from cmstools.lib.api import request_and_check_status
 from cmstools.lib.defs import CmstoolsException as BBException
 from cmstools.test.barebones_image_test.log import logger
 from cmstools.lib.hsm.defs import HSM_ARCH_STRINGS, HSM_COMP_STATE_URL, HSM_UNKNOWN_ARCH
+
 from .compute_node import ComputeNode
 
 

@@ -45,5 +45,5 @@ JsonDict = dict[str, JsonObject]
 class CmstoolsException(Exception):
     """
     This is the base exception for all custom exceptions that can be raised from
-    this application.
+    cmstools tests and applications.
     """

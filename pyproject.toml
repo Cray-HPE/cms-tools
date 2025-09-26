@@ -21,7 +21,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# Package info for cmstools python tests
+# Info for cmstools Python package
 
 [build-system]
 requires = ["setuptools>=61.0"]
@@ -36,7 +36,7 @@ version = "@RPM_VERSION@"
 authors = [
   { name="HPE Development LP", email="sps@cray.com" },
 ]
-description = "cmstools python test package"
+description = "cmstools Python package"
 requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3.10",

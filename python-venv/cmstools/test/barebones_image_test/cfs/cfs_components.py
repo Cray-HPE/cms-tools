@@ -23,6 +23,7 @@
 #
 
 from dataclasses import dataclass
+
 from cmstools.lib.cfs.defs import CFS_COMPONENTS_URL
 from cmstools.test.barebones_image_test.log import logger
 from cmstools.lib.api import request_and_check_status
