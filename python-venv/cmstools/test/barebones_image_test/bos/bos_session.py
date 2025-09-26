@@ -34,9 +34,9 @@ from cmstools.test.barebones_image_test.hsm import ComputeNode
 from cmstools.lib.defs import CmstoolsException as BBException
 from cmstools.test.barebones_image_test.log import logger
 from cmstools.test.barebones_image_test.test_session import SessionStatusFields, TestSession
+from cmstools.lib.bos.defs import BOS_SESSIONS_URL
 
 from .bos_template import BosTemplate
-from cmstools.lib.bos.defs import BOS_SESSIONS_URL
 
 
 @dataclass(frozen=True)

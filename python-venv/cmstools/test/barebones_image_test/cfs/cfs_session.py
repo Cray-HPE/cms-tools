@@ -36,8 +36,9 @@ from cmstools.test.barebones_image_test.defs import BB_TEST_RESOURCE_NAME
 from cmstools.test.barebones_image_test.ims import ImsImage
 from cmstools.test.barebones_image_test.log import logger
 from cmstools.test.barebones_image_test.test_session import SessionStatusFields, TestSession
-from .cfs_config import CfsConfig
 from cmstools.lib.cfs.defs import CFS_SESSIONS_URL
+
+from .cfs_config import CfsConfig
 
 
 @dataclass(frozen=True)
