@@ -42,11 +42,11 @@ DEFAULT_LOG_LEVEL = os.environ.get("LOG_LEVEL", logging.INFO)
 LOG_FILE_PATH = ""
 
 
-def set_log_file_path(path: str):
+def set_log_file_path(path: str) -> None:
     global LOG_FILE_PATH
     LOG_FILE_PATH = path
 
-def get_test_logger(test_name: str):
+def get_test_logger(test_name: str) -> logging.Logger:
     log_dir = os.path.join(DEFAULT_LOG_DIR, test_name)
     os.makedirs(log_dir, exist_ok=True)
     log_file_path = f"{log_dir}/{TEST_TIMESTAMP}.log"

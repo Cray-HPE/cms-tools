@@ -36,7 +36,7 @@ import time
 
 from cmstools.lib.common.defs import  TestException as BBException
 from .log import logger
-from cmstools.test.barebones_image_test.test_resource import TestResource
+from .test_resource import TestResource
 
 
 @dataclass(frozen=True)
