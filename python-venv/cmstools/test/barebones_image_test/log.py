@@ -23,6 +23,6 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from cmstools.lib.common.log import get_test_logger
+from cmstools.lib.log import get_test_logger
 
 logger = get_test_logger("barebones_image_test")

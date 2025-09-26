@@ -23,5 +23,5 @@
 #
 
 """
-lib for cmstools test
+BOS module for cmstools tests
 """

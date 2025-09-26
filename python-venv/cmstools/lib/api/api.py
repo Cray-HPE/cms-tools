@@ -23,20 +23,19 @@
 #
 
 """
-API module for barebones boot test
+API module cmstools tests
 """
 
 import base64
 import json
-import logging
 
 import requests
 from requests_retry_session import requests_retry_session
 from urllib3.exceptions import MaxRetryError
 
-from cmstools.lib.common.defs import TestException as BBException, JsonDict, JsonObject
-from cmstools.lib.common.k8s import get_k8s_secret_data
-from cmstools.lib.common.common_logger import logger
+from cmstools.lib.defs import CmstoolsException, JsonDict, JsonObject
+from cmstools.lib.k8s import get_k8s_secret_data
+from cmstools.lib.common_logger import logger
 
 # set up gateway address
 API_GW_DNSNAME = "api-gw-service-nmn.local"
@@ -58,7 +57,7 @@ def add_api_auth(headers: JsonDict) -> None:
         admin_secret = base64.b64decode(encoded_admin_secret)
     except Exception as exc:
         logger.exception("Errpr accessing or decoding admin client secret")
-        raise BBException from exc
+        raise CmstoolsException from exc
 
     # get an access token from keycloak
     payload = {"grant_type":"client_credentials",
@@ -92,13 +91,13 @@ def request(verb, url, headers=None, add_auth_header=True, verify=SYSTEM_CA_CERT
         return session.request(verb, url=url, headers=headers, verify=verify, **kwargs)
     except (requests.exceptions.ConnectionError, MaxRetryError) as exc:
         logger.exception("Unable to connect to %s", url)
-        raise BBException from exc
+        raise CmstoolsException from exc
     except requests.exceptions.HTTPError as exc:
         logger.exception("Unexpected response making %s request to %s", verb, url)
-        raise BBException from exc
+        raise CmstoolsException from exc
     except Exception as exc:
         logger.exception("Unhandled exception making %s request to %s", verb, url)
-        raise BBException from exc
+        raise CmstoolsException from exc
 
 def request_and_check_status(verb, url, expected_status: int, parse_json: bool,
                              **kwargs) -> requests.Response|JsonObject:
@@ -112,14 +111,14 @@ def request_and_check_status(verb, url, expected_status: int, parse_json: bool,
     if resp.status_code != expected_status:
         logger.error("API %s request to %s received incorrect return code %d (expected %d): %s",
                      verb, url, resp.status_code, expected_status, resp.text)
-        raise BBException()
+        raise CmstoolsException()
     if not parse_json:
         return resp
     try:
         return json.loads(resp.text)
     except json.JSONDecodeError as exc:
         logger.exception("Non-JSON response to %s request to %s", verb, url)
-        raise BBException from exc
+        raise CmstoolsException from exc
     except Exception as exc:
         logger.exception("Unhandled exception making %s request to %s", verb, url)
-        raise BBException from exc
+        raise CmstoolsException from exc

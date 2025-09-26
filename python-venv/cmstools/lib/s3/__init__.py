@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,5 +23,8 @@
 #
 
 """
-lib for cmstools test
+S3 module for cmstools test
 """
+
+from .s3 import get_s3_artifact_etag
+from .s3_url import S3Url

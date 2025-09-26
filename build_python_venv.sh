@@ -31,8 +31,8 @@ TEMPDIR=$(mktemp -d)
 
 # Copy the cmstools package files over to TEMPDIR
 cp -pvr python-venv/cmstools \
-        barebones_image_test-constraints.txt \
-        barebones_image_test-requirements.txt \
+        cmstools-constraints.txt \
+        cmstools-requirements.txt \
         pyproject.toml \
         "${TEMPDIR}"
 
@@ -54,15 +54,15 @@ which "${PYTHON_BIN}"
 "${PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
 
 # Upgrade install/build tools
-"${PYTHON_BIN}" -m pip install pip setuptools wheel -c barebones_image_test-constraints.txt --disable-pip-version-check --no-cache
+"${PYTHON_BIN}" -m pip install pip setuptools wheel -c cmstools-constraints.txt --disable-pip-version-check --no-cache
 "${PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
 
 # Install test preqrequisites
-"${PYTHON_BIN}" -m pip install -r barebones_image_test-requirements.txt --disable-pip-version-check --no-cache
+"${PYTHON_BIN}" -m pip install -r cmstools-requirements.txt --disable-pip-version-check --no-cache
 "${PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
 
 # Install the test itself
-"${PYTHON_BIN}" -m pip install . -c barebones_image_test-constraints.txt --disable-pip-version-check --no-cache
+"${PYTHON_BIN}" -m pip install . -c cmstools-constraints.txt --disable-pip-version-check --no-cache
 "${PYTHON_BIN}" -m pip list --format freeze --disable-pip-version-check
 
 # Remove build tools to decrease the virtualenv size.

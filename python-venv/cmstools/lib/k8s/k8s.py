@@ -23,13 +23,13 @@
 #
 
 """
-Kubernetes module for barebones boot test
+Kubernetes module cmstools test
 """
 
 from kubernetes import client, config
 
-from cmstools.lib.common.defs import TestException, JsonDict
-from cmstools.lib.common.common_logger import logger
+from cmstools.lib.defs import CmstoolsException, JsonDict
+from cmstools.lib.common_logger import logger
 
 
 def get_k8s_configmap_data(cm_name: str, cm_namespace: str = "default") -> JsonDict:
@@ -42,7 +42,7 @@ def get_k8s_configmap_data(cm_name: str, cm_namespace: str = "default") -> JsonD
     except Exception as exc:
         logger.exception("Error retrieving Kubernetes configmap '%s' from namespace '%s'",
                          cm_name, cm_namespace)
-        raise TestException from exc
+        raise CmstoolsException from exc
 
 
 def get_k8s_secret_data(secret_name: str, secret_namespace: str = "default") -> JsonDict:
@@ -55,7 +55,7 @@ def get_k8s_secret_data(secret_name: str, secret_namespace: str = "default") -> 
     except Exception as exc:
         logger.exception("Error retrieving Kubernetes secret '%s' from namespace '%s'",
                          secret_name, secret_namespace)
-        raise TestException from exc
+        raise CmstoolsException from exc
 
 
 # initialize k8s

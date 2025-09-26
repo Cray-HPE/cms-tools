@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,7 +23,19 @@
 #
 
 """
-Kubernetes module for barebones boot test
+CsmProductCatalogData definitions
 """
 
-from .k8s import get_k8s_configmap_data, get_k8s_secret_data
+from cmstools.lib.api import API_GW_SECURE
+from cmstools.lib.defs import ARM_ARCH, X86_ARCH
+
+# VCS URLs:
+VCS_URL = f"{API_GW_SECURE}/vcs"
+
+PRODUCT_CATALOG_CONFIG_MAP_NAME = "cray-product-catalog"
+PRODUCT_CATALOG_CONFIG_MAP_NS = "services"
+
+# The strings used in the product catalog to identify node arch
+PRODCAT_ARM_ARCH = "aarch64"
+PRODCAT_X86_ARCH = "x86_64"
+PRODCAT_ARCH_STRINGS = { ARM_ARCH: PRODCAT_ARM_ARCH, X86_ARCH: PRODCAT_X86_ARCH }

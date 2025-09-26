@@ -21,7 +21,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# Package info for barebones image boot test
+# Package info for cmstools python tests
 
 [build-system]
 requires = ["setuptools>=61.0"]

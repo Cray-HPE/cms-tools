@@ -30,7 +30,7 @@ import logging
 import os
 import sys
 
-from cmstools.lib.common.defs import TEST_TIMESTAMP
+from cmstools.lib.defs import TEST_TIMESTAMP
 
 # The following line is also used by the Makefile and RPM spec file in this repo. Any changes to it
 # should ensure that they do not break this.

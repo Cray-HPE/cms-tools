@@ -23,22 +23,27 @@
 #
 
 """
-ComputeNode class and related functions
+Definitions and constants
 """
 
-from cmstools.lib.common.api import API_BASE_URL
-from cmstools.lib.common.defs import ARM_ARCH, X86_ARCH
+import datetime
 
-# HSM URLs
-HSM_URL = f"{API_BASE_URL}/smd/hsm/v2"
-HSM_COMP_STATE_URL = f"{HSM_URL}/State/Components"
+TEST_TIMESTAMP = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 
-# The strings HSM uses to identify node arch
-HSM_ARM_ARCH = "ARM"
-HSM_X86_ARCH = "X86"
-HSM_UNKNOWN_ARCH = "UNKNOWN"
-# For backwards compatability reasons, nodes with Unknown architecture in HSM are considered to be
-# X86_64 architecture
-HSM_ARCH_STRINGS = {
-    ARM_ARCH: [HSM_ARM_ARCH],
-    X86_ARCH: [HSM_X86_ARCH, HSM_UNKNOWN_ARCH]}
+# Constants
+ARM_ARCH = "arm"
+X86_ARCH = "x86"
+
+# First in the list is the default for the test
+ARCH_LIST = [ X86_ARCH, ARM_ARCH ]
+
+# To help for type hinting
+JsonObject = str|int|float|list|dict|bool|None
+JsonDict = dict[str, JsonObject]
+
+
+class CmstoolsException(Exception):
+    """
+    This is the base exception for all custom exceptions that can be raised from
+    this application.
+    """

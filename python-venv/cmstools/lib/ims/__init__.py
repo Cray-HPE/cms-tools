@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,11 +23,5 @@
 #
 
 """
-BOS URLs
+IMS module for cmstools tests
 """
-
-from cmstools.lib.common.api import API_BASE_URL
-
-BOS_URL = f"{API_BASE_URL}/bos/v2"
-BOS_SESSIONS_URL = f"{BOS_URL}/sessions"
-BOS_TEMPLATES_URL = f"{BOS_URL}/sessiontemplates"

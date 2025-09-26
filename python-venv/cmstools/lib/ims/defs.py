@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,40 +23,22 @@
 #
 
 """
-S3Url class
+IMS definitions
 """
 
-from urllib.parse import urlparse
+from cmstools.lib.api import API_BASE_URL
+from cmstools.lib.defs import ARM_ARCH, X86_ARCH
 
-class S3Url(str):
-    """
-    A string class whose value is standardized through URLparser, and with extra properties
-    to display S3 bucket, key, etc
+# IMS URLs
+IMS_URL = f"{API_BASE_URL}/ims"
+IMS_IMAGES_URL = f"{IMS_URL}/images"
 
-    https://stackoverflow.com/questions/42641315/s3-urls-get-bucket-name-and-path/42641363
-    """
+# We use IMS v2 for deleting images because it gives the option to
+# also delete the S3 resources associated with them.
+IMS_V2_URL = f"{IMS_URL}/v2"
+IMS_V2_IMAGES_URL = f"{IMS_V2_URL}/images"
 
-    def __new__(cls, url):
-        return super().__new__(cls, urlparse(url, allow_fragments=False).geturl())
-
-    def __init__(self, url):
-        parsed = urlparse(url, allow_fragments=False)
-        if parsed.query:
-            self.__key = parsed.path.lstrip('/') + '?' + parsed.query
-        else:
-            self.__key = parsed.path.lstrip('/')
-        self.__bucket = parsed.netloc
-
-    @property
-    def key(self) -> str:
-        """
-        Return the S3 key portion of this S3 URL
-        """
-        return self.__key
-
-    @property
-    def bucket(self) -> str:
-        """
-        Return the S3 bucket portion of this S3 URL
-        """
-        return self.__bucket
+# The strings IMS uses to identify image arch
+IMS_ARM_ARCH = "aarch64"
+IMS_X86_ARCH = "x86_64"
+IMS_ARCH_STRINGS = { ARM_ARCH: IMS_ARM_ARCH, X86_ARCH: IMS_X86_ARCH }

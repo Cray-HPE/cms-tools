@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,7 +23,14 @@
 #
 
 """
-API module for barebones boot test
+S3 module for cmstools test
 """
 
-from .api import API_GW_SECURE, API_BASE_URL, request, request_and_check_status
+S3_CREDS_SECRET_NAME = "ims-s3-credentials"
+
+# Mapping from the boto3 client kwargs field names to the Kubernetes secret field names
+S3_CREDS_SECRET_FIELDS = {
+    "endpoint_url": "s3_endpoint",
+    "aws_access_key_id": "access_key",
+    "aws_secret_access_key": "secret_key",
+    "verify": "ssl_validate" }

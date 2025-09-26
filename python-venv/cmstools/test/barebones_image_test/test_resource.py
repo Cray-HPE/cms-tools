@@ -30,8 +30,8 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import ClassVar
 
-from cmstools.lib.common.api import request_and_check_status
-from cmstools.lib.common.defs import JsonObject
+from cmstools.lib.api import request_and_check_status
+from cmstools.lib.defs import JsonObject
 from .defs import BB_TEST_RESOURCE_NAME
 from .log import logger
 

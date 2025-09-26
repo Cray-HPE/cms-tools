@@ -23,9 +23,9 @@
 #
 
 from dataclasses import dataclass
-from cmstools.lib.common.cfs.defs import CFS_COMPONENTS_URL
+from cmstools.lib.cfs.defs import CFS_COMPONENTS_URL
 from cmstools.test.barebones_image_test.log import logger
-from cmstools.lib.common.api import request_and_check_status
+from cmstools.lib.api import request_and_check_status
 
 
 @dataclass(frozen=True)

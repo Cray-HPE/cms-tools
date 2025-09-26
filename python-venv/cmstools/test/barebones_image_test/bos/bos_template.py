@@ -28,11 +28,11 @@ BosTemplate class
 
 from typing import ClassVar
 
-from cmstools.lib.common.api import request_and_check_status
+from cmstools.lib.api import request_and_check_status
 from cmstools.test.barebones_image_test.ims import ImsImage
 from cmstools.test.barebones_image_test.log import logger
 from cmstools.test.barebones_image_test.test_resource import TestResource
-from cmstools.lib.common.bos.defs import BOS_TEMPLATES_URL
+from cmstools.lib.bos.defs import BOS_TEMPLATES_URL
 
 
 class BosTemplate(TestResource):

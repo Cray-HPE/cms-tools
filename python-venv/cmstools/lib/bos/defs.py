@@ -23,19 +23,11 @@
 #
 
 """
-CsmProductCatalogData definitions
+BOS URLs
 """
 
-from cmstools.lib.common.api import API_GW_SECURE
-from cmstools.lib.common.defs import ARM_ARCH, X86_ARCH
+from cmstools.lib.api import API_BASE_URL
 
-# VCS URLs:
-VCS_URL = f"{API_GW_SECURE}/vcs"
-
-PRODUCT_CATALOG_CONFIG_MAP_NAME = "cray-product-catalog"
-PRODUCT_CATALOG_CONFIG_MAP_NS = "services"
-
-# The strings used in the product catalog to identify node arch
-PRODCAT_ARM_ARCH = "aarch64"
-PRODCAT_X86_ARCH = "x86_64"
-PRODCAT_ARCH_STRINGS = { ARM_ARCH: PRODCAT_ARM_ARCH, X86_ARCH: PRODCAT_X86_ARCH }
+BOS_URL = f"{API_BASE_URL}/bos/v2"
+BOS_SESSIONS_URL = f"{BOS_URL}/sessions"
+BOS_TEMPLATES_URL = f"{BOS_URL}/sessiontemplates"

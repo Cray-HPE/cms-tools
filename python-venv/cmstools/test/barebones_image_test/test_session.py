@@ -29,12 +29,11 @@ TestSession and SessionStatusFields classes
 # To support forward references in type hinting
 from __future__ import annotations
 
-import logging
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 import time
 
-from cmstools.lib.common.defs import  TestException as BBException
+from cmstools.lib.defs import  CmstoolsException as BBException
 from .log import logger
 from .test_resource import TestResource
 

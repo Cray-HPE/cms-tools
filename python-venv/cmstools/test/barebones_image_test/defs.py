@@ -25,7 +25,7 @@
 """
 Definitions and constants
 """
-from cmstools.lib.common.defs import TEST_TIMESTAMP
+from cmstools.lib.defs import TEST_TIMESTAMP
 
 # names
 BB_TEST_PREFIX = "csm-barebones-boot-test"

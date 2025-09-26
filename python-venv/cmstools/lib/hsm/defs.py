@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,5 +23,22 @@
 #
 
 """
-lib for cmstools test
+ComputeNode class and related functions
 """
+
+from cmstools.lib.api import API_BASE_URL
+from cmstools.lib.defs import ARM_ARCH, X86_ARCH
+
+# HSM URLs
+HSM_URL = f"{API_BASE_URL}/smd/hsm/v2"
+HSM_COMP_STATE_URL = f"{HSM_URL}/State/Components"
+
+# The strings HSM uses to identify node arch
+HSM_ARM_ARCH = "ARM"
+HSM_X86_ARCH = "X86"
+HSM_UNKNOWN_ARCH = "UNKNOWN"
+# For backwards compatability reasons, nodes with Unknown architecture in HSM are considered to be
+# X86_64 architecture
+HSM_ARCH_STRINGS = {
+    ARM_ARCH: [HSM_ARM_ARCH],
+    X86_ARCH: [HSM_X86_ARCH, HSM_UNKNOWN_ARCH]}

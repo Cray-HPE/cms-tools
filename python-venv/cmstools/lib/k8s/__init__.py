@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,26 +23,7 @@
 #
 
 """
-Definitions and constants
+Kubernetes module for cmstools tests
 """
 
-import datetime
-
-TEST_TIMESTAMP = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-
-# Constants
-ARM_ARCH = "arm"
-X86_ARCH = "x86"
-
-# First in the list is the default for the test
-ARCH_LIST = [ X86_ARCH, ARM_ARCH ]
-
-# To help for type hinting
-JsonObject = str|int|float|list|dict|bool|None
-JsonDict = dict[str, JsonObject]
-
-class TestException(Exception):
-    """
-    This is the base exception for all custom exceptions that can be raised from
-    this application.
-    """
+from .k8s import get_k8s_configmap_data, get_k8s_secret_data
