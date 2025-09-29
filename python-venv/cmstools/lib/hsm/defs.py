@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,32 +21,24 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# Info for cmstools Python package
 
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+"""
+ComputeNode class and related functions
+"""
 
-[tool.setuptools.packages]
-find = {}
+from cmstools.lib.api import API_BASE_URL
+from cmstools.lib.defs import ARM_ARCH, X86_ARCH
 
-[project]
-name = "cmstools"
-version = "@RPM_VERSION@"
-authors = [
-  { name="HPE Development LP", email="sps@cray.com" },
-]
-description = "cmstools Python package"
-requires-python = ">=3.10"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "License :: OSI Approved :: MIT License",
-    "Topic :: System :: Systems Administration",
-]
+# HSM URLs
+HSM_URL = f"{API_BASE_URL}/smd/hsm/v2"
+HSM_COMP_STATE_URL = f"{HSM_URL}/State/Components"
 
-[project.scripts]
-barebones_image_test = "cmstools.test.barebones_image_test.__main__:main"
-
-[project.urls]
-Homepage = "https://github.com/Cray-HPE/cms-tools"
+# The strings HSM uses to identify node arch
+HSM_ARM_ARCH = "ARM"
+HSM_X86_ARCH = "X86"
+HSM_UNKNOWN_ARCH = "UNKNOWN"
+# For backwards compatability reasons, nodes with Unknown architecture in HSM are considered to be
+# X86_64 architecture
+HSM_ARCH_STRINGS = {
+    ARM_ARCH: [HSM_ARM_ARCH],
+    X86_ARCH: [HSM_X86_ARCH, HSM_UNKNOWN_ARCH]}
