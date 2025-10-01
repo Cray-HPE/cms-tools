@@ -57,7 +57,33 @@ def get_k8s_secret_data(secret_name: str, secret_namespace: str = "default") -> 
                          secret_name, secret_namespace)
         raise CmstoolsException from exc
 
+def get_deployment_replicas(deployment_name: str, namespace: str = "services") -> int:
+    """
+    Get the current replica count for the specified deployment.
+    """
+    try:
+        deployment = apps_v1_api.read_namespaced_deployment(name=deployment_name, namespace=namespace)
+        return deployment.spec.replicas
+    except Exception as exc:
+        logger.exception("Error retrieving replica count for deployment '%s' in namespace '%s'",
+                         deployment_name, namespace)
+        raise CmstoolsException from exc
+
+def set_deployment_replicas(deployment_name: str, replicas: int, namespace: str = "services") -> None:
+    """
+    Set the replica count for the specified deployment.
+    """
+    try:
+        body = {'spec': {'replicas': replicas}}
+        apps_v1_api.patch_namespaced_deployment_scale(name=deployment_name,
+                                                     namespace=namespace,
+                                                     body=body)
+    except Exception as exc:
+        logger.exception("Error scaling deployment '%s' in namespace '%s' to %d replicas",
+                         deployment_name, namespace, replicas)
+        raise CmstoolsException from exc
 
 # initialize k8s
 config.load_kube_config()
 k8s_client_api = client.CoreV1Api()
+apps_v1_api = client.AppsV1Api()

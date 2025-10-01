@@ -1,7 +1,6 @@
-#
 # MIT License
 #
-# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,20 +22,23 @@
 #
 
 """
-CFS URL definitions
+CFS configuration related functions
 """
 
-from cmstools.lib.api import API_BASE_URL
+from cmstools.lib.api import request
+from cmstools.lib.cfs.defs import CFS_CONFIGS_URL
+from cmstools.lib.defs import CmstoolsException as CFSRCException
+from cmstools.test.cfs_sessions_rc_test.log import logger
 
-# CFS URLs
-CFS_URL = f"{API_BASE_URL}/cfs/v3"
-CFS_CONFIGS_URL = f"{CFS_URL}/configurations"
-CFS_SESSIONS_URL = f"{CFS_URL}/sessions"
-CFS_COMPONENTS_URL = f"{CFS_URL}/components"
-CFS_OPTIONS_URL = f"{CFS_URL}/options"
 
-# CFS formatted URLs for API version as placeholder
-CFS_SESSIONS_URL_TEMPLATE = f"{API_BASE_URL}/cfs/{{api_version}}/sessions"
+def delete_cfs_configuration(cfs_configuration_name: str) -> None:
+    """
+    Deletes the specified CFS configuration
+    """
+    url = f"{CFS_CONFIGS_URL}/{cfs_configuration_name}"
+    resp = request("delete", url)
 
-# Deployments
-CFS_OPERATOR_DEPLOYMENT = "cray-cfs-operator"
+    if resp.status_code != 204:
+        logger.error(f"Failed to delete CFS configuration {cfs_configuration_name}: {resp.text}")
+        raise CFSRCException()
+

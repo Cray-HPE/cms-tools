@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,21 +22,6 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-"""
-CFS URL definitions
-"""
+from cmstools.lib.log import get_test_logger
 
-from cmstools.lib.api import API_BASE_URL
-
-# CFS URLs
-CFS_URL = f"{API_BASE_URL}/cfs/v3"
-CFS_CONFIGS_URL = f"{CFS_URL}/configurations"
-CFS_SESSIONS_URL = f"{CFS_URL}/sessions"
-CFS_COMPONENTS_URL = f"{CFS_URL}/components"
-CFS_OPTIONS_URL = f"{CFS_URL}/options"
-
-# CFS formatted URLs for API version as placeholder
-CFS_SESSIONS_URL_TEMPLATE = f"{API_BASE_URL}/cfs/{{api_version}}/sessions"
-
-# Deployments
-CFS_OPERATOR_DEPLOYMENT = "cray-cfs-operator"
+logger = get_test_logger("cfs_sessions_rc_test")

@@ -26,4 +26,4 @@
 Kubernetes module for cmstools tests
 """
 
-from .k8s import get_k8s_configmap_data, get_k8s_secret_data
+from .k8s import get_k8s_configmap_data, get_k8s_secret_data, get_deployment_replicas, set_deployment_replicas

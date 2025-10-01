@@ -47,6 +47,7 @@ classifiers = [
 
 [project.scripts]
 barebones_image_test = "cmstools.test.barebones_image_test.__main__:main"
+cfs_sessions_rc_test = "cmstools.test.cfs_sessions_rc_test.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/Cray-HPE/cms-tools"
