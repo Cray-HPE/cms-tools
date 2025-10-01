@@ -52,7 +52,7 @@ class CfsSessionCreator:
 
         configs = resp.json()
         configurations_data = configs["configurations"]
-        logger.info(f"Found configurations: {configurations_data}")
+
         if configs:
             config_name = configurations_data[0]["name"]
             logger.info(f"Using existing CFS config: {config_name}")
@@ -77,6 +77,12 @@ class CfsSessionCreator:
         logger.debug(f"Created {config_name}: {resp_data}")
         return config_name
 
+    @property
+    def expected_http_status(self) -> int:
+        if self.cfs_version == "v2":
+            return 200
+        return 201
+
     def create_cfs_session_payload(self, session_name: str, config_name: str) -> dict:
         if self.cfs_version == "v3":
             return {
@@ -98,6 +104,11 @@ class CfsSessionCreator:
         }
 
     def create_sessions(self) -> (list[str], str):
+        """
+        Create CFS sessions up to max_sessions using the specified name prefix.
+        List all sessions in pending state that have the text prefix string in their names. Verify that the names of
+        these sessions match the ones we just created.
+        """
         config_name = self._find_or_create_cfs_config()
         cfs_session_names_list = []
         url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=self.cfs_version)
@@ -106,7 +117,7 @@ class CfsSessionCreator:
             session_payload = self.create_cfs_session_payload(session_name=session_name, config_name=config_name)
             _ = request_and_check_status("post", url,
                                                  json=session_payload,
-                                                 expected_status=201, parse_json=True)
+                                                 expected_status=self.expected_http_status, parse_json=True)
             cfs_session_names_list.append(session_name)
             logger.info(f"Created CFS session: {session_name}")
 
@@ -114,7 +125,7 @@ class CfsSessionCreator:
         sessions = get_cfs_sessions_list(cfs_session_name_contains=self.name_prefix, cfs_version=self.cfs_version)
         pending_cfs_session_names = sorted([s["name"] for s in sessions if s["name"] in cfs_session_names_list])
 
-        if sorted(cfs_session_names_list) != pending_cfs_session_names:
+        if sorted(cfs_session_names_list) != sorted(pending_cfs_session_names):
             logger.error(f"Mismatch in created and pending session names. Created: {cfs_session_names_list}, Pending: {pending_cfs_session_names}")
             raise CFSRCException()
 

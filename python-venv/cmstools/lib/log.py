@@ -44,14 +44,12 @@ LOG_FILE_PATH = ""
 
 def set_log_file_path(path: str) -> None:
     global LOG_FILE_PATH
-    print(f"Logging to file: {path}")
     LOG_FILE_PATH = path
 
 def get_test_logger(test_name: str) -> logging.Logger:
     log_dir = os.path.join(DEFAULT_LOG_DIR, test_name)
     os.makedirs(log_dir, exist_ok=True)
     log_file_path = f"{log_dir}/{TEST_TIMESTAMP}.log"
-    print(f"Creating log file: {log_file_path}")
     set_log_file_path(log_file_path)
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)

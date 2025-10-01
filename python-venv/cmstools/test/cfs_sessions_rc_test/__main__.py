@@ -27,13 +27,13 @@ import sys
 
 from typing import NamedTuple
 
-from cmstools.lib.log import LOG_FILE_PATH
-from cmstools.lib.defs import CmstoolsException as CFSRCException
-from cmstools.lib.k8s import get_deployment_replicas, set_deployment_replicas
-from cmstools.lib.cfs.defs import CFS_OPERATOR_DEPLOYMENT
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session import cfs_session_exists, delete_cfs_sessions
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_options import get_cfs_page_size, set_cfs_page_size
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_configurations import delete_cfs_configuration
+from cmstools.lib.defs import CmstoolsException as CFSRCException, CmstoolsException
+from cmstools.lib.k8s import get_deployment_replicas, set_deployment_replicas
+from cmstools.lib.cfs.defs import CFS_OPERATOR_DEPLOYMENT
+from cmstools.lib.log import LOG_FILE_PATH
 
 from .log import logger
 from .cfs.cfs_session_creator import CfsSessionCreator
@@ -69,6 +69,15 @@ def cleanup_and_restore(current_replicas: int, current_page_size: int | None, co
 def run(script_args: ScriptArgs):
     """
     CFS sessions race condition test main processing
+    Check the number of cfs-operator instances and, if it is non-0, remember the current value and scale it down to 0.
+    This will ensure the sessions we create remain in pending state. This must be scaled back to its original value
+    when the test exits.
+    Check for previous test sessions
+    If --delete-previous-sessions is true, then delete all pending state sessions with the text prefix in their names
+    (if any), and verify that they are gone.
+    If --delete-previous-sessions is not true, then list all pending state sessions with the text prefix in their names.
+     If there are any, exit with an error, telling the user to delete these sessions, run with a different name string,
+     or run with --delete-previous-sessions
     """
     cfs_config_name = None
     # First check for deleting pre-existing sessions if requested
@@ -117,6 +126,10 @@ def run(script_args: ScriptArgs):
         )
         cfs_session_deleter.delete_sessions()
         logger.info("All CFS sessions successfully deleted")
+    except CFSRCException as _:
+        raise
+    except Exception as _:
+        raise
     finally:
         # Check if cfs configuration was created, delete it
         # if cfs_config_name contains script_args.cfs_session_name.
@@ -128,6 +141,19 @@ def run(script_args: ScriptArgs):
 def parse_command_line() -> ScriptArgs:
     """
     Parse the command line arguments
+    --name	All sessions used for this test will have names with this prefix.
+    It should default to one that is not likely to be used by a real customer. Something like "cfs-race-condition-test-".
+    --max-sessions	Maximum number of CFS sessions to create (maybe start with a default of 20)
+    --max-multi-delete-reqs	Maximum number of parallel multi-delete requests (maybe start with a default of 4)
+    --delete-previous-sessions	If true, the test will automatically delete any sessions that exist at the
+    start of the test that are in pending state and contain the specified name string. If false, if such sessions exist,
+    the test will exit in error.
+    --cfs-version	Which version of the CFS API to use. Defaults to 3.
+    --page-size	The page size to use for multi-get requests (default to 10*<max-sessions>).
+    If using CFS v2, the minimum value is <max-sessions>. Otherwise, minimum value of 1
+    If running CFS v2, set the V3 global CFS page-size option to <page-size>
+    (if it does not already have that value), but the original value should be restored when the test exits
+
     """
     parser = argparse.ArgumentParser(
          description="CFS Sessions Race Condition Test Script",)
@@ -206,8 +232,8 @@ def main():
        sys.exit(1)
    except Exception as err:
        logger.exception(f"An unanticipated exception occurred during cfs sessions race condition test: {str(err)};")
+       sys.exit(1)
 
-       # exit indicating success
    logger.info("Successfully completed cfs sessions race condition test.")
    sys.exit(0)
 

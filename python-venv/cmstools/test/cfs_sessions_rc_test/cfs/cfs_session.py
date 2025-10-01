@@ -59,23 +59,26 @@ def get_cfs_sessions_list(cfs_session_name_contains: str, cfs_version: str) -> l
     }
     url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=cfs_version)
     cfs_sessions_url_with_params = f"{url}?{urllib.parse.urlencode(params)}"
-    logger.info(f"Getting CFS sessions with URL: {url}")
+
     resp = request("get", cfs_sessions_url_with_params)
-    logger.info(f"GET {url} returned status code {resp.status_code}")
 
     if resp.status_code != 200:
         logger.error(f"Unexpected return code {resp.status_code} from GET query to {url}: {resp.text}")
 
     sessions = resp.json()
-    logger.info(f"Found {sessions} CFS sessions with name prefix {cfs_session_name_contains} and status pending")
     session_data = get_session_data(sessions)
-    logger.info(f"Session data found: {session_data}")
+    logger.debug(f"Session data found: {session_data}")
     return session_data
 
 def delete_cfs_sessions(cfs_session_name_contains: str, cfs_version: str) -> None:
     """
     Delete all CFS sessions with the specified name prefix and pending status.
     """
+    sessions = get_cfs_sessions_list(cfs_session_name_contains, cfs_version)
+    if not sessions:
+        logger.info(f"No CFS sessions found with name prefix {cfs_session_name_contains} and status pending to delete")
+        return
+
     params = {
         "status": "pending",
         "name_contains": cfs_session_name_contains

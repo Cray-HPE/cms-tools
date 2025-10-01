@@ -46,28 +46,39 @@ class CfsSessionDeleter:
         self.deleted_sessions_lists = []  # Only used for v3
         self.cfs_session_names_list = cfs_session_name_list
 
+    @property
+    def expected_http_status(self) -> int:
+        if self.cfs_version == "v2":
+            return 204
+        return 200
+
     def _delete_sessions_thread(self, results_list) -> None:
+        """
+        Thread target function to delete CFS sessions with the specified name prefix and pending status.
+        Verify that all multi-delete requests returned successful status and did not time out
+        """
         params = {
             "status": "pending",
             "name_contains": self.name_prefix
         }
         url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=self.cfs_version)
         cfs_sessions_url_with_params = f"{url}?{urllib.parse.urlencode(params)}"
+        logger.info(f"Deleting CFS sessions with URL: {cfs_sessions_url_with_params}")
         try:
             resp = request("delete", cfs_sessions_url_with_params)
 
-            if resp.status_code == 200 and self.cfs_version == "v3":
+            if resp.status_code == self.expected_http_status and self.cfs_version == "v3":
                 deleted = resp.json() if resp.content else []
                 logger.info(f"Deleted sessions: {deleted}")
                 results_list.append(deleted)
                 return
 
             if resp.status_code == 400:
-                logger.info(f"Bad request response from Delete query to {url}: {resp.text}")
+                logger.info(f"Bad request response from Delete to {url}: {resp.text}")
                 return
 
-            if resp.status_code not in (200, 400):
-                logger.error(f"Unexpected return code {resp.status_code} from Delete query to {url}: {resp.text}")
+            if resp.status_code not in (self.expected_http_status, 400):
+                logger.error(f"Unexpected return code {resp.status_code} from Delete to {url}: {resp.text}")
                 raise CFSRCException()
 
         except Exception as exc:
@@ -75,8 +86,13 @@ class CfsSessionDeleter:
             raise
 
     def verify_v3_api_deleted_cfs_sessions_response(self) -> None:
-        # Flatten the list of lists into a single list
-        all_deleted_sessions = [session for sublist in self.deleted_sessions_lists for session in sublist]
+        """
+        Verify that all sessions were deleted with no duplicates based on the lists of deleted session names
+        """
+        logger.info(f"Deleted sessions lists from threads: {self.deleted_sessions_lists}")
+        # Flatten the list of lists into a single list of session names
+        all_deleted_sessions = [session_name for sublist in self.deleted_sessions_lists for session_name in sublist.get('session_ids', [])]
+        logger.info(f"All deleted sessions combined: {all_deleted_sessions}")
         unique_deleted_sessions = set(all_deleted_sessions)
 
         if len(all_deleted_sessions) != len(unique_deleted_sessions):
@@ -87,15 +103,13 @@ class CfsSessionDeleter:
             logger.error(f"Number of unique deleted sessions {len(unique_deleted_sessions)} does not match expected {self.max_sessions}")
             raise CFSRCException()
 
-        counts = Counter(all_deleted_sessions)
-        duplicates = [name for name, count in counts.items() if count != 1]
-
-        if duplicates:
-            logger.error(f"Some session names appear more than once or not at all: {duplicates}")
-            raise CFSRCException()
         logger.info(f"All {self.max_sessions} sessions successfully deleted with no duplicates")
 
     def verify_all_sessions_deleted(self) -> None:
+        """
+        Verify that all CFS sessions with the specified name prefix are deleted.
+        If any sessions still exist, attempt to delete them one by one.
+        """
         sessions = get_cfs_sessions_list(self.name_prefix, self.cfs_version)
 
         if sessions:
@@ -110,6 +124,12 @@ class CfsSessionDeleter:
             raise CFSRCException()
 
     def delete_sessions(self):
+        """
+        Delete CFS sessions in parallel using multiple threads.
+        Each thread will attempt to delete all sessions with the specified name prefix and pending status.
+        (v3 only) If successful, each delete request will return a list of the session names that it deleted.
+        These lists need to be saved. (This is only true for v3 – for v2 a successful response returns nothing)
+        """
         threads = []
         results = []  # For collecting deleted session names (v3)
 
