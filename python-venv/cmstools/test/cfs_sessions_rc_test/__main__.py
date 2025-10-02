@@ -24,6 +24,7 @@
 
 import argparse
 import sys
+import time
 
 from typing import NamedTuple
 
@@ -66,6 +67,52 @@ def cleanup_and_restore(current_replicas: int, current_page_size: int | None, co
         logger.info(f"Deleting CFS configuration {config_name}")
         delete_cfs_configuration(config_name)
 
+def check_replicas_scaled(deployment_name: str, expected_replicas: int):
+    """
+    Check recursively that the specified deployment has the expected number of replicas
+    """
+    start_time = time.time()
+    while True:
+        actual_replicas = get_deployment_replicas(deployment_name=deployment_name)
+        if actual_replicas == expected_replicas:
+            logger.info(f"Deployment {deployment_name} has been scaled to {expected_replicas} replicas")
+            return
+        if time.time() - start_time > 300:
+            # Timeout after 5 minutes
+            logger.error(f"Timeout: Deployment {deployment_name} did not scale to {expected_replicas} replicas within 5 minutes")
+            raise CFSRCException()
+        logger.info(f"Waiting for deployment {deployment_name} to scale to {expected_replicas} replicas (currently {actual_replicas})")
+        time.sleep(5)
+
+def set_page_size_if_needed(page_size: int|None, max_sessions: int, cfs_version: str) -> (int, int | None):
+    """
+    Set the CFS global page-size option to the desired value if it is not already set to that value for v2.
+    Return the current value if it was changed, otherwise return None.
+    For v3, if page_size is None, set it to 10 * max_sessions.
+    For v2, if page_size is None, set it to 10 * max_sessions, but if that is less than the current value,
+    leave it unchanged. If page_size is specified and is less than max_sessions, set it to max_sessions.
+    For v2, return the current value if it was changed, otherwise return None.
+    """
+    current_page_size = None
+
+    if page_size is None:
+        page_size = 10 * max_sessions
+        if cfs_version == "v2":
+            current_page_size = get_cfs_page_size()
+            if current_page_size < page_size:
+                set_cfs_page_size(page_size)
+                logger.info(f"Using CFS v2 API with page size {page_size}")
+    else:
+        if cfs_version == "v2":
+            if page_size < max_sessions:
+                logger.info(f"For CFS v2, setting --page-size to {max_sessions} to match --max-sessions")
+                page_size = max_sessions
+            current_page_size = get_cfs_page_size()
+            set_cfs_page_size(page_size)
+            logger.info(f"Using CFS v2 API with page size {page_size}")
+    return page_size, current_page_size
+
+
 def run(script_args: ScriptArgs):
     """
     CFS sessions race condition test main processing
@@ -94,18 +141,19 @@ def run(script_args: ScriptArgs):
     # Get the current number of replicas for the cray-cfs-operator deployment
     current_replicas = get_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT)
     logger.info(f"Current number of replicas for cray-cfs-operator deployment: {current_replicas}")
-    current_page_size = None
 
     try:
         # Scale the cray-cfs-operator deployment to 0 replicas to stop it from processing cfs sessions
         logger.info("Scaling cray-cfs-operator deployment to 0 replicas to stop it from processing CFS sessions")
         set_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT, replicas=0)
+        check_replicas_scaled(deployment_name=CFS_OPERATOR_DEPLOYMENT, expected_replicas=0)
 
         # If running CFS v2, set the V3 global CFS page-size option to <page-size>
-        if script_args.cfs_version == "v2":
-            current_page_size = get_cfs_page_size()
-            set_cfs_page_size(script_args.page_size)
-            logger.info(f"Using CFS v2 API with page size {script_args.page_size}")
+        script_args.page_size, current_page_size = set_page_size_if_needed(
+            page_size=script_args.page_size,
+            max_sessions=script_args.max_cfs_sessions,
+            cfs_version=script_args.cfs_version
+        )
 
         # Create the specified number of CFS sessions
         cfs_session_creator = CfsSessionCreator(
@@ -196,19 +244,6 @@ def parse_command_line() -> ScriptArgs:
 
     args = parser.parse_args()
 
-    # Set default page size if not provided
-    if args.page_size is None:
-        args.page_size = 10 * args.max_sessions
-
-    # Enforce minimum page size rules
-    if args.cfs_version == "v2":
-        if args.page_size < args.max_sessions:
-            logger.info(f"For CFS v2, setting --page-size to {args.max_sessions} to match --max-sessions")
-            args.page_size = args.max_sessions
-    else:
-        if args.page_size < 1:
-            logger.info("For CFS v3, setting --page-size to 1")
-            args.page_size = 1
     return ScriptArgs(
         cfs_session_name=args.name,
         max_cfs_sessions=args.max_sessions,
