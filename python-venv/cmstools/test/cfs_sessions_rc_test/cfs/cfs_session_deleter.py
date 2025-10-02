@@ -28,7 +28,6 @@ cfs session deleter class for parallel deletion of cfs sessions
 
 import threading
 import urllib.parse
-from collections import Counter
 
 from cmstools.lib.api import request
 from cmstools.lib.cfs.defs import CFS_SESSIONS_URL_TEMPLATE
@@ -38,13 +37,14 @@ from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session import delete_cfs_sessio
 
 class CfsSessionDeleter:
     def __init__(self, name_prefix: str, max_sessions: int, max_multi_delete_reqs: int, cfs_session_name_list: list[str],
-                 cfs_version: str = "v3"):
+                 page_size: int, cfs_version: str = "v3"):
         self.name_prefix = name_prefix
         self.max_sessions = max_sessions
         self.max_multi_delete_reqs = max_multi_delete_reqs
         self.cfs_version = cfs_version
         self.deleted_sessions_lists = []  # Only used for v3
         self.cfs_session_names_list = cfs_session_name_list
+        self.page_size = page_size # only used for V3 GET requests
 
     @property
     def expected_http_status(self) -> int:
@@ -70,7 +70,8 @@ class CfsSessionDeleter:
             if resp.status_code == self.expected_http_status and self.cfs_version == "v3":
                 deleted = resp.json() if resp.content else []
                 logger.info(f"Deleted sessions: {deleted}")
-                results_list.append(deleted)
+                with threading.Lock():
+                    results_list.append(deleted)
                 return
 
             if resp.status_code == 400:
@@ -110,7 +111,7 @@ class CfsSessionDeleter:
         Verify that all CFS sessions with the specified name prefix are deleted.
         If any sessions still exist, attempt to delete them one by one.
         """
-        sessions = get_cfs_sessions_list(self.name_prefix, self.cfs_version)
+        sessions = get_cfs_sessions_list(self.name_prefix, self.cfs_version, self.page_size)
 
         if sessions:
             cfs_session_list = [s["name"] for s in sessions]

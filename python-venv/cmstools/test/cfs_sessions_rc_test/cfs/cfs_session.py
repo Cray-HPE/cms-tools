@@ -33,6 +33,15 @@ from cmstools.lib.defs import CmstoolsException as CFSRCException
 
 from cmstools.test.cfs_sessions_rc_test.log import logger
 
+def get_next_id(data: dict) -> str|None:
+    """
+    Get the next_id from the data if it exists.
+    """
+    next_obj = data.get("next")
+    if isinstance(next_obj, dict):
+        return next_obj.get("after_id")
+    return None
+
 def get_session_data(cfs_session_data: dict|list) -> list|None:
     """
     Get sessions list from the data as get cfs session data is different for V2 and V3.
@@ -42,39 +51,102 @@ def get_session_data(cfs_session_data: dict|list) -> list|None:
     if isinstance(cfs_session_data, dict) and "sessions" in cfs_session_data:
         return cfs_session_data["sessions"]
 
-def cfs_session_exists(cfs_session_name_contains: str, cfs_version: str) -> bool:
+def cfs_session_exists(cfs_session_name_contains: str, cfs_version: str, limit: int) -> bool:
     """
     Returns True if any CFS sessions exist with the specified name prefix and pending status.
     """
-    sessions_list = get_cfs_sessions_list(cfs_session_name_contains, cfs_version)
+    sessions_list = get_cfs_sessions_list(cfs_session_name_contains, cfs_version, limit)
     return bool(sessions_list)
 
-def get_cfs_sessions_list(cfs_session_name_contains: str, cfs_version: str) -> list|None:
+def get_cfs_sessions_list_params(cfs_session_name_contains: str, cfs_version: str, limit: int|None) -> dict:
     """
-    Returns a list of CFS sessions with the specified name prefix and pending status.
+    Returns the URL with parameters to list CFS sessions with the specified name prefix and pending status.
     """
-    params = {
-        "status": "pending",
-        "name_contains": cfs_session_name_contains
-    }
-    url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=cfs_version)
-    cfs_sessions_url_with_params = f"{url}?{urllib.parse.urlencode(params)}"
+    if cfs_version == "v2":
+        return {
+            "status": "pending",
+            "name_contains": cfs_session_name_contains
+        }
 
-    resp = request("get", cfs_sessions_url_with_params)
+    return {
+            "status": "pending",
+            "name_contains": cfs_session_name_contains,
+            "limit": limit
+        }
+
+def get_all_cfs_sessions_v2 (cfs_session_name_contains: str, cfs_version: str) -> list|None:
+    """
+    Return all CFS sessions using v2 API.No pagination support in v2.
+    """
+    params = get_cfs_sessions_list_params(
+        cfs_session_name_contains=cfs_session_name_contains,
+        cfs_version=cfs_version,
+        limit=None
+    )
+
+    url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=cfs_version)
+    query_url = f"{url}?{urllib.parse.urlencode(params)}"
+    resp = request("get", query_url)
 
     if resp.status_code != 200:
         logger.error(f"Unexpected return code {resp.status_code} from GET query to {url}: {resp.text}")
+        raise CFSRCException()
 
     sessions = resp.json()
     session_data = get_session_data(sessions)
     logger.debug(f"Session data found: {session_data}")
     return session_data
 
-def delete_cfs_sessions(cfs_session_name_contains: str, cfs_version: str) -> None:
+def get_all_cfs_sessions_v3(cfs_session_name_contains: str, cfs_version: str, limit: int) -> list:
+    url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=cfs_version)
+    params = get_cfs_sessions_list_params(
+        cfs_session_name_contains=cfs_session_name_contains,
+        cfs_version=cfs_version,
+        limit=limit
+    )
+    all_sessions = []
+    after_id = None
+
+    while True:
+        if after_id:
+            params["after_id"] = after_id
+        query_url = f"{url}?{urllib.parse.urlencode(params)}"
+        logger.info(f"Querying CFS sessions with URL: {query_url}")
+        resp = request("get", query_url)
+        if resp.status_code != 200:
+            logger.error(f"Unexpected return code {resp.status_code} from GET query to {url}: {resp.text}")
+            raise CFSRCException()
+        data = resp.json()
+        sessions = get_session_data(data)
+        if not sessions:
+            break
+        all_sessions.extend(sessions)
+        next_id = get_next_id(data)
+        if not next_id:
+            break
+        after_id = next_id
+    logger.debug(f"Session data found: {all_sessions}")
+    return all_sessions
+
+def get_cfs_sessions_list(cfs_session_name_contains: str, cfs_version: str, limit: int) -> list|None:
+    """
+    Returns a list of CFS sessions with the specified name prefix and pending status.
+    """
+    if cfs_version == "v2":
+        return get_all_cfs_sessions_v2(
+            cfs_session_name_contains=cfs_session_name_contains,
+        cfs_version=cfs_version)
+
+    return get_all_cfs_sessions_v3(
+        cfs_session_name_contains=cfs_session_name_contains,
+        cfs_version=cfs_version,
+        limit=limit)
+
+def delete_cfs_sessions(cfs_session_name_contains: str, cfs_version: str, limit: int) -> None:
     """
     Delete all CFS sessions with the specified name prefix and pending status.
     """
-    sessions = get_cfs_sessions_list(cfs_session_name_contains, cfs_version)
+    sessions = get_cfs_sessions_list(cfs_session_name_contains, cfs_version, limit)
     if not sessions:
         logger.info(f"No CFS sessions found with name prefix {cfs_session_name_contains} and status pending to delete")
         return

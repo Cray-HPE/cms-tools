@@ -122,7 +122,7 @@ class CfsSessionCreator:
             logger.info(f"Created CFS session: {session_name}")
 
         # Verify all sessions are in pending state and names match
-        sessions = get_cfs_sessions_list(cfs_session_name_contains=self.name_prefix, cfs_version=self.cfs_version)
+        sessions = get_cfs_sessions_list(cfs_session_name_contains=self.name_prefix, cfs_version=self.cfs_version, limit=self.page_size)
         pending_cfs_session_names = sorted([s["name"] for s in sessions if s["name"] in cfs_session_names_list])
 
         if sorted(cfs_session_names_list) != sorted(pending_cfs_session_names):

@@ -25,13 +25,14 @@
 import argparse
 import sys
 import time
+import re
 
 from typing import NamedTuple
 
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session import cfs_session_exists, delete_cfs_sessions
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_options import get_cfs_page_size, set_cfs_page_size
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_configurations import delete_cfs_configuration
-from cmstools.lib.defs import CmstoolsException as CFSRCException, CmstoolsException
+from cmstools.lib.defs import CmstoolsException as CFSRCException
 from cmstools.lib.k8s import get_deployment_replicas, set_deployment_replicas
 from cmstools.lib.cfs.defs import CFS_OPERATOR_DEPLOYMENT
 from cmstools.lib.log import LOG_FILE_PATH
@@ -127,33 +128,39 @@ def run(script_args: ScriptArgs):
      or run with --delete-previous-sessions
     """
     cfs_config_name = None
-    # First check for deleting pre-existing sessions if requested
-    logger.info(f"Checking for pre-existing CFS sessions with name prefix {script_args.cfs_session_name}")
-
-    if not script_args.delete_preexisting_cfs_sessions:
-        # check for existing sessions and fail if any found
-        if cfs_session_exists(script_args.cfs_session_name, script_args.cfs_version):
-            logger.error("Pre-existing CFS sessions found with specified name prefix. Use --delete-previous-sessions to delete them before proceeding.")
-            raise CFSRCException()
-
-    # If requested, delete any pre-existing sessions
-    delete_cfs_sessions(script_args.cfs_session_name, script_args.cfs_version)
-    # Get the current number of replicas for the cray-cfs-operator deployment
-    current_replicas = get_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT)
-    logger.info(f"Current number of replicas for cray-cfs-operator deployment: {current_replicas}")
+    current_page_size = None
 
     try:
-        # Scale the cray-cfs-operator deployment to 0 replicas to stop it from processing cfs sessions
-        logger.info("Scaling cray-cfs-operator deployment to 0 replicas to stop it from processing CFS sessions")
-        set_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT, replicas=0)
-        check_replicas_scaled(deployment_name=CFS_OPERATOR_DEPLOYMENT, expected_replicas=0)
-
         # If running CFS v2, set the V3 global CFS page-size option to <page-size>
-        script_args.page_size, current_page_size = set_page_size_if_needed(
+        # Update page_size in script_args by creating a new instance
+        new_page_size, current_page_size = set_page_size_if_needed(
             page_size=script_args.page_size,
             max_sessions=script_args.max_cfs_sessions,
             cfs_version=script_args.cfs_version
         )
+        script_args = script_args._replace(page_size=new_page_size)
+        logger.info(f"Using page size of {script_args.page_size} for CFS API calls")
+
+        # First check for deleting pre-existing sessions if requested
+        logger.info(f"Checking for pre-existing CFS sessions with name prefix {script_args.cfs_session_name}")
+
+        if not script_args.delete_preexisting_cfs_sessions:
+            # check for existing sessions and fail if any found
+            if cfs_session_exists(script_args.cfs_session_name, script_args.cfs_version, script_args.page_size):
+                logger.error(
+                    "Pre-existing CFS sessions found with specified name prefix. Use --delete-previous-sessions to delete them before proceeding.")
+                raise CFSRCException()
+
+        # If requested, delete any pre-existing sessions
+        delete_cfs_sessions(script_args.cfs_session_name, script_args.cfs_version, script_args.page_size)
+        # Get the current number of replicas for the cray-cfs-operator deployment
+        current_replicas = get_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT)
+        logger.info(f"Current number of replicas for cray-cfs-operator deployment: {current_replicas}")
+
+        # Scale the cray-cfs-operator deployment to 0 replicas to stop it from processing cfs sessions
+        logger.info("Scaling cray-cfs-operator deployment to 0 replicas to stop it from processing CFS sessions")
+        set_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT, replicas=0)
+        check_replicas_scaled(deployment_name=CFS_OPERATOR_DEPLOYMENT, expected_replicas=0)
 
         # Create the specified number of CFS sessions
         cfs_session_creator = CfsSessionCreator(
@@ -170,6 +177,7 @@ def run(script_args: ScriptArgs):
             max_sessions=script_args.max_cfs_sessions,
             max_multi_delete_reqs=script_args.max_multi_cfs_sessions_delete_requests,
             cfs_session_name_list=cfs_sessions_list,
+            page_size=script_args.page_size,
             cfs_version=script_args.cfs_version
         )
         cfs_session_deleter.delete_sessions()
@@ -182,15 +190,46 @@ def run(script_args: ScriptArgs):
         # Check if cfs configuration was created, delete it
         # if cfs_config_name contains script_args.cfs_session_name.
         # This means it was created by this script.
-        if not script_args.cfs_session_name in cfs_config_name:
+        if cfs_config_name is not None and script_args.cfs_session_name in cfs_config_name:
+            # valid config_name, keep it
+            pass
+        else:
             cfs_config_name = None
         cleanup_and_restore(current_replicas=current_replicas, current_page_size=current_page_size, config_name=cfs_config_name)
+
+# Validations for command line arguments
+def check_min_page_size(value):
+    int_value = int(value)
+    if int_value < 1:
+        raise argparse.ArgumentTypeError("--page-size must be at least 1")
+    return int_value
+
+def validate_name(value):
+    pattern = r'^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$'
+    # Script appends a number to the name, so allow up to 40 characters here
+    if not (1 <= len(value) <= 40):
+        raise argparse.ArgumentTypeError("--name must be between 1 and 40 characters")
+    if not re.match(pattern, value):
+        raise argparse.ArgumentTypeError("--name must match pattern: " + pattern)
+    return value
+
+def check_minimum_max_sessions(value):
+    int_value = int(value)
+    if int_value < 1:
+        raise argparse.ArgumentTypeError("--max-sessions must be at least 1")
+    return int_value
+
+def check_minimum_max_delete_reqs(value):
+    int_value = int(value)
+    if int_value < 1:
+        raise argparse.ArgumentTypeError("--max-multi-delete-reqs must be at least 1")
+    return int_value
 
 def parse_command_line() -> ScriptArgs:
     """
     Parse the command line arguments
     --name	All sessions used for this test will have names with this prefix.
-    It should default to one that is not likely to be used by a real customer. Something like "cfs-race-condition-test-".
+    It should default to one that is not likely to be used by a real customer. Something like cfs-race-condition-test-.
     --max-sessions	Maximum number of CFS sessions to create (maybe start with a default of 20)
     --max-multi-delete-reqs	Maximum number of parallel multi-delete requests (maybe start with a default of 4)
     --delete-previous-sessions	If true, the test will automatically delete any sessions that exist at the
@@ -207,19 +246,19 @@ def parse_command_line() -> ScriptArgs:
          description="CFS Sessions Race Condition Test Script",)
     parser.add_argument(
         "--name",
-        type=str,
+        type=validate_name,
         default="cfs-race-condition-test-",
         help="Prefix for all session names (default: %(default)s)"
     )
     parser.add_argument(
         "--max-sessions",
-        type=int,
+        type=check_minimum_max_sessions,
         default=20,
         help="Maximum number of CFS sessions to create (default: %(default)s)"
     )
     parser.add_argument(
         "--max-multi-delete-reqs",
-        type=int,
+        type=check_minimum_max_delete_reqs,
         default=4,
         help="Maximum number of parallel multi-delete requests (default: %(default)s)"
     )
@@ -237,7 +276,7 @@ def parse_command_line() -> ScriptArgs:
     )
     parser.add_argument(
         "--page-size",
-        type=int,
+        type=check_min_page_size,
         default=None,
         help="Page size for multi-get requests (default: 10 * max-sessions for v3, min=max-sessions for v2, min=1 for v3)"
     )
