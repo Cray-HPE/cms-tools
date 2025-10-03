@@ -53,7 +53,7 @@ class ScriptArgs(NamedTuple):
     cfs_version: str # default to v3
     page_size: int
 
-def cleanup_and_restore(current_replicas: int, current_page_size: int | None, config_name: str| None):
+def cleanup_and_restore(current_replicas: int, current_page_size: int | None, config_name: str| None) -> None:
     """
     Cleanup function to restore the cray-cfs-operator deployment and CFS page size
     """
