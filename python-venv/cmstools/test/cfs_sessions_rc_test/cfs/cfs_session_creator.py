@@ -31,7 +31,6 @@ from cmstools.lib.cfs.defs import CFS_CONFIGS_URL, CFS_SESSIONS_URL_TEMPLATE
 from cmstools.lib.defs import CmstoolsException as CFSRCException
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session import get_cfs_sessions_list
 from cmstools.test.cfs_sessions_rc_test.log import logger
-from cmstools.test.barebones_image_test.prodcat import CsmProductCatalogData
 
 DEFAULT_PLAYBOOK = "compute_nodes.yml"
 
@@ -61,12 +60,12 @@ class CfsSessionCreator:
         # Create a new config
         config_name = f"{self.name_prefix}config"
         url = f"{CFS_CONFIGS_URL}/{config_name}"
-        csm_prodcat_data = CsmProductCatalogData.get_latest()
+        # Using dummy values for clone_url and commit
         cfs_config_json = {
             "layers": [
                 {
-                    "clone_url": csm_prodcat_data.clone_url,
-                    "commit": csm_prodcat_data.commit,
+                    "clone_url": "https://dummy-server-nmn.local/vcs/cray/example-repo.git",
+                    "commit": "43ecfa8236bed625b54325ebb70916f599999999",
                     "playbook": DEFAULT_PLAYBOOK,
                     "name": "compute"
                 }
