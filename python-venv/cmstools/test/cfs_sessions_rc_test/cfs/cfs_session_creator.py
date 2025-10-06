@@ -40,6 +40,7 @@ class CfsSessionCreator:
         self.max_sessions = max_sessions
         self.cfs_version = cfs_version
         self.page_size = page_size
+        self.created_config_name = None
 
     def _find_or_create_cfs_config(self) -> str:
         url = CFS_CONFIGS_URL
@@ -74,6 +75,7 @@ class CfsSessionCreator:
         resp_data = request_and_check_status("put", url, expected_status=200,
                                              parse_json=True, json=cfs_config_json)
         logger.debug(f"Created {config_name}: {resp_data}")
+        self.created_config_name = config_name
         return config_name
 
     @property
@@ -102,7 +104,7 @@ class CfsSessionCreator:
             }
         }
 
-    def create_sessions(self) -> (list[str], str):
+    def create_sessions(self) -> (list[str]):
         """
         Create CFS sessions up to max_sessions using the specified name prefix.
         List all sessions in pending state that have the text prefix string in their names. Verify that the names of
@@ -129,4 +131,4 @@ class CfsSessionCreator:
             raise CFSRCException()
 
         logger.info(f"All {self.max_sessions} CFS sessions created and in pending state")
-        return cfs_session_names_list, config_name
+        return cfs_session_names_list

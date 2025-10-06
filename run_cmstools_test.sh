@@ -23,7 +23,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Run the barebones boot test from the appropriate virtual environment
+# Run the cmstools test from the appropriate virtual environment
 # based on the installed system Python version
 
 # The value for this variable is set by the Makefile during the build

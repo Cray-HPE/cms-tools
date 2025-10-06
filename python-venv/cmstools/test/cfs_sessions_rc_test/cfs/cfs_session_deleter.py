@@ -26,14 +26,17 @@
 cfs session deleter class for parallel deletion of cfs sessions
 """
 
+import urllib3
 import threading
-import urllib.parse
+import requests
 
-from cmstools.lib.api import request
+from cmstools.lib.api.api import API_REQUEST_TIMEOUT, add_api_auth
 from cmstools.lib.cfs.defs import CFS_SESSIONS_URL_TEMPLATE
 from cmstools.lib.defs import CmstoolsException as CFSRCException
 from cmstools.test.cfs_sessions_rc_test.log import logger
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session import delete_cfs_session_by_name, get_cfs_sessions_list
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class CfsSessionDeleter:
     def __init__(self, name_prefix: str, max_sessions: int, max_multi_delete_reqs: int, cfs_session_name_list: list[str],
@@ -62,10 +65,10 @@ class CfsSessionDeleter:
             "name_contains": self.name_prefix
         }
         url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=self.cfs_version)
-        cfs_sessions_url_with_params = f"{url}?{urllib.parse.urlencode(params)}"
-        logger.info(f"Deleting CFS sessions with URL: {cfs_sessions_url_with_params}")
         try:
-            resp = request("delete", cfs_sessions_url_with_params)
+            headers = {}
+            add_api_auth(headers)
+            resp = requests.delete(url=url, params=params, timeout=API_REQUEST_TIMEOUT, headers=headers, verify=False)
 
             if resp.status_code == self.expected_http_status and self.cfs_version == "v3":
                 deleted = resp.json() if resp.content else []

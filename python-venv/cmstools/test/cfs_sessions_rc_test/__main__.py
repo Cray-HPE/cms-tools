@@ -26,14 +26,16 @@ import argparse
 import sys
 import time
 import re
+import subprocess
 
 from typing import NamedTuple
 
-from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session import cfs_session_exists, delete_cfs_sessions
+from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session import (cfs_session_exists,delete_cfs_session_by_name,
+                                                                delete_cfs_sessions, get_cfs_sessions_list)
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_options import get_cfs_page_size, set_cfs_page_size
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_configurations import delete_cfs_configuration
 from cmstools.lib.defs import CmstoolsException as CFSRCException
-from cmstools.lib.k8s import get_deployment_replicas, set_deployment_replicas
+from cmstools.lib.k8s import get_deployment_replicas, set_deployment_replicas, get_pod_count_for_deployment
 from cmstools.lib.cfs.defs import CFS_OPERATOR_DEPLOYMENT
 from cmstools.lib.log import LOG_FILE_PATH
 
@@ -53,12 +55,42 @@ class ScriptArgs(NamedTuple):
     cfs_version: str # default to v3
     page_size: int
 
-def cleanup_and_restore(current_replicas: int, current_page_size: int | None, config_name: str| None) -> None:
+def cleanup_cfs_sessions(name_prefix: str, cfs_version: str, page_size: int) -> None:
+    """
+    Cleanup function to delete any remaining CFS sessions with the specified name prefix
+    """
+    try:
+        delete_cfs_sessions(
+            cfs_session_name_contains=name_prefix,
+            cfs_version=cfs_version,
+            limit=page_size
+        )
+    except Exception as ex:
+        logger.error(f"Failed to delete remaining CFS sessions with name prefix {name_prefix}: {str(ex)}")
+        logger.info("Deleting session one by one")
+        sessions = get_cfs_sessions_list(
+            cfs_session_name_contains=name_prefix,
+            cfs_version=cfs_version,
+            limit=page_size
+        )
+        if sessions:
+            cfs_session_list = [s["name"] for s in sessions]
+            for session_name in cfs_session_list:
+                try:
+                    delete_cfs_session_by_name(session_name, cfs_version=cfs_version)
+                except Exception as ex2:
+                    logger.error(f"Failed to delete CFS session {session_name}: {str(ex2)}")
+
+def cleanup_and_restore(actual_replicas: int, current_page_size: int | None,
+                        config_name: str| None, name_prefix: str,
+                        cfs_version: str,page_size: int) -> None:
     """
     Cleanup function to restore the cray-cfs-operator deployment and CFS page size
     """
-    logger.info(f"Restoring cray-cfs-operator deployment to its original number of replicas: {current_replicas}")
-    set_deployment_replicas(deployment_name="cray-cfs-operator", replicas=current_replicas)
+
+    if actual_replicas != get_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT):
+        logger.info(f"Restoring cray-cfs-operator deployment to its original number of replicas: {actual_replicas}")
+        set_deployment_replicas(deployment_name="cray-cfs-operator", replicas=actual_replicas)
 
     if current_page_size is not None:
         logger.info(f"Restoring CFS v3 global page-size option to its original value: {current_page_size}")
@@ -68,21 +100,29 @@ def cleanup_and_restore(current_replicas: int, current_page_size: int | None, co
         logger.info(f"Deleting CFS configuration {config_name}")
         delete_cfs_configuration(config_name)
 
-def check_replicas_scaled(deployment_name: str, expected_replicas: int):
+    if cfs_session_exists(
+            cfs_session_name_contains=name_prefix,
+            cfs_version=cfs_version,
+            limit=page_size):
+        logger.info(f"Cleaning up any remaining CFS sessions with name prefix {name_prefix}")
+        cleanup_cfs_sessions(name_prefix, cfs_version, page_size)
+
+def check_replicas_and_pods_scaled(deployment_name: str, expected_replicas: int, namespace: str = "services"):
     """
-    Check recursively that the specified deployment has the expected number of replicas
+    Ensure deployment is scaled and all pods are terminated.
     """
     start_time = time.time()
     while True:
         actual_replicas = get_deployment_replicas(deployment_name=deployment_name)
-        if actual_replicas == expected_replicas:
-            logger.info(f"Deployment {deployment_name} has been scaled to {expected_replicas} replicas")
+
+        if actual_replicas == expected_replicas and get_pod_count_for_deployment(deployment_name=deployment_name) == 0:
+            logger.info(f"Deployment {deployment_name} scaled to {expected_replicas} replicas and all pods terminated")
             return
         if time.time() - start_time > 300:
-            # Timeout after 5 minutes
-            logger.error(f"Timeout: Deployment {deployment_name} did not scale to {expected_replicas} replicas within 5 minutes")
+            logger.error(f"Timeout: Deployment {deployment_name} did not scale to {expected_replicas} replicas and terminate pods within 5 minutes")
             raise CFSRCException()
-        logger.info(f"Waiting for deployment {deployment_name} to scale to {expected_replicas} replicas (currently {actual_replicas})")
+
+        logger.info(f"Waiting for deployment {deployment_name} to scale down and pods to terminate.")
         time.sleep(5)
 
 def set_page_size_if_needed(page_size: int|None, max_sessions: int, cfs_version: str) -> (int, int | None):
@@ -127,8 +167,9 @@ def run(script_args: ScriptArgs):
      If there are any, exit with an error, telling the user to delete these sessions, run with a different name string,
      or run with --delete-previous-sessions
     """
-    cfs_config_name = None
     current_page_size = None
+    cfs_session_creator = None
+    current_replicas = 0
 
     try:
         # If running CFS v2, set the V3 global CFS page-size option to <page-size>
@@ -160,7 +201,7 @@ def run(script_args: ScriptArgs):
         # Scale the cray-cfs-operator deployment to 0 replicas to stop it from processing cfs sessions
         logger.info("Scaling cray-cfs-operator deployment to 0 replicas to stop it from processing CFS sessions")
         set_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT, replicas=0)
-        check_replicas_scaled(deployment_name=CFS_OPERATOR_DEPLOYMENT, expected_replicas=0)
+        check_replicas_and_pods_scaled(deployment_name=CFS_OPERATOR_DEPLOYMENT, expected_replicas=0)
 
         # Create the specified number of CFS sessions
         cfs_session_creator = CfsSessionCreator(
@@ -169,7 +210,7 @@ def run(script_args: ScriptArgs):
             cfs_version=script_args.cfs_version,
             page_size=script_args.page_size
         )
-        cfs_sessions_list, cfs_config_name = cfs_session_creator.create_sessions()
+        cfs_sessions_list = cfs_session_creator.create_sessions()
 
         # Now issue the specified number of parallel multi-delete requests to delete all sessions
         cfs_session_deleter = CfsSessionDeleter(
@@ -187,15 +228,12 @@ def run(script_args: ScriptArgs):
     except Exception as _:
         raise
     finally:
-        # Check if cfs configuration was created, delete it
-        # if cfs_config_name contains script_args.cfs_session_name.
-        # This means it was created by this script.
-        if cfs_config_name is not None and script_args.cfs_session_name in cfs_config_name:
-            # valid config_name, keep it
-            pass
-        else:
-            cfs_config_name = None
-        cleanup_and_restore(current_replicas=current_replicas, current_page_size=current_page_size, config_name=cfs_config_name)
+        cleanup_and_restore(actual_replicas=current_replicas,
+                            current_page_size=current_page_size,
+                            config_name=cfs_session_creator.created_config_name if cfs_session_creator is not None else None,
+                            name_prefix=script_args.cfs_session_name,
+                            cfs_version=script_args.cfs_version,
+                            page_size=script_args.page_size)
 
 # Validations for command line arguments
 def check_min_page_size(value):

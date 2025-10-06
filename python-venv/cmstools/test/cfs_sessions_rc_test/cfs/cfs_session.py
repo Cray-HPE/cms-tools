@@ -25,7 +25,6 @@
 """
 CFS Session related functions
 """
-import urllib.parse
 
 from cmstools.lib.api import request
 from cmstools.lib.cfs.defs import CFS_SESSIONS_URL_TEMPLATE
@@ -85,8 +84,7 @@ def get_all_cfs_sessions_v2 (cfs_session_name_contains: str, cfs_version: str) -
     )
 
     url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=cfs_version)
-    query_url = f"{url}?{urllib.parse.urlencode(params)}"
-    resp = request("get", query_url)
+    resp = request("get", url=url, params=params)
 
     if resp.status_code != 200:
         logger.error(f"Unexpected return code {resp.status_code} from GET query to {url}: {resp.text}")
@@ -110,9 +108,7 @@ def get_all_cfs_sessions_v3(cfs_session_name_contains: str, cfs_version: str, li
     while True:
         if after_id:
             params["after_id"] = after_id
-        query_url = f"{url}?{urllib.parse.urlencode(params)}"
-        logger.info(f"Querying CFS sessions with URL: {query_url}")
-        resp = request("get", query_url)
+        resp = request("get", url=url, params=params)
         if resp.status_code != 200:
             logger.error(f"Unexpected return code {resp.status_code} from GET query to {url}: {resp.text}")
             raise CFSRCException()
@@ -156,8 +152,7 @@ def delete_cfs_sessions(cfs_session_name_contains: str, cfs_version: str, limit:
         "name_contains": cfs_session_name_contains
     }
     url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=cfs_version)
-    cfs_sessions_url_with_params = f"{url}?{urllib.parse.urlencode(params)}"
-    resp = request("delete", cfs_sessions_url_with_params)
+    resp = request("delete", url=url, params=params)
     if resp.status_code == 200:
         logger.info(f"Deleted CFS sessions with name prefix {cfs_session_name_contains} and status pending")
         return
@@ -173,8 +168,8 @@ def delete_cfs_session_by_name(cfs_session_name: str, cfs_version: str) -> None:
     Delete a CFS session by name.
     """
     url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=cfs_version)
-    cfs_sessions_url_with_params = f"{url}/{cfs_session_name}"
-    resp = request("delete", cfs_sessions_url_with_params)
+    cfs_sessions_url = f"{url}/{cfs_session_name}"
+    resp = request("delete", cfs_sessions_url)
     if resp.status_code == 204:
         logger.info(f"Deleted CFS session {cfs_session_name}")
         return

@@ -83,6 +83,21 @@ def set_deployment_replicas(deployment_name: str, replicas: int, namespace: str 
                          deployment_name, namespace, replicas)
         raise CmstoolsException from exc
 
+def get_pod_count_for_deployment(deployment_name: str, namespace: str = "services") -> int:
+    """
+    Return the number of pods in the specified namespace for a given deployment.
+    """
+    try:
+        # Get the deployment to extract its selector
+        deployment = apps_v1_api.read_namespaced_deployment(name=deployment_name, namespace=namespace)
+        selector = deployment.spec.selector.match_labels
+        label_selector = ",".join([f"{k}={v}" for k, v in selector.items()])
+        pods = k8s_client_api.list_namespaced_pod(namespace=namespace, label_selector=label_selector)
+        return len(pods.items)
+    except Exception as exc:
+        logger.exception("Error retrieving pod count for deployment '%s' in namespace '%s'", deployment_name, namespace)
+        raise CmstoolsException from exc
+
 # initialize k8s
 config.load_kube_config()
 k8s_client_api = client.CoreV1Api()

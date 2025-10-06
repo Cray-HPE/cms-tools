@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,22 +22,5 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-
-set -exuo pipefail
-
-source ./vars.sh
-sed -i "s#@BB_BASE_DIR@#${INSTALL_VENV_PYTHON_BASE_DIR}#" run_cmstools_test.sh
-if [[ -d ./${LOCAL_VENV_PYTHON_SUBDIR_NAME} ]]; then
-    rm -rvf "./${LOCAL_VENV_PYTHON_SUBDIR_NAME}"
-fi
-if [[ -e ${LOCAL_VENV_PYTHON_SUBDIR_NAME} ]]; then
-    echo "'${LOCAL_VENV_PYTHON_SUBDIR_NAME}' exists, but it should not"
-    exit 1
-fi
-mkdir -pv "${LOCAL_VENV_PYTHON_SUBDIR_NAME}"
-./cms_meta_tools/scripts/runBuildPrep.sh
-
-# If the `build` directory exists, delete it
-if [[ -e ./build ]]; then
-    rm -rvf ./build
-fi
+# wrapper to call cmstools test
+exec /opt/cray/tests/integration/csm/run_cmstools_test.sh barebones_image_test "$@"
