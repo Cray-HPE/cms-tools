@@ -92,7 +92,7 @@ echo /opt/cray/tests/integration/csm/run_cmstools_test.sh | tee -a INSTALLED_FIL
 
 # If the RPM contains just a single Python version, then we can use a simple symlink.
 # Otherwise we should use the run_cmstools_test.sh script
-# barebones_image_test
+# to run the barebones_image_test and cfs_sessions_rc_test
 %if %{num_py_versions} == 1
 pushd %{buildroot}/opt/cray/tests/integration/csm
 ln -s ../../../../..%{install_venv_python_base_dir}/*/%{cmstools_venv_name}/bin/barebones_image_test barebones_image_test

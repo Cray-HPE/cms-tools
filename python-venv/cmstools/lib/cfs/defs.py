@@ -38,5 +38,11 @@ CFS_OPTIONS_URL = f"{CFS_URL}/options"
 # CFS formatted URLs for API version as placeholder
 CFS_SESSIONS_URL_TEMPLATE = f"{API_BASE_URL}/cfs/{{api_version}}/sessions"
 
+# Type hinting
+
+# There was a CFS v1, but it hasn't been in CSM since CSM 1.0
+CFS_VERSION_INT = Literal[ 2, 3 ]
+CFS_VERSION_STR = Literal[ "v2", "v3" ]
+
 # Deployments
 CFS_OPERATOR_DEPLOYMENT = "cray-cfs-operator"
