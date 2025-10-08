@@ -31,6 +31,7 @@ from cmstools.lib.cfs.defs import CFS_CONFIGS_URL, CFS_SESSIONS_URL_TEMPLATE
 from cmstools.lib.defs import CmstoolsException as CFSRCException
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session import get_cfs_sessions_list
 from cmstools.test.cfs_sessions_rc_test.log import logger
+from cmstools.test.cfs_sessions_rc_test.cfs.setup import set_cfs_config_name
 
 DEFAULT_PLAYBOOK = "compute_nodes.yml"
 
@@ -40,7 +41,6 @@ class CfsSessionCreator:
         self.max_sessions = max_sessions
         self.cfs_version = cfs_version
         self.page_size = page_size
-        self.created_config_name = None
 
     def _find_or_create_cfs_config(self) -> str:
         url = CFS_CONFIGS_URL
@@ -75,7 +75,8 @@ class CfsSessionCreator:
         resp_data = request_and_check_status("put", url, expected_status=200,
                                              parse_json=True, json=cfs_config_json)
         logger.debug(f"Created {config_name}: {resp_data}")
-        self.created_config_name = config_name
+        # Set the created config name globally for cleanup
+        set_cfs_config_name(config_name)
         return config_name
 
     @property

@@ -27,6 +27,7 @@ CFS URL definitions
 """
 
 from cmstools.lib.api import API_BASE_URL
+from typing import Literal
 
 # CFS URLs
 CFS_URL = f"{API_BASE_URL}/cfs/v3"

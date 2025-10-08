@@ -24,225 +24,90 @@
 
 import argparse
 import sys
-import time
 import re
-import subprocess
 
-from typing import NamedTuple
-
-from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session import (cfs_session_exists,delete_cfs_session_by_name,
-                                                                delete_cfs_sessions, get_cfs_sessions_list)
-from cmstools.test.cfs_sessions_rc_test.cfs.cfs_options import get_cfs_page_size, set_cfs_page_size
-from cmstools.test.cfs_sessions_rc_test.cfs.cfs_configurations import delete_cfs_configuration
+from cmstools.test.cfs_sessions_rc_test.cfs.cleanup import cleanup_and_restore
+from cmstools.test.cfs_sessions_rc_test.cfs.setup import get_cfs_config_name
+from cmstools.test.cfs_sessions_rc_test.cfs.setup import cfs_sessions_rc_test_setup
+from cmstools.test.cfs_sessions_rc_test.cfs.cfs_sessions_multi_delete_test import cfs_sessions_multi_delete_test
 from cmstools.lib.defs import CmstoolsException as CFSRCException
-from cmstools.lib.k8s import get_deployment_replicas, set_deployment_replicas, get_pod_count_for_deployment
-from cmstools.lib.cfs.defs import CFS_OPERATOR_DEPLOYMENT
 from cmstools.lib.log import LOG_FILE_PATH
 
 from .log import logger
-from .cfs.cfs_session_creator import CfsSessionCreator
-from .cfs.cfs_session_deleter import CfsSessionDeleter
+from .defs import ScriptArgs
 
+# Subtests
+CFS_SESSIONS_RC_MULTI_DELETE = "multi_delete"
+CFS_SESSIONS_RC_MULTI_CREATE_MULTI_DELETE = "multi_create_multi_delete"
 
-class ScriptArgs(NamedTuple):
+subtest_functions_dict = {
+    CFS_SESSIONS_RC_MULTI_DELETE: cfs_sessions_multi_delete_test
+}
+
+def get_test_names(script_args: ScriptArgs) -> list[str] | None:
     """
-    Encapsulates the command line arguments
+    Get the list of subtests to run or skip based on command line arguments.
+    If neither is specified, return None to indicate all tests should be run.
     """
-    cfs_session_name: str # prefix for cfs session names to "cfs-race-condition-test-"
-    max_cfs_sessions: int # default to 20
-    max_multi_cfs_sessions_delete_requests: int # default to 4
-    delete_preexisting_cfs_sessions: bool
-    cfs_version: str # default to v3
-    page_size: int
+    all_tests = list(subtest_functions_dict.keys())
+    if script_args.run_subtests:
+        return script_args.run_subtests
 
-def cleanup_cfs_sessions(name_prefix: str, cfs_version: str, page_size: int) -> None:
-    """
-    Cleanup function to delete any remaining CFS sessions with the specified name prefix
-    """
-    try:
-        delete_cfs_sessions(
-            cfs_session_name_contains=name_prefix,
-            cfs_version=cfs_version,
-            limit=page_size
-        )
-    except Exception as ex:
-        logger.error(f"Failed to delete remaining CFS sessions with name prefix {name_prefix}: {str(ex)}")
-        logger.info("Deleting session one by one")
-        sessions = get_cfs_sessions_list(
-            cfs_session_name_contains=name_prefix,
-            cfs_version=cfs_version,
-            limit=page_size
-        )
-        if sessions:
-            cfs_session_list = [s["name"] for s in sessions]
-            for session_name in cfs_session_list:
-                try:
-                    delete_cfs_session_by_name(session_name, cfs_version=cfs_version)
-                except Exception as ex2:
-                    logger.error(f"Failed to delete CFS session {session_name}: {str(ex2)}")
+    if script_args.skip_subtests:
+        return [name for name in all_tests if name not in script_args.skip_subtests]
 
-def cleanup_and_restore(actual_replicas: int, current_page_size: int | None,
-                        config_name: str| None, name_prefix: str,
-                        cfs_version: str,page_size: int) -> None:
-    """
-    Cleanup function to restore the cray-cfs-operator deployment and CFS page size
-    """
-
-    if actual_replicas != get_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT):
-        logger.info(f"Restoring cray-cfs-operator deployment to its original number of replicas: {actual_replicas}")
-        set_deployment_replicas(deployment_name="cray-cfs-operator", replicas=actual_replicas)
-
-    if current_page_size is not None:
-        logger.info(f"Restoring CFS v3 global page-size option to its original value: {current_page_size}")
-        set_cfs_page_size(current_page_size)
-
-    if config_name is not None:
-        logger.info(f"Deleting CFS configuration {config_name}")
-        delete_cfs_configuration(config_name)
-
-    if cfs_session_exists(
-            cfs_session_name_contains=name_prefix,
-            cfs_version=cfs_version,
-            limit=page_size):
-        logger.info(f"Cleaning up any remaining CFS sessions with name prefix {name_prefix}")
-        cleanup_cfs_sessions(name_prefix, cfs_version, page_size)
-
-def check_replicas_and_pods_scaled(deployment_name: str, expected_replicas: int, namespace: str = "services"):
-    """
-    Ensure deployment is scaled and all pods are terminated.
-    """
-    start_time = time.time()
-    while True:
-        actual_replicas = get_deployment_replicas(deployment_name=deployment_name)
-
-        if actual_replicas == expected_replicas and get_pod_count_for_deployment(deployment_name=deployment_name) == 0:
-            logger.info(f"Deployment {deployment_name} scaled to {expected_replicas} replicas and all pods terminated")
-            return
-        if time.time() - start_time > 300:
-            logger.error(f"Timeout: Deployment {deployment_name} did not scale to {expected_replicas} replicas and terminate pods within 5 minutes")
-            raise CFSRCException()
-
-        logger.info(f"Waiting for deployment {deployment_name} to scale down and pods to terminate.")
-        time.sleep(5)
-
-def set_page_size_if_needed(page_size: int|None, max_sessions: int, cfs_version: str) -> (int, int | None):
-    """
-    Set the CFS global page-size option to the desired value if it is not already set to that value for v2.
-    Return the current value if it was changed, otherwise return None.
-    For v3, if page_size is None, set it to 10 * max_sessions.
-    For v2, if page_size is None, set it to 10 * max_sessions, but if that is less than the current value,
-    leave it unchanged. If page_size is specified and is less than max_sessions, set it to max_sessions.
-    For v2, return the current value if it was changed, otherwise return None.
-    """
-    current_page_size = None
-
-    if page_size is None:
-        page_size = 10 * max_sessions
-        if cfs_version == "v2":
-            current_page_size = get_cfs_page_size()
-            if current_page_size < page_size:
-                set_cfs_page_size(page_size)
-                logger.info(f"Using CFS v2 API with page size {page_size}")
-    else:
-        if cfs_version == "v2":
-            if page_size < max_sessions:
-                logger.info(f"For CFS v2, setting --page-size to {max_sessions} to match --max-sessions")
-                page_size = max_sessions
-            current_page_size = get_cfs_page_size()
-            set_cfs_page_size(page_size)
-            logger.info(f"Using CFS v2 API with page size {page_size}")
-    return page_size, current_page_size
-
+    return all_tests  # Run all tests
 
 def run(script_args: ScriptArgs):
     """
     CFS sessions race condition test main processing
-    Check the number of cfs-operator instances and, if it is non-0, remember the current value and scale it down to 0.
-    This will ensure the sessions we create remain in pending state. This must be scaled back to its original value
-    when the test exits.
-    Check for previous test sessions
-    If --delete-previous-sessions is true, then delete all pending state sessions with the text prefix in their names
-    (if any), and verify that they are gone.
-    If --delete-previous-sessions is not true, then list all pending state sessions with the text prefix in their names.
-     If there are any, exit with an error, telling the user to delete these sessions, run with a different name string,
-     or run with --delete-previous-sessions
     """
-    current_page_size = None
-    cfs_session_creator = None
-    current_replicas = 0
+    orig_page_size = None
+    orig_replica_count = 0
 
     try:
-        # If running CFS v2, set the V3 global CFS page-size option to <page-size>
-        # Update page_size in script_args by creating a new instance
-        new_page_size, current_page_size = set_page_size_if_needed(
-            page_size=script_args.page_size,
-            max_sessions=script_args.max_cfs_sessions,
-            cfs_version=script_args.cfs_version
-        )
-        script_args = script_args._replace(page_size=new_page_size)
+        # Setting up the test environment
+        test_setup_response = cfs_sessions_rc_test_setup(script_args)
+        script_args = script_args._replace(page_size=test_setup_response.new_page_size)
         logger.info(f"Using page size of {script_args.page_size} for CFS API calls")
+        orig_page_size = test_setup_response.original_page_size
+        orig_replica_count = test_setup_response.original_replicas_count
 
-        # First check for deleting pre-existing sessions if requested
-        logger.info(f"Checking for pre-existing CFS sessions with name prefix {script_args.cfs_session_name}")
+        # Run the tests
+        test_names = get_test_names(script_args)
+        if test_names:
+            for test in test_names:
+                logger.info(f"Starting subtest {test}")
+                subtest_function = subtest_functions_dict.get(test)
+                if subtest_function:
+                    subtest_function(script_args)
+                else:
+                    logger.error(f"Subtest function for {test} not found")
+                    raise CFSRCException()
+                logger.info(f"Completed subtest {test}")
+        else:
+            logger.warning("No subtests to run")
 
-        if not script_args.delete_preexisting_cfs_sessions:
-            # check for existing sessions and fail if any found
-            if cfs_session_exists(script_args.cfs_session_name, script_args.cfs_version, script_args.page_size):
-                logger.error(
-                    "Pre-existing CFS sessions found with specified name prefix. Use --delete-previous-sessions to delete them before proceeding.")
-                raise CFSRCException()
-
-        # If requested, delete any pre-existing sessions
-        delete_cfs_sessions(script_args.cfs_session_name, script_args.cfs_version, script_args.page_size)
-        # Get the current number of replicas for the cray-cfs-operator deployment
-        current_replicas = get_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT)
-        logger.info(f"Current number of replicas for cray-cfs-operator deployment: {current_replicas}")
-
-        # Scale the cray-cfs-operator deployment to 0 replicas to stop it from processing cfs sessions
-        logger.info("Scaling cray-cfs-operator deployment to 0 replicas to stop it from processing CFS sessions")
-        set_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT, replicas=0)
-        check_replicas_and_pods_scaled(deployment_name=CFS_OPERATOR_DEPLOYMENT, expected_replicas=0)
-
-        # Create the specified number of CFS sessions
-        cfs_session_creator = CfsSessionCreator(
-            name_prefix=script_args.cfs_session_name,
-            max_sessions=script_args.max_cfs_sessions,
-            cfs_version=script_args.cfs_version,
-            page_size=script_args.page_size
-        )
-        cfs_sessions_list = cfs_session_creator.create_sessions()
-
-        # Now issue the specified number of parallel multi-delete requests to delete all sessions
-        cfs_session_deleter = CfsSessionDeleter(
-            name_prefix=script_args.cfs_session_name,
-            max_sessions=script_args.max_cfs_sessions,
-            max_multi_delete_reqs=script_args.max_multi_cfs_sessions_delete_requests,
-            cfs_session_name_list=cfs_sessions_list,
-            page_size=script_args.page_size,
-            cfs_version=script_args.cfs_version
-        )
-        cfs_session_deleter.delete_sessions()
-        logger.info("All CFS sessions successfully deleted")
     except CFSRCException as _:
         raise
     except Exception as _:
         raise
     finally:
-        cleanup_and_restore(actual_replicas=current_replicas,
-                            current_page_size=current_page_size,
-                            config_name=cfs_session_creator.created_config_name if cfs_session_creator is not None else None,
+        cleanup_and_restore(orig_replicas_count=orig_replica_count,
+                            orig_page_size=orig_page_size,
+                            config_name=get_cfs_config_name(),
                             name_prefix=script_args.cfs_session_name,
                             cfs_version=script_args.cfs_version,
                             page_size=script_args.page_size)
 
 # Validations for command line arguments
-def check_min_page_size(value):
+def check_min_page_size(value) -> int:
     int_value = int(value)
     if int_value < 1:
         raise argparse.ArgumentTypeError("--page-size must be at least 1")
     return int_value
 
-def validate_name(value):
+def validate_name(value) -> str:
     pattern = r'^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$'
     # Script appends a number to the name, so allow up to 40 characters here
     if not (1 <= len(value) <= 40):
@@ -251,17 +116,24 @@ def validate_name(value):
         raise argparse.ArgumentTypeError("--name must match pattern: " + pattern)
     return value
 
-def check_minimum_max_sessions(value):
+def check_minimum_max_sessions(value) -> int:
     int_value = int(value)
     if int_value < 1:
         raise argparse.ArgumentTypeError("--max-sessions must be at least 1")
     return int_value
 
-def check_minimum_max_delete_reqs(value):
+def check_minimum_max_delete_reqs(value) -> int:
     int_value = int(value)
     if int_value < 1:
         raise argparse.ArgumentTypeError("--max-multi-delete-reqs must be at least 1")
     return int_value
+
+def check_subtest_names(value) -> list[str]:
+    names = [name.strip() for name in value.split(",")]
+    invalid_names = [name for name in names if name not in subtest_functions_dict.keys()]
+    if invalid_names:
+        raise argparse.ArgumentTypeError(f"Invalid subtest names: {', '.join(invalid_names)}")
+    return names
 
 def parse_command_line() -> ScriptArgs:
     """
@@ -282,6 +154,17 @@ def parse_command_line() -> ScriptArgs:
     """
     parser = argparse.ArgumentParser(
          description="CFS Sessions Race Condition Test Script",)
+    subtest_group = parser.add_mutually_exclusive_group()
+    subtest_group.add_argument(
+        "--run-subtests",
+        type=check_subtest_names,
+        help="Comma-separated list of subtests to run. Mutually exclusive with --skip-subtests. If neither is specified, all subtests are run."
+    )
+    subtest_group.add_argument(
+        "--skip-subtests",
+        type=check_subtest_names,
+        help="Comma-separated list of subtests to skip. Mutually exclusive with --run-subtests. If neither is specified, all subtests are run."
+    )
     parser.add_argument(
         "--name",
         type=validate_name,
@@ -327,7 +210,9 @@ def parse_command_line() -> ScriptArgs:
         max_multi_cfs_sessions_delete_requests=args.max_multi_delete_reqs,
         delete_preexisting_cfs_sessions=args.delete_previous_sessions,
         cfs_version=args.cfs_version,
-        page_size=args.page_size
+        page_size=args.page_size,
+        run_subtests=args.run_subtests,
+        skip_subtests=args.skip_subtests
     )
 
 

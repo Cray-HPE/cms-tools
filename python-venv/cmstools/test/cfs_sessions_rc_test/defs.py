@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,8 +23,31 @@
 #
 
 """
-Kubernetes module for cmstools tests
+CFS race condition test related definitions
 """
 
-from .k8s import (get_k8s_configmap_data, get_k8s_secret_data, get_deployment_replicas, set_deployment_replicas,
-                  get_pod_count_for_deployment, check_replicas_and_pods_scaled)
+from typing import NamedTuple
+
+
+class ScriptArgs(NamedTuple):
+    """
+    Encapsulates the command line arguments
+    """
+    cfs_session_name: str # prefix for cfs session names to "cfs-race-condition-test-"
+    max_cfs_sessions: int # default to 20
+    max_multi_cfs_sessions_delete_requests: int # default to 4
+    delete_preexisting_cfs_sessions: bool
+    cfs_version: str # default to v3
+    page_size: int
+    run_subtests: list[str] | None = None
+    skip_subtests: list[str] | None = None
+
+
+class TestSetupResponse:
+    """
+    Encapsulates the response from cfs_sessions_rc_test_setup()
+    """
+    def __init__(self, original_page_size: int | None, original_replicas: int | None, new_page_size: int | None):
+        self.original_page_size = original_page_size
+        self.original_replicas_count = original_replicas
+        self.new_page_size = new_page_size

@@ -25,6 +25,7 @@
 """
 Kubernetes module cmstools test
 """
+import time
 
 from kubernetes import client, config
 
@@ -97,6 +98,24 @@ def get_pod_count_for_deployment(deployment_name: str, namespace: str = "service
     except Exception as exc:
         logger.exception("Error retrieving pod count for deployment '%s' in namespace '%s'", deployment_name, namespace)
         raise CmstoolsException from exc
+
+def check_replicas_and_pods_scaled(deployment_name: str, expected_replicas: int):
+    """
+    Ensure deployment is scaled and all pods are terminated.
+    """
+    start_time = time.time()
+    while True:
+        actual_replicas = get_deployment_replicas(deployment_name=deployment_name)
+
+        if actual_replicas == expected_replicas and get_pod_count_for_deployment(deployment_name=deployment_name) == 0:
+            logger.info(f"Deployment {deployment_name} scaled to {expected_replicas} replicas and all pods terminated")
+            return
+        if time.time() - start_time > 300:
+            logger.error(f"Timeout: Deployment {deployment_name} did not scale to {expected_replicas} replicas and terminate pods within 5 minutes")
+            raise CmstoolsException()
+
+        logger.info(f"Waiting for deployment {deployment_name} to scale down and pods to terminate.")
+        time.sleep(5)
 
 # initialize k8s
 config.load_kube_config()
