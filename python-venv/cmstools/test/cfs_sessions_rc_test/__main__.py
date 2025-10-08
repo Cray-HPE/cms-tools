@@ -30,6 +30,7 @@ from cmstools.test.cfs_sessions_rc_test.cfs.cleanup import cleanup_and_restore
 from cmstools.test.cfs_sessions_rc_test.cfs.setup import get_cfs_config_name
 from cmstools.test.cfs_sessions_rc_test.cfs.setup import cfs_sessions_rc_test_setup
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_sessions_multi_delete_test import cfs_sessions_multi_delete_test
+from cmstools.test.cfs_sessions_rc_test.cfs.cfs_sessions_multi_delete_multi_get_test import cfs_sessions_multi_delete_multi_get_test
 from cmstools.lib.defs import CmstoolsException as CFSRCException
 from cmstools.lib.log import LOG_FILE_PATH
 
@@ -38,10 +39,11 @@ from .defs import ScriptArgs
 
 # Subtests
 CFS_SESSIONS_RC_MULTI_DELETE = "multi_delete"
-CFS_SESSIONS_RC_MULTI_CREATE_MULTI_DELETE = "multi_create_multi_delete"
+CFS_SESSIONS_RC_MULTI_DELETE_MULTI_GET = "multi_delete_multi_get"
 
 subtest_functions_dict = {
-    CFS_SESSIONS_RC_MULTI_DELETE: cfs_sessions_multi_delete_test
+    CFS_SESSIONS_RC_MULTI_DELETE: cfs_sessions_multi_delete_test,
+    CFS_SESSIONS_RC_MULTI_DELETE_MULTI_GET: cfs_sessions_multi_delete_multi_get_test
 }
 
 def get_test_names(script_args: ScriptArgs) -> list[str] | None:
@@ -66,16 +68,16 @@ def run(script_args: ScriptArgs):
     orig_replica_count = 0
 
     try:
-        # Setting up the test environment
-        test_setup_response = cfs_sessions_rc_test_setup(script_args)
-        script_args = script_args._replace(page_size=test_setup_response.new_page_size)
-        logger.info(f"Using page size of {script_args.page_size} for CFS API calls")
-        orig_page_size = test_setup_response.original_page_size
-        orig_replica_count = test_setup_response.original_replicas_count
-
         # Run the tests
         test_names = get_test_names(script_args)
         if test_names:
+            # Setting up the test environment
+            test_setup_response = cfs_sessions_rc_test_setup(script_args)
+            script_args = script_args._replace(page_size=test_setup_response.new_page_size)
+            logger.info(f"Using page size of {script_args.page_size} for CFS API calls")
+            orig_page_size = test_setup_response.original_page_size
+            orig_replica_count = test_setup_response.original_replicas_count
+
             for test in test_names:
                 logger.info(f"Starting subtest {test}")
                 subtest_function = subtest_functions_dict.get(test)
@@ -122,7 +124,7 @@ def check_minimum_max_sessions(value) -> int:
         raise argparse.ArgumentTypeError("--max-sessions must be at least 1")
     return int_value
 
-def check_minimum_max_delete_reqs(value) -> int:
+def check_minimum_max_parallel_reqs(value) -> int:
     int_value = int(value)
     if int_value < 1:
         raise argparse.ArgumentTypeError("--max-multi-delete-reqs must be at least 1")
@@ -132,7 +134,7 @@ def check_subtest_names(value) -> list[str]:
     names = [name.strip() for name in value.split(",")]
     invalid_names = [name for name in names if name not in subtest_functions_dict.keys()]
     if invalid_names:
-        raise argparse.ArgumentTypeError(f"Invalid subtest names: {', '.join(invalid_names)}")
+        raise argparse.ArgumentTypeError(f"Invalid subtest names: {', '.join(invalid_names)}, valid names are: {', '.join(subtest_functions_dict.keys())}")
     return names
 
 def parse_command_line() -> ScriptArgs:
@@ -178,8 +180,14 @@ def parse_command_line() -> ScriptArgs:
         help="Maximum number of CFS sessions to create (default: %(default)s)"
     )
     parser.add_argument(
+        "--max-multi-get-reqs",
+        type=check_minimum_max_parallel_reqs,
+        default=4,
+        help="Maximum number of parallel multi-get requests (default: %(default)s)"
+    )
+    parser.add_argument(
         "--max-multi-delete-reqs",
-        type=check_minimum_max_delete_reqs,
+        type=check_minimum_max_parallel_reqs,
         default=4,
         help="Maximum number of parallel multi-delete requests (default: %(default)s)"
     )
@@ -209,6 +217,7 @@ def parse_command_line() -> ScriptArgs:
         max_cfs_sessions=args.max_sessions,
         max_multi_cfs_sessions_delete_requests=args.max_multi_delete_reqs,
         delete_preexisting_cfs_sessions=args.delete_previous_sessions,
+        max_multi_cfs_sessions_get_requests=args.max_multi_get_reqs,
         cfs_version=args.cfs_version,
         page_size=args.page_size,
         run_subtests=args.run_subtests,

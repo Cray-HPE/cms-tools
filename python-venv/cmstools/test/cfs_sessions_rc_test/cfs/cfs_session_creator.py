@@ -31,16 +31,17 @@ from cmstools.lib.cfs.defs import CFS_CONFIGS_URL, CFS_SESSIONS_URL_TEMPLATE
 from cmstools.lib.defs import CmstoolsException as CFSRCException
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session import get_cfs_sessions_list
 from cmstools.test.cfs_sessions_rc_test.log import logger
+from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs
 from cmstools.test.cfs_sessions_rc_test.cfs.setup import set_cfs_config_name
 
 DEFAULT_PLAYBOOK = "compute_nodes.yml"
 
 class CfsSessionCreator:
-    def __init__(self, name_prefix: str, max_sessions: int, cfs_version: str, page_size: int):
-        self.name_prefix = name_prefix
-        self.max_sessions = max_sessions
-        self.cfs_version = cfs_version
-        self.page_size = page_size
+    def __init__(self, script_args: ScriptArgs):
+        self.name_prefix = script_args.cfs_session_name
+        self.max_sessions = script_args.max_cfs_sessions
+        self.cfs_version = script_args.cfs_version
+        self.page_size = script_args.page_size
 
     def _find_or_create_cfs_config(self) -> str:
         url = CFS_CONFIGS_URL

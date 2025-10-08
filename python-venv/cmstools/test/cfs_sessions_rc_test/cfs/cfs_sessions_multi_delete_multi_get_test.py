@@ -23,7 +23,7 @@
 #
 
 """
-CFS race condition multi delete test related functions
+CFS race condition multi delete multi get test related functions
 """
 
 from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs
@@ -31,13 +31,15 @@ from cmstools.test.cfs_sessions_rc_test.log import logger
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session_deleter import CfsSessionDeleter
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session_creator import CfsSessionCreator
 
-def cfs_sessions_multi_delete_test(script_args: ScriptArgs) -> None:
+def cfs_sessions_multi_delete_multi_get_test(script_args: ScriptArgs) -> None:
     """
     Create <max-multi-delete-reqs> parallel mutli-delete requests, each of which is deleting all pending
     sessions that have the text prefix string in their names.
-    (v3 only) If successful, each delete request will return a list of the session names that it deleted.
-    These lists need to be saved. (This is only true for v3 – for v2 a successful response returns nothing)
-    Wait for all parallel jobs to complete.
+    Issue multiple parallel get requests to get all sessions that have the text prefix string in their names.
+    For the session lists that were returned by the multi-get requests, validate that every entry in each list
+    is a dict object that corresponds to one of the sessions we created.
+    (It is fine if some sessions are not listed in any of the responses. It is fine if no sessions are listed
+    in any of the responses.)
     """
     cfs_session_creator = CfsSessionCreator(
         script_args=script_args
@@ -48,6 +50,5 @@ def cfs_sessions_multi_delete_test(script_args: ScriptArgs) -> None:
         script_args=script_args,
         cfs_session_name_list=cfs_sessions_list
     )
-    cfs_session_deleter.multi_delete_sessions()
+    cfs_session_deleter.multi_delete_multi_get_sessions()
     logger.info("All CFS sessions successfully deleted")
-

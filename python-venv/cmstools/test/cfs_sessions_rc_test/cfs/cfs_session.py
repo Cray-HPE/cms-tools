@@ -26,9 +26,12 @@
 CFS Session related functions
 """
 
+import requests
+
 from cmstools.lib.api import request
 from cmstools.lib.cfs.defs import CFS_SESSIONS_URL_TEMPLATE
 from cmstools.lib.defs import CmstoolsException as CFSRCException
+from cmstools.lib.api.api import API_REQUEST_TIMEOUT, add_api_auth
 
 from cmstools.test.cfs_sessions_rc_test.log import logger
 
@@ -73,7 +76,7 @@ def get_cfs_sessions_list_params(cfs_session_name_contains: str, cfs_version: st
             "limit": limit
         }
 
-def get_all_cfs_sessions_v2 (cfs_session_name_contains: str, cfs_version: str) -> list|None:
+def get_all_cfs_sessions_v2 (cfs_session_name_contains: str, cfs_version: str, retry: bool) -> list|None:
     """
     Return all CFS sessions using v2 API.No pagination support in v2.
     """
@@ -84,7 +87,14 @@ def get_all_cfs_sessions_v2 (cfs_session_name_contains: str, cfs_version: str) -
     )
 
     url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=cfs_version)
-    resp = request("get", url=url, params=params)
+
+    if not retry:
+        # Using requests directly to disable retries
+        headers = {}
+        add_api_auth(headers)
+        resp = requests.delete(url=url, params=params, timeout=API_REQUEST_TIMEOUT, headers=headers, verify=False)
+    else:
+        resp = request("get", url=url, params=params)
 
     if resp.status_code != 200:
         logger.error(f"Unexpected return code {resp.status_code} from GET query to {url}: {resp.text}")
@@ -95,7 +105,7 @@ def get_all_cfs_sessions_v2 (cfs_session_name_contains: str, cfs_version: str) -
     logger.debug(f"Session data found: {session_data}")
     return session_data
 
-def get_all_cfs_sessions_v3(cfs_session_name_contains: str, cfs_version: str, limit: int) -> list:
+def get_all_cfs_sessions_v3(cfs_session_name_contains: str, cfs_version: str, limit: int, retry: bool) -> list:
     url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=cfs_version)
     params = get_cfs_sessions_list_params(
         cfs_session_name_contains=cfs_session_name_contains,
@@ -108,7 +118,13 @@ def get_all_cfs_sessions_v3(cfs_session_name_contains: str, cfs_version: str, li
     while True:
         if after_id:
             params["after_id"] = after_id
-        resp = request("get", url=url, params=params)
+        if not retry:
+            # Using requests directly to disable retries
+            headers = {}
+            add_api_auth(headers)
+            resp = requests.delete(url=url, params=params, timeout=API_REQUEST_TIMEOUT, headers=headers, verify=False)
+        else:
+            resp = request("get", url=url, params=params)
         if resp.status_code != 200:
             logger.error(f"Unexpected return code {resp.status_code} from GET query to {url}: {resp.text}")
             raise CFSRCException()
@@ -124,19 +140,19 @@ def get_all_cfs_sessions_v3(cfs_session_name_contains: str, cfs_version: str, li
     logger.debug(f"Session data found: {all_sessions}")
     return all_sessions
 
-def get_cfs_sessions_list(cfs_session_name_contains: str, cfs_version: str, limit: int) -> list|None:
+def get_cfs_sessions_list(cfs_session_name_contains: str, cfs_version: str, limit: int, retry: bool = True) -> list|None:
     """
     Returns a list of CFS sessions with the specified name prefix and pending status.
     """
     if cfs_version == "v2":
         return get_all_cfs_sessions_v2(
             cfs_session_name_contains=cfs_session_name_contains,
-        cfs_version=cfs_version)
+        cfs_version=cfs_version, retry=retry)
 
     return get_all_cfs_sessions_v3(
         cfs_session_name_contains=cfs_session_name_contains,
         cfs_version=cfs_version,
-        limit=limit)
+        limit=limit, retry=retry)
 
 def delete_cfs_sessions(cfs_session_name_contains: str, cfs_version: str, limit: int) -> None:
     """

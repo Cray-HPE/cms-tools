@@ -29,31 +29,49 @@ cfs session deleter class for parallel deletion of cfs sessions
 import urllib3
 import threading
 import requests
+import random
 
 from cmstools.lib.api.api import API_REQUEST_TIMEOUT, add_api_auth
 from cmstools.lib.cfs.defs import CFS_SESSIONS_URL_TEMPLATE
 from cmstools.lib.defs import CmstoolsException as CFSRCException
 from cmstools.test.cfs_sessions_rc_test.log import logger
+from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session import delete_cfs_session_by_name, get_cfs_sessions_list
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class CfsSessionDeleter:
-    def __init__(self, name_prefix: str, max_sessions: int, max_multi_delete_reqs: int, cfs_session_name_list: list[str],
-                 page_size: int, cfs_version: str = "v3"):
-        self.name_prefix = name_prefix
-        self.max_sessions = max_sessions
-        self.max_multi_delete_reqs = max_multi_delete_reqs
-        self.cfs_version = cfs_version
+    def __init__(self, script_args: ScriptArgs, cfs_session_name_list: list[str]):
+
+        self.name_prefix = script_args.cfs_session_name
+        self.max_sessions = script_args.max_cfs_sessions
+        self.max_multi_delete_reqs = script_args.max_multi_cfs_sessions_delete_requests
+        self.max_multi_get_reqs = script_args.max_multi_cfs_sessions_get_requests
+        self.cfs_version = script_args.cfs_version
         self.deleted_sessions_lists = []  # Only used for v3
         self.cfs_session_names_list = cfs_session_name_list
-        self.page_size = page_size # only used for V3 GET requests
+        self.page_size = script_args.page_size # only used for V3 GET requests
 
     @property
     def expected_http_status(self) -> int:
         if self.cfs_version == "v2":
             return 204
         return 200
+
+    def _get_sessions_thread(self, results_list) -> None:
+        """
+        Thread target function to get CFS sessions with the specified name prefix and pending status.
+        """
+        sessions_list = get_cfs_sessions_list(
+            cfs_session_name_contains=self.name_prefix,
+            cfs_version=self.cfs_version,
+            limit=self.page_size, retry=False)
+
+        if sessions_list is not None:
+            logger.debug(f"Got {sessions_list} sessions in thread with name prefix {self.name_prefix}")
+            with threading.Lock():
+                results_list.append(sessions_list)
+
 
     def _delete_sessions_thread(self, results_list) -> None:
         """
@@ -127,7 +145,63 @@ class CfsSessionDeleter:
                     logger.error(f"Failed to delete CFS session: {session_name}")
             raise CFSRCException()
 
-    def delete_sessions(self):
+    def verify_sessions_after_delete(self, sessions: list) -> None:
+        """
+        Verify that all CFS sessions with the specified name prefix are deleted after multi-delete.
+        """
+        logger.info(f"Verifying all CFS sessions with name prefix {self.name_prefix} are deleted")
+        self.verify_all_sessions_deleted()
+
+        if self.cfs_version == "v3":
+            # When deletion is performed via the v3 API, verify the response
+            # to make sure that all sessions were deleted with no duplicates
+            self.deleted_sessions_lists = sessions
+            self.verify_v3_api_deleted_cfs_sessions_response()
+
+    def validate_multi_get_sessions(self, multi_get_results: list, created_session_names: list[str]) -> None:
+        """
+        Validate that every entry in each list returned by the multi-get requests is a dict
+        and corresponds to one of the sessions we created.
+        """
+        for idx, session_list in enumerate(multi_get_results):
+            for session in session_list:
+                if not isinstance(session, dict):
+                    logger.error(f"Entry in multi-get result at index {idx} is not a dict: {session}")
+                    raise CFSRCException()
+                if session.get("name") not in created_session_names:
+                    logger.error(f"Session name {session.get('name')} not in created session names")
+                    raise CFSRCException()
+        logger.info("All multi-get session entries are valid and correspond to created sessions")
+
+    def multi_delete_multi_get_sessions(self):
+        """
+        Get CFS sessions in parallel using multiple threads.
+        Each thread will attempt to get all sessions with the specified name prefix and pending status.
+        Verify that all get requests returned successful status and did not time out.
+        """
+        threads = []
+        get_results = []  # For collecting sessions from each get thread
+        results = []  # For collecting sessions from each delete thread
+        for _ in range(self.max_multi_get_reqs):
+            t = threading.Thread(target=self._get_sessions_thread, args=(get_results,))
+            threads.append(t)
+
+        for _ in range(self.max_multi_delete_reqs):
+            t = threading.Thread(target=self._delete_sessions_thread, args=(results,))
+            threads.append(t)
+
+        # start all threads randomly in threads list
+        random.shuffle(threads)
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.verify_sessions_after_delete(sessions=results)
+        self.validate_multi_get_sessions(multi_get_results=get_results,
+                                         created_session_names=self.cfs_session_names_list)
+
+    def multi_delete_sessions(self):
         """
         Delete CFS sessions in parallel using multiple threads.
         Each thread will attempt to delete all sessions with the specified name prefix and pending status.
@@ -144,12 +218,6 @@ class CfsSessionDeleter:
         for t in threads:
             t.join()
 
-        # Verify all sessions are deleted
-        logger.info(f"Verifying all CFS sessions with name prefix {self.name_prefix} are deleted")
-        self.verify_all_sessions_deleted()
+        self.verify_sessions_after_delete(sessions=results)
 
-        if self.cfs_version == "v3":
-            # When deletion is performed via the v3 API, verify the response
-            # to make sure that all sessions were deleted with no duplicates
-            self.deleted_sessions_lists = results
-            self.verify_v3_api_deleted_cfs_sessions_response()
+
