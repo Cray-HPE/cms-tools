@@ -52,7 +52,7 @@ def get_cfs_config_name() -> str | None:
     global cfs_config_name
     return cfs_config_name
 
-def set_page_size_if_needed(page_size: int|None, max_sessions: int, cfs_version: str) -> (int, int | None):
+def set_page_size_if_needed(page_size: int|None, max_sessions: int, cfs_version: str) -> tuple[int, int | None]:
     """
     Set the CFS global page-size option to the desired value if it is not already set to that value for v2.
     Return the current value if it was changed, otherwise return None.

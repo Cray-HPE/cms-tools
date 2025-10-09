@@ -88,13 +88,7 @@ def request(verb, url, headers=None, add_auth_header=True, verify=SYSTEM_CA_CERT
         # We don't want the client_secret to be logged
         logger.debug("API %s request to %s (args not logged)", verb, url)
 
-    status_forcelist = [500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511]
-    session = requests_retry_session(
-        retries=5,                # Number of total retries
-        backoff_factor=0.5,       # Wait time between retries (exponential)
-        status_forcelist=status_forcelist  # HTTP status codes to retry on
-    )
-
+    session = requests_retry_session()
     try:
         return session.request(verb, url=url, headers=headers, verify=verify, **kwargs)
     except (requests.exceptions.ConnectionError, MaxRetryError) as exc:

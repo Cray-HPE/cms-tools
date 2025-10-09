@@ -31,9 +31,10 @@ from kubernetes import client, config
 
 from cmstools.lib.defs import CmstoolsException, JsonDict
 from cmstools.lib.common_logger import logger
+from cmstools.lib.k8s.defs import (DEFAULT_DEPLOYMENT_NS, DEFAULT_SECRET_NS, DEFAULT_CONFIGMAP_NS)
 
 
-def get_k8s_configmap_data(cm_name: str, cm_namespace: str = "default") -> JsonDict:
+def get_k8s_configmap_data(cm_name: str, cm_namespace: str = DEFAULT_CONFIGMAP_NS) -> JsonDict:
     """
     Get the specified config map from Kubernetes and return its data field.
     Raise an exception if any problems are encountered.
@@ -46,7 +47,7 @@ def get_k8s_configmap_data(cm_name: str, cm_namespace: str = "default") -> JsonD
         raise CmstoolsException from exc
 
 
-def get_k8s_secret_data(secret_name: str, secret_namespace: str = "default") -> JsonDict:
+def get_k8s_secret_data(secret_name: str, secret_namespace: str = DEFAULT_SECRET_NS) -> JsonDict:
     """
     Get the specified secret from Kubernetes and return its data field.
     Raise an exception if any problems are encountered.
@@ -58,7 +59,7 @@ def get_k8s_secret_data(secret_name: str, secret_namespace: str = "default") -> 
                          secret_name, secret_namespace)
         raise CmstoolsException from exc
 
-def get_deployment_replicas(deployment_name: str, namespace: str = "services") -> int:
+def get_deployment_replicas(deployment_name: str, namespace: str = DEFAULT_DEPLOYMENT_NS) -> int:
     """
     Get the current replica count for the specified deployment.
     """
@@ -70,7 +71,7 @@ def get_deployment_replicas(deployment_name: str, namespace: str = "services") -
                          deployment_name, namespace)
         raise CmstoolsException from exc
 
-def set_deployment_replicas(deployment_name: str, replicas: int, namespace: str = "services") -> None:
+def set_deployment_replicas(deployment_name: str, replicas: int, namespace: str = DEFAULT_DEPLOYMENT_NS) -> None:
     """
     Set the replica count for the specified deployment.
     """
@@ -84,7 +85,7 @@ def set_deployment_replicas(deployment_name: str, replicas: int, namespace: str 
                          deployment_name, namespace, replicas)
         raise CmstoolsException from exc
 
-def get_pod_count_for_deployment(deployment_name: str, namespace: str = "services") -> int:
+def get_pod_count_for_deployment(deployment_name: str, namespace: str = DEFAULT_DEPLOYMENT_NS) -> int:
     """
     Return the number of pods in the specified namespace for a given deployment.
     """
@@ -99,7 +100,7 @@ def get_pod_count_for_deployment(deployment_name: str, namespace: str = "service
         logger.exception("Error retrieving pod count for deployment '%s' in namespace '%s'", deployment_name, namespace)
         raise CmstoolsException from exc
 
-def check_replicas_and_pods_scaled(deployment_name: str, expected_replicas: int):
+def check_replicas_and_pods_scaled(deployment_name: str, expected_replicas: int) -> None:
     """
     Ensure deployment is scaled and all pods are terminated.
     """

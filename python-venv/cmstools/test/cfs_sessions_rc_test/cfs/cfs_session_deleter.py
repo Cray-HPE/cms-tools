@@ -62,6 +62,7 @@ class CfsSessionDeleter:
         """
         Thread target function to get CFS sessions with the specified name prefix and pending status.
         """
+        logger.info("Starting get sessions thread")
         sessions_list = get_cfs_sessions_list(
             cfs_session_name_contains=self.name_prefix,
             cfs_version=self.cfs_version,
@@ -78,6 +79,7 @@ class CfsSessionDeleter:
         Thread target function to delete CFS sessions with the specified name prefix and pending status.
         Verify that all multi-delete requests returned successful status and did not time out
         """
+        logger.info("Starting delete sessions thread")
         params = {
             "status": "pending",
             "name_contains": self.name_prefix
@@ -158,7 +160,7 @@ class CfsSessionDeleter:
             self.deleted_sessions_lists = sessions
             self.verify_v3_api_deleted_cfs_sessions_response()
 
-    def validate_multi_get_sessions(self, multi_get_results: list, created_session_names: list[str]) -> None:
+    def validate_multi_get_sessions_response(self, multi_get_results: list, created_session_names: list[str]) -> None:
         """
         Validate that every entry in each list returned by the multi-get requests is a dict
         and corresponds to one of the sessions we created.
@@ -198,7 +200,7 @@ class CfsSessionDeleter:
             t.join()
 
         self.verify_sessions_after_delete(sessions=results)
-        self.validate_multi_get_sessions(multi_get_results=get_results,
+        self.validate_multi_get_sessions_response(multi_get_results=get_results,
                                          created_session_names=self.cfs_session_names_list)
 
     def multi_delete_sessions(self):

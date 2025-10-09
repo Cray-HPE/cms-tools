@@ -23,33 +23,9 @@
 #
 
 """
-CFS race condition test related definitions
+K8s definitions
 """
 
-from typing import NamedTuple
-from cmstools.lib.cfs.defs import CFS_VERSION_STR
-
-
-class ScriptArgs(NamedTuple):
-    """
-    Encapsulates the command line arguments
-    """
-    cfs_session_name: str # prefix for cfs session names to "cfs-race-condition-test-"
-    max_cfs_sessions: int # default to 20
-    max_multi_cfs_sessions_delete_requests: int # default to 4
-    max_multi_cfs_sessions_get_requests: int # default to 4
-    delete_preexisting_cfs_sessions: bool
-    cfs_version: CFS_VERSION_STR # default to v3
-    page_size: int
-    run_subtests: list[str] | None = None
-    skip_subtests: list[str] | None = None
-
-
-class TestSetupResponse:
-    """
-    Encapsulates the response from cfs_sessions_rc_test_setup()
-    """
-    def __init__(self, original_page_size: int | None, original_replicas: int | None, new_page_size: int | None):
-        self.original_page_size = original_page_size
-        self.original_replicas_count = original_replicas
-        self.new_page_size = new_page_size
+DEFAULT_CONFIGMAP_NS="services"
+DEFAULT_SECRET_NS="services"
+DEFAULT_DEPLOYMENT_NS="services"

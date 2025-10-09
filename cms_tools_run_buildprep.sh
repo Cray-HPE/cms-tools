@@ -27,6 +27,8 @@ set -exuo pipefail
 
 source ./vars.sh
 sed -i "s#@BB_BASE_DIR@#${INSTALL_VENV_PYTHON_BASE_DIR}#" run_cmstools_test.sh
+sed -i "s#@BB_BASE_DIR@#${INSTALL_VENV_PYTHON_BASE_DIR}#" barebones_image_test.sh
+sed -i "s#@BB_BASE_DIR@#${INSTALL_VENV_PYTHON_BASE_DIR}#" cfs_sessions_rc_test.sh
 if [[ -d ./${LOCAL_VENV_PYTHON_SUBDIR_NAME} ]]; then
     rm -rvf "./${LOCAL_VENV_PYTHON_SUBDIR_NAME}"
 fi

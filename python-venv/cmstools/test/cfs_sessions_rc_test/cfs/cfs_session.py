@@ -89,6 +89,7 @@ def get_all_cfs_sessions_v2 (cfs_session_name_contains: str, cfs_version: str, r
     url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=cfs_version)
 
     if not retry:
+        logger.info("No retry for requests")
         # Using requests directly to disable retries
         headers = {}
         add_api_auth(headers)
@@ -120,6 +121,7 @@ def get_all_cfs_sessions_v3(cfs_session_name_contains: str, cfs_version: str, li
             params["after_id"] = after_id
         if not retry:
             # Using requests directly to disable retries
+            logger.info("No retry for requests")
             headers = {}
             add_api_auth(headers)
             resp = requests.delete(url=url, params=params, timeout=API_REQUEST_TIMEOUT, headers=headers, verify=False)

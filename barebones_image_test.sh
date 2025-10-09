@@ -23,4 +23,4 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 # wrapper to call cmstools test
-exec /opt/cray/tests/integration/csm/run_cmstools_test.sh barebones_image_test "$@"
+exec @BB_BASE_DIR@/run_cmstools_test.sh barebones_image_test "$@"

@@ -52,17 +52,19 @@ def cleanup_cfs_sessions(name_prefix: str, cfs_version: str, page_size: int) -> 
             cfs_version=cfs_version,
             limit=page_size
         )
-        if sessions:
-            cfs_session_list = [s["name"] for s in sessions]
-            for session_name in cfs_session_list:
-                try:
-                    delete_cfs_session_by_name(session_name, cfs_version=cfs_version)
-                except Exception as ex2:
-                    logger.error(f"Failed to delete CFS session {session_name}: {str(ex2)}")
+        if not sessions:
+            logger.info("No remaining CFS sessions found for cleanup")
+            return
+        cfs_session_list = [s["name"] for s in sessions]
+        for session_name in cfs_session_list:
+            try:
+                delete_cfs_session_by_name(session_name, cfs_version=cfs_version)
+            except Exception as ex2:
+                logger.error(f"Failed to delete CFS session {session_name}: {str(ex2)}")
 
 def cleanup_and_restore(orig_replicas_count: int, orig_page_size: int | None,
                         config_name: str| None, name_prefix: str,
-                        cfs_version: str,page_size: int) -> None:
+                        cfs_version: str, page_size: int) -> None:
     """
     Cleanup function to restore the cray-cfs-operator deployment and CFS page size
     """

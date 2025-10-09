@@ -27,7 +27,6 @@ CFS race condition multi delete multi get test related functions
 """
 
 from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs
-from cmstools.test.cfs_sessions_rc_test.log import logger
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session_deleter import CfsSessionDeleter
 from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session_creator import CfsSessionCreator
 
@@ -51,4 +50,3 @@ def cfs_sessions_multi_delete_multi_get_test(script_args: ScriptArgs) -> None:
         cfs_session_name_list=cfs_sessions_list
     )
     cfs_session_deleter.multi_delete_multi_get_sessions()
-    logger.info("All CFS sessions successfully deleted")

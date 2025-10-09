@@ -96,20 +96,13 @@ echo /opt/cray/tests/integration/csm/run_cmstools_test.sh | tee -a INSTALLED_FIL
 %if %{num_py_versions} == 1
 pushd %{buildroot}/opt/cray/tests/integration/csm
 ln -s ../../../../..%{install_venv_python_base_dir}/*/%{cmstools_venv_name}/bin/barebones_image_test barebones_image_test
-popd
-%else
-install -m 755 barebones_image_test.sh %{buildroot}/opt/cray/tests/integration/csm/barebones_image_test
-%endif
-echo /opt/cray/tests/integration/csm/barebones_image_test | tee -a INSTALLED_FILES
-
-# cfs_sessions_rc_test
-%if %{num_py_versions} == 1
-pushd %{buildroot}/opt/cray/tests/integration/csm
 ln -s ../../../../..%{install_venv_python_base_dir}/*/%{cmstools_venv_name}/bin/cfs_sessions_rc_test cfs_sessions_rc_test
 popd
 %else
+install -m 755 barebones_image_test.sh %{buildroot}/opt/cray/tests/integration/csm/barebones_image_test
 install -m 755 cfs_sessions_rc_test.sh  %{buildroot}/opt/cray/tests/integration/csm/cfs_sessions_rc_test
 %endif
+echo /opt/cray/tests/integration/csm/barebones_image_test | tee -a INSTALLED_FILES
 echo /opt/cray/tests/integration/csm/cfs_sessions_rc_test | tee -a INSTALLED_FILES
 
 cat INSTALLED_FILES | xargs -i sh -c 'test -L $RPM_BUILD_ROOT{} -o -f $RPM_BUILD_ROOT{} && echo {} || echo %dir {}' | sort -u > FILES

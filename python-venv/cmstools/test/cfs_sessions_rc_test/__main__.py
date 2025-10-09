@@ -25,6 +25,7 @@
 import argparse
 import sys
 import re
+from typing import NoReturn
 
 from cmstools.test.cfs_sessions_rc_test.cfs.cleanup import cleanup_and_restore
 from cmstools.test.cfs_sessions_rc_test.cfs.setup import get_cfs_config_name
@@ -49,7 +50,7 @@ subtest_functions_dict = {
 def get_test_names(script_args: ScriptArgs) -> list[str] | None:
     """
     Get the list of subtests to run or skip based on command line arguments.
-    If neither is specified, return None to indicate all tests should be run.
+    If neither is specified, return all tests to run.
     """
     all_tests = list(subtest_functions_dict.keys())
     if script_args.run_subtests:
@@ -152,7 +153,11 @@ def parse_command_line() -> ScriptArgs:
     If using CFS v2, the minimum value is <max-sessions>. Otherwise, minimum value of 1
     If running CFS v2, set the V3 global CFS page-size option to <page-size>
     (if it does not already have that value), but the original value should be restored when the test exits
-
+    --max-multi-get-reqs	Maximum number of parallel multi-get requests (maybe start with a default of 4)
+    --run-subtests	A comma-separated list of subtests. Only these subtests will be run. Mutually exclusive with
+    --skip-subtests. If neither is specified, all subtests are run.
+    --skip-subtests	A comma-separated list of subtests. All subtests will be run EXCEPT for these. Mutually exclusive
+     with --run-subtests. If neither is specified, all subtests are run.
     """
     parser = argparse.ArgumentParser(
          description="CFS Sessions Race Condition Test Script",)
