@@ -60,7 +60,7 @@ def get_test_names(script_args: ScriptArgs) -> list[str] | None:
 
     return all_tests  # Run all tests
 
-def run(script_args: ScriptArgs):
+def run(script_args: ScriptArgs) -> None:
     """
     CFS sessions race condition test main processing
     """
@@ -225,7 +225,7 @@ def parse_command_line() -> ScriptArgs:
     )
 
 
-def main():
+def main() -> NoReturn:
    logger.info("CFS Sessions Race Condition Test Starting")
    logger.info(f"For complete logs look in the file {LOG_FILE_PATH}")
 
