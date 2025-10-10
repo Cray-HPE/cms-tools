@@ -24,27 +24,30 @@
 
 import argparse
 import sys
-import re
-from typing import NoReturn
+from typing import NoReturn, Callable, Dict
 
 from cmstools.test.cfs_sessions_rc_test.cfs.cleanup import cleanup_and_restore
 from cmstools.test.cfs_sessions_rc_test.cfs.setup import get_cfs_config_name
 from cmstools.test.cfs_sessions_rc_test.cfs.setup import cfs_sessions_rc_test_setup
-from cmstools.test.cfs_sessions_rc_test.cfs.cfs_sessions_multi_delete_test import cfs_sessions_multi_delete_test
-from cmstools.test.cfs_sessions_rc_test.cfs.cfs_sessions_multi_delete_multi_get_test import cfs_sessions_multi_delete_multi_get_test
+from cmstools.test.cfs_sessions_rc_test.cfs import cfs_sessions_multi_delete_test
+from cmstools.test.cfs_sessions_rc_test.cfs import cfs_sessions_multi_delete_multi_get_test
 from cmstools.lib.defs import CmstoolsException as CFSRCException
 from cmstools.lib.log import LOG_FILE_PATH
 
 from .log import logger
 from .defs import ScriptArgs
+from .argument_parser import (_add_mutually_exclusive_arguments, _add_setup_arguments,
+                              _add_subtests_arguments, _add_cfs_session_arguments)
 
 # Subtests
+SubtestFunction = Callable[[ScriptArgs], None]
+
 CFS_SESSIONS_RC_MULTI_DELETE = "multi_delete"
 CFS_SESSIONS_RC_MULTI_DELETE_MULTI_GET = "multi_delete_multi_get"
 
-subtest_functions_dict = {
-    CFS_SESSIONS_RC_MULTI_DELETE: cfs_sessions_multi_delete_test,
-    CFS_SESSIONS_RC_MULTI_DELETE_MULTI_GET: cfs_sessions_multi_delete_multi_get_test
+subtest_functions_dict: Dict[str, SubtestFunction] = {
+    CFS_SESSIONS_RC_MULTI_DELETE: cfs_sessions_multi_delete_test.execute,
+    CFS_SESSIONS_RC_MULTI_DELETE_MULTI_GET: cfs_sessions_multi_delete_multi_get_test.execute
 }
 
 def get_test_names(script_args: ScriptArgs) -> list[str] | None:
@@ -61,6 +64,20 @@ def get_test_names(script_args: ScriptArgs) -> list[str] | None:
 
     return all_tests  # Run all tests
 
+
+def _execute_subtests(test_names: list[str], script_args: ScriptArgs) -> None:
+    """Execute the specified subtests."""
+    for test_name in test_names:
+        logger.info(f"Starting subtest {test_name}")
+        subtest_function = subtest_functions_dict.get(test_name)
+
+        if not subtest_function:
+            logger.error(f"Subtest function for {test_name} not found")
+            raise CFSRCException()
+
+        subtest_function(script_args)
+        logger.info(f"Completed subtest {test_name}")
+
 def run(script_args: ScriptArgs) -> None:
     """
     CFS sessions race condition test main processing
@@ -71,25 +88,18 @@ def run(script_args: ScriptArgs) -> None:
     try:
         # Run the tests
         test_names = get_test_names(script_args)
-        if test_names:
-            # Setting up the test environment
-            test_setup_response = cfs_sessions_rc_test_setup(script_args)
-            script_args = script_args._replace(page_size=test_setup_response.new_page_size)
-            logger.info(f"Using page size of {script_args.page_size} for CFS API calls")
-            orig_page_size = test_setup_response.original_page_size
-            orig_replica_count = test_setup_response.original_replicas_count
+        if not test_names:
+            logger.warning("No subtests to run after applying run/skip filters")
+            return
 
-            for test in test_names:
-                logger.info(f"Starting subtest {test}")
-                subtest_function = subtest_functions_dict.get(test)
-                if subtest_function:
-                    subtest_function(script_args)
-                else:
-                    logger.error(f"Subtest function for {test} not found")
-                    raise CFSRCException()
-                logger.info(f"Completed subtest {test}")
-        else:
-            logger.warning("No subtests to run")
+        # Setting up the test environment
+        test_setup_response = cfs_sessions_rc_test_setup(script_args)
+        script_args = script_args._replace(page_size=test_setup_response.new_page_size)
+        logger.info(f"Using page size of {script_args.page_size} for CFS API calls")
+        orig_page_size = test_setup_response.original_page_size
+        orig_replica_count = test_setup_response.original_replicas_count
+
+        _execute_subtests(test_names=test_names, script_args=script_args)
 
     except CFSRCException as _:
         raise
@@ -98,122 +108,21 @@ def run(script_args: ScriptArgs) -> None:
     finally:
         cleanup_and_restore(orig_replicas_count=orig_replica_count,
                             orig_page_size=orig_page_size,
-                            config_name=get_cfs_config_name(),
-                            name_prefix=script_args.cfs_session_name,
-                            cfs_version=script_args.cfs_version,
-                            page_size=script_args.page_size)
+                            config_name=get_cfs_config_name())
 
-# Validations for command line arguments
-def check_min_page_size(value) -> int:
-    int_value = int(value)
-    if int_value < 1:
-        raise argparse.ArgumentTypeError("--page-size must be at least 1")
-    return int_value
 
-def validate_name(value) -> str:
-    pattern = r'^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$'
-    # Script appends a number to the name, so allow up to 40 characters here
-    if not (1 <= len(value) <= 40):
-        raise argparse.ArgumentTypeError("--name must be between 1 and 40 characters")
-    if not re.match(pattern, value):
-        raise argparse.ArgumentTypeError("--name must match pattern: " + pattern)
-    return value
-
-def check_minimum_max_sessions(value) -> int:
-    int_value = int(value)
-    if int_value < 1:
-        raise argparse.ArgumentTypeError("--max-sessions must be at least 1")
-    return int_value
-
-def check_minimum_max_parallel_reqs(value) -> int:
-    int_value = int(value)
-    if int_value < 1:
-        raise argparse.ArgumentTypeError("--max-multi-delete-reqs must be at least 1")
-    return int_value
-
-def check_subtest_names(value) -> list[str]:
-    names = [name.strip() for name in value.split(",")]
-    invalid_names = [name for name in names if name not in subtest_functions_dict.keys()]
-    if invalid_names:
-        raise argparse.ArgumentTypeError(f"Invalid subtest names: {', '.join(invalid_names)}, valid names are: {', '.join(subtest_functions_dict.keys())}")
-    return names
 
 def parse_command_line() -> ScriptArgs:
     """
     Parse the command line arguments
-    --name	All sessions used for this test will have names with this prefix.
-    It should default to one that is not likely to be used by a real customer. Something like cfs-race-condition-test-.
-    --max-sessions	Maximum number of CFS sessions to create (maybe start with a default of 20)
-    --max-multi-delete-reqs	Maximum number of parallel multi-delete requests (maybe start with a default of 4)
-    --delete-previous-sessions	If true, the test will automatically delete any sessions that exist at the
-    start of the test that are in pending state and contain the specified name string. If false, if such sessions exist,
-    the test will exit in error.
-    --cfs-version	Which version of the CFS API to use. Defaults to 3.
-    --page-size	The page size to use for multi-get requests (default to 10*<max-sessions>).
-    If using CFS v2, the minimum value is <max-sessions>. Otherwise, minimum value of 1
-    If running CFS v2, set the V3 global CFS page-size option to <page-size>
-    (if it does not already have that value), but the original value should be restored when the test exits
-    --max-multi-get-reqs	Maximum number of parallel multi-get requests (maybe start with a default of 4)
-    --run-subtests	A comma-separated list of subtests. Only these subtests will be run. Mutually exclusive with
-    --skip-subtests. If neither is specified, all subtests are run.
-    --skip-subtests	A comma-separated list of subtests. All subtests will be run EXCEPT for these. Mutually exclusive
-     with --run-subtests. If neither is specified, all subtests are run.
     """
     parser = argparse.ArgumentParser(
          description="CFS Sessions Race Condition Test Script",)
-    subtest_group = parser.add_mutually_exclusive_group()
-    subtest_group.add_argument(
-        "--run-subtests",
-        type=check_subtest_names,
-        help="Comma-separated list of subtests to run. Mutually exclusive with --skip-subtests. If neither is specified, all subtests are run."
-    )
-    subtest_group.add_argument(
-        "--skip-subtests",
-        type=check_subtest_names,
-        help="Comma-separated list of subtests to skip. Mutually exclusive with --run-subtests. If neither is specified, all subtests are run."
-    )
-    parser.add_argument(
-        "--name",
-        type=validate_name,
-        default="cfs-race-condition-test-",
-        help="Prefix for all session names (default: %(default)s)"
-    )
-    parser.add_argument(
-        "--max-sessions",
-        type=check_minimum_max_sessions,
-        default=20,
-        help="Maximum number of CFS sessions to create (default: %(default)s)"
-    )
-    parser.add_argument(
-        "--max-multi-get-reqs",
-        type=check_minimum_max_parallel_reqs,
-        default=4,
-        help="Maximum number of parallel multi-get requests (default: %(default)s)"
-    )
-    parser.add_argument(
-        "--max-multi-delete-reqs",
-        type=check_minimum_max_parallel_reqs,
-        default=4,
-        help="Maximum number of parallel multi-delete requests (default: %(default)s)"
-    )
-    parser.add_argument(
-        "--delete-previous-sessions",
-        action='store_true',
-        help="Delete any existing pending sessions with the specified name prefix"
-    )
-    parser.add_argument(
-        "--cfs-version",
-        type=str,
-        default="v3",
-        choices=["v2", "v3"],
-        help="CFS API version to use (default: %(default)s)"
-    )
-    parser.add_argument(
-        "--page-size",
-        type=check_min_page_size,
-        default=None,
-        help="Page size for multi-get requests (default: 10 * max-sessions for v3, min=max-sessions for v2, min=1 for v3)"
-    )
+
+    _add_mutually_exclusive_arguments(parser=parser)
+    _add_cfs_session_arguments(parser=parser)
+    _add_setup_arguments(parser=parser)
+    _add_subtests_arguments(parser=parser)
 
     args = parser.parse_args()
 

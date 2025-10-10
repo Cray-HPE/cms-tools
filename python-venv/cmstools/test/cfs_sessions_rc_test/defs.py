@@ -26,8 +26,15 @@
 CFS race condition test related definitions
 """
 
-from typing import NamedTuple
-from cmstools.lib.cfs.defs import CFS_VERSION_STR
+from typing import NamedTuple, Literal
+
+DEFAULT_SESSION_NAME_PREFIX = "cfs-race-condition-test-"
+DEFAULT_MAX_SESSIONS = 20
+DEFAULT_MAX_PARALLEL_REQUESTS = 4
+DEFAULT_CFS_VERSION = "v3"
+CFS_VERSIONS_STR = Literal["v2", "v3"]
+MAX_NAME_LENGTH = 40
+MIN_NAME_LENGTH = 1
 
 
 class ScriptArgs(NamedTuple):
@@ -39,7 +46,7 @@ class ScriptArgs(NamedTuple):
     max_multi_cfs_sessions_delete_requests: int # default to 4
     max_multi_cfs_sessions_get_requests: int # default to 4
     delete_preexisting_cfs_sessions: bool
-    cfs_version: CFS_VERSION_STR # default to v3
+    cfs_version: CFS_VERSIONS_STR # default to v3
     page_size: int
     run_subtests: list[str] | None = None
     skip_subtests: list[str] | None = None

@@ -25,7 +25,6 @@
 """
 CFS race condition setup related functions
 """
-from typing import List
 
 from cmstools.lib.defs import CmstoolsException as CFSRCException
 from cmstools.lib.k8s import get_deployment_replicas, set_deployment_replicas, check_replicas_and_pods_scaled

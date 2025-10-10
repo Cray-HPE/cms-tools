@@ -31,7 +31,7 @@ from kubernetes import client, config
 
 from cmstools.lib.defs import CmstoolsException, JsonDict
 from cmstools.lib.common_logger import logger
-from cmstools.lib.k8s.defs import (DEFAULT_DEPLOYMENT_NS, DEFAULT_SECRET_NS, DEFAULT_CONFIGMAP_NS)
+from cmstools.lib.k8s.defs import (DEFAULT_DEPLOYMENT_NS, DEFAULT_SEC_NS, DEFAULT_CONFIGMAP_NS)
 
 
 def get_k8s_configmap_data(cm_name: str, cm_namespace: str = DEFAULT_CONFIGMAP_NS) -> JsonDict:
@@ -47,16 +47,16 @@ def get_k8s_configmap_data(cm_name: str, cm_namespace: str = DEFAULT_CONFIGMAP_N
         raise CmstoolsException from exc
 
 
-def get_k8s_secret_data(secret_name: str, secret_namespace: str = DEFAULT_SECRET_NS) -> JsonDict:
+def get_k8s_secret_data(sec_name: str, sec_namespace: str = DEFAULT_SEC_NS) -> JsonDict:
     """
     Get the specified secret from Kubernetes and return its data field.
     Raise an exception if any problems are encountered.
     """
     try:
-        return k8s_client_api.read_namespaced_secret(secret_name, secret_namespace).data
+        return k8s_client_api.read_namespaced_secret(sec_name, sec_namespace).data
     except Exception as exc:
         logger.exception("Error retrieving Kubernetes secret '%s' from namespace '%s'",
-                         secret_name, secret_namespace)
+                         sec_name, sec_namespace)
         raise CmstoolsException from exc
 
 def get_deployment_replicas(deployment_name: str, namespace: str = DEFAULT_DEPLOYMENT_NS) -> int:

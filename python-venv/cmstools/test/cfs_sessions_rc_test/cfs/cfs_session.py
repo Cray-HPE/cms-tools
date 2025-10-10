@@ -32,7 +32,6 @@ from cmstools.lib.api import request
 from cmstools.lib.cfs.defs import CFS_SESSIONS_URL_TEMPLATE
 from cmstools.lib.defs import CmstoolsException as CFSRCException
 from cmstools.lib.api.api import API_REQUEST_TIMEOUT, add_api_auth
-
 from cmstools.test.cfs_sessions_rc_test.log import logger
 
 def get_next_id(data: dict) -> str|None:
@@ -93,7 +92,7 @@ def get_all_cfs_sessions_v2 (cfs_session_name_contains: str, cfs_version: str, r
         # Using requests directly to disable retries
         headers = {}
         add_api_auth(headers)
-        resp = requests.delete(url=url, params=params, timeout=API_REQUEST_TIMEOUT, headers=headers, verify=False)
+        resp = requests.get(url=url, params=params, timeout=API_REQUEST_TIMEOUT, headers=headers, verify=False)
     else:
         resp = request("get", url=url, params=params)
 
@@ -124,7 +123,7 @@ def get_all_cfs_sessions_v3(cfs_session_name_contains: str, cfs_version: str, li
             logger.info("No retry for requests")
             headers = {}
             add_api_auth(headers)
-            resp = requests.delete(url=url, params=params, timeout=API_REQUEST_TIMEOUT, headers=headers, verify=False)
+            resp = requests.get(url=url, params=params, timeout=API_REQUEST_TIMEOUT, headers=headers, verify=False)
         else:
             resp = request("get", url=url, params=params)
         if resp.status_code != 200:
