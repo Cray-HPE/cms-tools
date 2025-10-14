@@ -28,7 +28,8 @@ Class for creating and managing concurrent API requests using threading.
 
 import threading
 import random
-from typing import Callable, List, TypeVar
+from collections.abc import Callable
+from typing import List, TypeVar
 from dataclasses import dataclass
 
 from cmstools.test.cfs_sessions_rc_test.log import logger
