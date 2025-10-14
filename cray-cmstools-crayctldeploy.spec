@@ -87,9 +87,6 @@ find %{local_venv_python_base_dir} -print | sed 's#^%{local_venv_python_base_dir
 install -m 755 -d %{buildroot}/opt/cray/tests/integration/csm/
 echo /opt/cray/tests/integration/csm | tee -a INSTALLED_FILES
 
-install -m 755 run_cmstools_test.sh %{buildroot}/opt/cray/tests/integration/csm/run_cmstools_test.sh
-echo /opt/cray/tests/integration/csm/run_cmstools_test.sh | tee -a INSTALLED_FILES
-
 # If the RPM contains just a single Python version, then we can use a simple symlink.
 # Otherwise we should use the run_cmstools_test.sh script
 # to run the barebones_image_test and cfs_sessions_rc_test
@@ -99,9 +96,12 @@ ln -s ../../../../..%{install_venv_python_base_dir}/*/%{cmstools_venv_name}/bin/
 ln -s ../../../../..%{install_venv_python_base_dir}/*/%{cmstools_venv_name}/bin/cfs_sessions_rc_test cfs_sessions_rc_test
 popd
 %else
+install -m 755 run_cmstools_test.sh %{buildroot}/opt/cray/tests/integration/csm/run_cmstools_test.sh
+echo /opt/cray/tests/integration/csm/run_cmstools_test.sh | tee -a INSTALLED_FILES
 install -m 755 barebones_image_test.sh %{buildroot}/opt/cray/tests/integration/csm/barebones_image_test
 install -m 755 cfs_sessions_rc_test.sh  %{buildroot}/opt/cray/tests/integration/csm/cfs_sessions_rc_test
 %endif
+
 echo /opt/cray/tests/integration/csm/barebones_image_test | tee -a INSTALLED_FILES
 echo /opt/cray/tests/integration/csm/cfs_sessions_rc_test | tee -a INSTALLED_FILES
 

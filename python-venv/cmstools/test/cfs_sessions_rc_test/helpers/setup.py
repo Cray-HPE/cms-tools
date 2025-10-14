@@ -26,13 +26,12 @@
 CFS race condition setup related functions
 """
 
-from cmstools.lib.defs import CmstoolsException as CFSRCException
 from cmstools.lib.k8s import get_deployment_replicas, set_deployment_replicas, check_replicas_and_pods_scaled
 from cmstools.lib.cfs.defs import CFS_OPERATOR_DEPLOYMENT
-from cmstools.test.cfs_sessions_rc_test.cfs.cfs_options import get_cfs_page_size, set_cfs_page_size
+from cmstools.test.cfs_sessions_rc_test.cfs.options import get_cfs_page_size, set_cfs_page_size
 from cmstools.test.cfs_sessions_rc_test.log import logger
-from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs
-from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session import cfs_session_exists, delete_cfs_sessions
+from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs, CFSRCException
+from cmstools.test.cfs_sessions_rc_test.cfs.session import cfs_session_exists, delete_cfs_sessions
 from cmstools.test.cfs_sessions_rc_test.defs import TestSetupResponse
 
 cfs_config_name = None
@@ -42,7 +41,7 @@ def set_cfs_config_name(config_name: str) -> None:
     """
     global cfs_config_name
     cfs_config_name = config_name
-    logger.info(f"Using CFS configuration {config_name}")
+    logger.info("Using CFS configuration %s", config_name)
 
 def get_cfs_config_name() -> str | None:
     """
@@ -68,15 +67,15 @@ def set_page_size_if_needed(page_size: int|None, max_sessions: int, cfs_version:
             current_page_size = get_cfs_page_size()
             if current_page_size < page_size:
                 set_cfs_page_size(page_size)
-                logger.info(f"Using CFS v2 API with page size {page_size}")
+                logger.info("Using CFS v2 API with page size %d", page_size)
     else:
         if cfs_version == "v2":
             if page_size < max_sessions:
-                logger.info(f"For CFS v2, setting --page-size to {max_sessions} to match --max-sessions")
+                logger.info("For CFS v2, setting --page-size to %d to match --max-sessions", max_sessions)
                 page_size = max_sessions
             current_page_size = get_cfs_page_size()
             set_cfs_page_size(page_size)
-            logger.info(f"Using CFS v2 API with page size {page_size}")
+            logger.info("Using CFS v2 API with page size %d", page_size)
     return page_size, current_page_size
 
 
@@ -102,13 +101,14 @@ def cfs_sessions_rc_test_setup(script_args: ScriptArgs ) -> TestSetupResponse:
     )
 
     # First check for deleting pre-existing sessions if requested
-    logger.info(f"Checking for pre-existing CFS sessions with name prefix {script_args.cfs_session_name}")
+    logger.info("Checking for pre-existing CFS sessions with name prefix %s", script_args.cfs_session_name)
 
     if not script_args.delete_preexisting_cfs_sessions:
         # check for existing sessions and fail if any found
         if cfs_session_exists(script_args.cfs_session_name, script_args.cfs_version, script_args.page_size):
             logger.error(
-                "Pre-existing CFS sessions found with specified name prefix. Use --delete-previous-sessions to delete them before proceeding.")
+                "Pre-existing CFS sessions found with specified name prefix. Use --delete-previous-sessions "
+                "to delete them before proceeding.")
             raise CFSRCException()
 
     # If requested, delete any pre-existing sessions
@@ -116,7 +116,7 @@ def cfs_sessions_rc_test_setup(script_args: ScriptArgs ) -> TestSetupResponse:
 
     # Get the current number of replicas for the cray-cfs-operator deployment
     current_replicas = get_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT)
-    logger.info(f"Current number of replicas for cray-cfs-operator deployment: {current_replicas}")
+    logger.info("Current number of replicas for cray-cfs-operator deployment: %d", current_replicas)
 
     # Scale the cray-cfs-operator deployment to 0 replicas to stop it from processing cfs sessions
     logger.info("Scaling cray-cfs-operator deployment to 0 replicas to stop it from processing CFS sessions")

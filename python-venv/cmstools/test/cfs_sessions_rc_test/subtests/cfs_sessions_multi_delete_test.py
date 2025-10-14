@@ -26,22 +26,18 @@
 CFS race condition multi delete test related functions
 """
 
-import urllib3
 import requests
 import threading
-from typing import List, Any
+from typing import Any
 
-from cmstools.lib.defs import CmstoolsException as CFSRCException
-from cmstools.lib.api.api import API_REQUEST_TIMEOUT, add_api_auth
+from cmstools.lib.api.api import API_REQUEST_TIMEOUT, add_api_auth, SYSTEM_CA_CERTS
 from cmstools.lib.cfs.defs import CFS_SESSIONS_URL_TEMPLATE
-from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs
+from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs, CFSRCException
 from cmstools.test.cfs_sessions_rc_test.log import logger
 
-from .cfs_session_gd_base import CFSSessionGDBase
-from .response_handler import ResponseHandler
-from .concurrent_requests import ConcurrentRequestManager, RequestBatch
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+from cmstools.test.cfs_sessions_rc_test.subtests.cfs_session_gd_base import CFSSessionGDBase
+from cmstools.test.cfs_sessions_rc_test.helpers.response_handler import ResponseHandler
+from cmstools.test.cfs_sessions_rc_test.helpers.concurrent_requests import ConcurrentRequestManager, RequestBatch
 
 
 
@@ -53,8 +49,12 @@ class CfsSessionMultiDeleteTest(CFSSessionGDBase):
         super().__init__(script_args=script_args)
         self.request_manager = ConcurrentRequestManager()
         self.response_handler = ResponseHandler(script_args=script_args, session_names=self._session_names)
-        self._tlist: List[threading.Thread] = []
-        self.delete_result_list: List[Any] = []
+        self._tlist: list[threading.Thread] = []
+        self.delete_result_list: list[Any] = []
+
+    @staticmethod
+    def get_subtest_name() -> str:
+        return "multi_delete"
 
     @property
     def expected_http_status(self) -> int:
@@ -64,7 +64,7 @@ class CfsSessionMultiDeleteTest(CFSSessionGDBase):
 
     def _execute_test_logic(self) -> None:
         """Execute parallel delete requests."""
-        logger.info(f"Starting multi-delete test with {len(self._session_names)} sessions")
+        logger.info("Starting multi-delete test with %d sessions", len(self._session_names))
 
         # Create a batch request for executing parallel delete requests
         batch = RequestBatch(
@@ -89,39 +89,47 @@ class CfsSessionMultiDeleteTest(CFSSessionGDBase):
         try:
             headers = {}
             add_api_auth(headers)
-            resp = requests.delete(url=url, params=params, timeout=API_REQUEST_TIMEOUT, headers=headers, verify=False)
+            resp = requests.delete(url=url, params=params, timeout=API_REQUEST_TIMEOUT, headers=headers, verify=SYSTEM_CA_CERTS)
 
             if resp.status_code == self.expected_http_status and self.script_args.cfs_version == "v3":
                 deleted = resp.json() if resp.content else []
-                logger.info(f"Deleted sessions: {deleted}")
+                logger.info("Deleted sessions: %s", deleted)
                 with self.lock:
                     self.delete_result_list.append(deleted)
                 return
 
             if resp.status_code == 400:
-                logger.info(f"Bad request response from Delete to {url}: {resp.text}")
+                logger.info("Bad request response from Delete to %s: %s", url, resp.text)
                 return
 
             if resp.status_code not in (self.expected_http_status, 400):
-                logger.error(f"Unexpected return code {resp.status_code} from Delete to {url}: {resp.text}")
+                logger.error("Unexpected return code %d from Delete to %s: %s", resp.status_code, url, resp.text)
                 raise CFSRCException()
 
         except Exception as exc:
-            logger.exception(f"Exception during CFS session delete: {str(exc)}")
+            logger.exception("Exception during CFS session delete: %s", str(exc))
             raise
 
     def _validate_results(self) -> None:
-        """Validate test results."""
+        """
+        Verify that all multi-delete requests returned successful status and did not time out
+        List all sessions in pending state that have the text prefix string in their names,
+        and verify that none exist (if this check fails, delete the sessions one by one, for test cleanup)
+        (v3 only) For the session name lists that were returned for each multi-delete request:
+        Validate that every test session appears in exactly 1 of the lists
+        Validate that no other session names are included in the lists
+        """
         self.response_handler.verify_sessions_after_multi_delete(self.delete_result_list)
 
-def execute(script_args: ScriptArgs) -> None:
-    """
-    Create <max-multi-delete-reqs> parallel multi-delete requests, each of which is deleting all pending
-    sessions that have the text prefix string in their names.
-    (v3 only) If successful, each delete request will return a list of the session names that it deleted.
-    These lists need to be saved. (This is only true for v3 – for v2 a successful response returns nothing)
-    Wait for all parallel jobs to complete.
-    """
-    test = CfsSessionMultiDeleteTest(script_args=script_args)
-    test.execute()
+    @staticmethod
+    def execute(script_args: ScriptArgs) -> None:
+        """
+        Create <max-multi-delete-reqs> parallel multi-delete requests, each of which is deleting all pending
+        sessions that have the text prefix string in their names.
+        (v3 only) If successful, each delete request will return a list of the session names that it deleted.
+        These lists need to be saved. (This is only true for v3 – for v2 a successful response returns nothing)
+        Wait for all parallel jobs to complete.
+        """
+        test = CfsSessionMultiDeleteTest(script_args=script_args)
+        test.run()
 

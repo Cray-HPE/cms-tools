@@ -61,10 +61,10 @@ def check_minimum_max_parallel_reqs(value) -> int:
 
 def check_subtest_names(value) -> list[str]:
     # Avoiding circular import
-    from .__main__ import subtest_functions_dict
+    from .__main__ import get_subtest_functions
 
     names = [name.strip() for name in value.split(",")]
-    invalid_names = [name for name in names if name not in subtest_functions_dict.keys()]
+    invalid_names = [name for name in names if name not in list(get_subtest_functions().keys())]
     if invalid_names:
-        raise argparse.ArgumentTypeError(f"Invalid subtest names: {', '.join(invalid_names)}, valid names are: {', '.join(subtest_functions_dict.keys())}")
+        raise argparse.ArgumentTypeError(f"Invalid subtest names: {', '.join(invalid_names)}, valid names are: {', '.join(list(get_subtest_functions().keys()))}")
     return names

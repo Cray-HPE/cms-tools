@@ -23,27 +23,46 @@
 #
 
 """
-
+CFS sessions race condition base class and related functions
 """
 
 import threading
 from abc import ABC, abstractmethod
-from typing import List
 
-from cmstools.lib.defs import CmstoolsException as CFSRCException
-from cmstools.test.cfs_sessions_rc_test.cfs.cleanup import cleanup_cfs_sessions
-from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session import cfs_session_exists
-from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session_creator import CfsSessionCreator
+from cmstools.test.cfs_sessions_rc_test.defs import CFSRCException
+from cmstools.test.cfs_sessions_rc_test.helpers.cleanup import cleanup_cfs_sessions
+from cmstools.test.cfs_sessions_rc_test.cfs.session import cfs_session_exists
+from cmstools.test.cfs_sessions_rc_test.cfs.session_creator import CfsSessionCreator
 from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs
 from cmstools.test.cfs_sessions_rc_test.log import logger
+
 
 class CFSSessionGDBase(ABC):
     """Abstract base class for CFS session race condition tests."""
 
+    _registry: dict[str, type] = {}
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        # Only register concrete subclasses
+        if not getattr(cls, '__abstractmethods__', None):
+            cls._registry[cls.get_subtest_name()] = cls
+
+    @classmethod
+    def get_all_subtests(cls) -> dict[str, type]:
+        """Return all registered subtest classes."""
+        return cls._registry.copy()
+
     def __init__(self, script_args: ScriptArgs):
         self.script_args = script_args
-        self._session_names: List[str] = self._setup()
+        self._session_names: list[str] = self._setup()
         self.lock = threading.Lock()
+
+    @staticmethod
+    @abstractmethod
+    def get_subtest_name() -> str:
+        """Return the unique name identifier for this subtest."""
+        pass
 
     @abstractmethod
     def _execute_test_logic(self) -> None:
@@ -55,20 +74,25 @@ class CFSSessionGDBase(ABC):
         """Validate test results. Must be implemented by subclasses."""
         pass
 
-    def execute(self) -> None:
-        """Template method for test execution."""
+    def run(self) -> None:
+        """Run the test with setup, execution, validation, and cleanup."""
         try:
             self._execute_test_logic()
             self._validate_results()
         except CFSRCException:
             raise
         except Exception as err:
-            logger.exception(f"Test execution failed: {err}")
+            logger.exception("Test execution failed: %s", err)
             raise CFSRCException() from err
         finally:
             self._cleanup()
 
-    def _setup(self) -> List[str]:
+    @staticmethod
+    def execute(script_args: ScriptArgs) -> None:
+        """Template method for test execution."""
+        pass
+
+    def _setup(self) -> list[str]:
         """Creating CFS sessions needed for tests."""
         return self._create_sessions()
 
@@ -77,7 +101,7 @@ class CFSSessionGDBase(ABC):
         if self._session_names:
             self._delete_sessions()
 
-    def _create_sessions(self) -> List[str]:
+    def _create_sessions(self) -> list[str]:
         """Create CFS sessions for testing."""
         cfs_session_creator = CfsSessionCreator(script_args=self.script_args)
         return cfs_session_creator.create_sessions()
@@ -88,7 +112,7 @@ class CFSSessionGDBase(ABC):
                 cfs_session_name_contains=self.script_args.cfs_session_name,
                 cfs_version=self.script_args.cfs_version,
                 limit=self.script_args.page_size):
-            logger.info(f"Cleaning up any remaining CFS sessions with name prefix {self.script_args.cfs_session_name}")
+            logger.info(f"Cleaning up any remaining CFS sessions with name prefix %s", self.script_args.cfs_session_name)
             cleanup_cfs_sessions(name_prefix=self.script_args.cfs_session_name,
                                  cfs_version=self.script_args.cfs_version,
                                  page_size=self.script_args.page_size)

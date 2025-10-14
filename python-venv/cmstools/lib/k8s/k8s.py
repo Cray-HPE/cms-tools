@@ -109,13 +109,14 @@ def check_replicas_and_pods_scaled(deployment_name: str, expected_replicas: int)
         actual_replicas = get_deployment_replicas(deployment_name=deployment_name)
 
         if actual_replicas == expected_replicas and get_pod_count_for_deployment(deployment_name=deployment_name) == 0:
-            logger.info(f"Deployment {deployment_name} scaled to {expected_replicas} replicas and all pods terminated")
+            logger.info("Deployment %s scaled to %d replicas and all pods terminated", deployment_name, expected_replicas)
             return
         if time.time() - start_time > 300:
-            logger.error(f"Timeout: Deployment {deployment_name} did not scale to {expected_replicas} replicas and terminate pods within 5 minutes")
+            logger.error("Timeout: Deployment %s did not scale to %d replicas and terminate pods within 5 minutes",
+                         deployment_name, expected_replicas)
             raise CmstoolsException()
 
-        logger.info(f"Waiting for deployment {deployment_name} to scale down and pods to terminate.")
+        logger.info("Waiting for deployment %s to scale down and pods to terminate.", deployment_name)
         time.sleep(5)
 
 # initialize k8s

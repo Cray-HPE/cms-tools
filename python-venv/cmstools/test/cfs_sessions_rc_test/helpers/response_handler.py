@@ -26,23 +26,22 @@
 Class to validate the response from CFS API calls.
 """
 
-from typing import Any, List
+from typing import Any
 
-from cmstools.lib.defs import CmstoolsException as CFSRCException
-from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs
-from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session import get_cfs_sessions_list
+from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs, CFSRCException
+from cmstools.test.cfs_sessions_rc_test.cfs.session import get_cfs_sessions_list
 from cmstools.test.cfs_sessions_rc_test.log import logger
 
 
 class ResponseHandler:
     """Class to handle and validate API responses."""
 
-    def __init__(self, script_args: ScriptArgs, session_names: List[str]) -> None:
+    def __init__(self, script_args: ScriptArgs, session_names: list[str]) -> None:
         self.script_args = script_args
         self.session_names = session_names
         self.deleted_sessions_lists = []
 
-    def validate_multi_get_sessions_response(self, multi_get_results: List[Any]) -> None:
+    def validate_multi_get_sessions_response(self, multi_get_results: list[Any]) -> None:
         """
         Validate that every entry in each list returned by the multi-get requests is a dict
         and corresponds to one of the sessions we created.
@@ -50,18 +49,18 @@ class ResponseHandler:
         for idx, session_list in enumerate(multi_get_results):
             for session in session_list:
                 if not isinstance(session, dict):
-                    logger.error(f"Entry in multi-get result at index {idx} is not a dict: {session}")
+                    logger.error("Entry in multi-get result at index %d is not a dict: %s", idx, session)
                     raise CFSRCException()
                 if session.get("name") not in self.session_names:
-                    logger.error(f"Session name {session.get('name')} not in created session names")
+                    logger.error("Session name %s not in created session names", session.get('name'))
                     raise CFSRCException()
         logger.info("All multi-get session entries are valid and correspond to created sessions")
 
-    def verify_sessions_after_multi_delete(self, deleted_sessions_list: List[Any]) -> None:
+    def verify_sessions_after_multi_delete(self, deleted_sessions_list: list[Any]) -> None:
         """
         Verify that all CFS sessions with the specified name prefix are deleted after multi-delete.
         """
-        logger.info(f"Verifying all CFS sessions with name prefix {self.script_args.cfs_session_name} are deleted")
+        logger.info("Verifying all CFS sessions with name prefix %s are deleted", self.script_args.cfs_session_name)
         self.verify_all_sessions_deleted()
 
         if self.script_args.cfs_version == "v3":
@@ -80,26 +79,27 @@ class ResponseHandler:
 
         if sessions:
             cfs_session_list = [s["name"] for s in sessions]
-            logger.error(f"CFS sessions still exist with name prefix {self.script_args.cfs_session_name}: {cfs_session_list}")
+            logger.error("CFS sessions still exist with name prefix %s: %s", self.script_args.cfs_session_name,
+                         cfs_session_list)
 
-    def verify_v3_api_deleted_cfs_sessions_response(self, deleted_sessions_list: List[Any]) -> None:
+    def verify_v3_api_deleted_cfs_sessions_response(self, deleted_sessions_list: list[Any]) -> None:
         """
         Verify that all sessions were deleted with no duplicates based on the lists of deleted session names
         """
-        logger.debug(f"Deleted sessions lists from threads: {deleted_sessions_list}")
+        logger.debug("Deleted sessions lists from threads: %s", deleted_sessions_list)
         # Flatten the list of lists into a single list of session names
         all_deleted_sessions = [session_name for sublist in deleted_sessions_list for session_name in
                                 sublist.get('session_ids', [])]
-        logger.info(f"All deleted sessions combined: {all_deleted_sessions}")
+        logger.info("All deleted sessions combined: %s", all_deleted_sessions)
         unique_deleted_sessions = set(all_deleted_sessions)
 
         if len(all_deleted_sessions) != len(unique_deleted_sessions):
-            logger.error(f"Duplicate session names found in deleted sessions: {all_deleted_sessions}")
+            logger.error("Duplicate session names found in deleted sessions: %s", all_deleted_sessions)
             raise CFSRCException()
 
         if len(unique_deleted_sessions) != self.script_args.max_cfs_sessions:
-            logger.error(
-                f"Number of unique deleted sessions {len(unique_deleted_sessions)} does not match expected {self.script_args.max_cfs_sessions}")
+            logger.error("Number of unique deleted sessions %d does not match expected %d", len(unique_deleted_sessions),
+                self.script_args.max_cfs_sessions)
             raise CFSRCException()
 
-        logger.info(f"All {self.script_args.max_cfs_sessions} sessions successfully deleted with no duplicates")
+        logger.info("All %d sessions successfully deleted with no duplicates", self.script_args.max_cfs_sessions)

@@ -26,15 +26,13 @@
 cfs session creator class for session creation and verification
 """
 
-from cmstools.lib.api import request, request_and_check_status
-from cmstools.lib.cfs.defs import CFS_CONFIGS_URL, CFS_SESSIONS_URL_TEMPLATE
-from cmstools.lib.defs import CmstoolsException as CFSRCException
-from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session import get_cfs_sessions_list
+from cmstools.lib.api import request_and_check_status
+from cmstools.lib.cfs.defs import CFS_SESSIONS_URL_TEMPLATE
+from cmstools.test.cfs_sessions_rc_test.cfs.session import get_cfs_sessions_list
 from cmstools.test.cfs_sessions_rc_test.log import logger
-from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs
-from cmstools.test.cfs_sessions_rc_test.cfs.setup import set_cfs_config_name
+from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs, CFSRCException
+from cmstools.test.cfs_sessions_rc_test.cfs.configurations import find_or_create_cfs_config
 
-DEFAULT_PLAYBOOK = "compute_nodes.yml"
 
 class CfsSessionCreator:
     def __init__(self, script_args: ScriptArgs):
@@ -42,43 +40,6 @@ class CfsSessionCreator:
         self.max_sessions = script_args.max_cfs_sessions
         self.cfs_version = script_args.cfs_version
         self.page_size = script_args.page_size
-
-    def _find_or_create_cfs_config(self) -> str:
-        url = CFS_CONFIGS_URL
-        resp = request("get", url)
-
-        if resp.status_code != 200:
-            logger.error(f"Failed to list CFS configs: {resp.text}")
-            raise CFSRCException()
-
-        configs = resp.json()
-        configurations_data = configs["configurations"]
-
-        if configs:
-            config_name = configurations_data[0]["name"]
-            logger.info(f"Using existing CFS config: {config_name}")
-            return config_name
-
-        # Create a new config
-        config_name = f"{self.name_prefix}config"
-        url = f"{CFS_CONFIGS_URL}/{config_name}"
-        # Using dummy values for clone_url and commit
-        cfs_config_json = {
-            "layers": [
-                {
-                    "clone_url": "https://dummy-server-nmn.local/vcs/cray/example-repo.git",
-                    "commit": "43ecfa8236bed625b54325ebb70916f599999999",
-                    "playbook": DEFAULT_PLAYBOOK,
-                    "name": "compute"
-                }
-            ]
-        }
-        resp_data = request_and_check_status("put", url, expected_status=200,
-                                             parse_json=True, json=cfs_config_json)
-        logger.debug(f"Created {config_name}: {resp_data}")
-        # Set the created config name globally for cleanup
-        set_cfs_config_name(config_name)
-        return config_name
 
     @property
     def expected_http_status(self) -> int:
@@ -112,7 +73,7 @@ class CfsSessionCreator:
         List all sessions in pending state that have the text prefix string in their names. Verify that the names of
         these sessions match the ones we just created.
         """
-        config_name = self._find_or_create_cfs_config()
+        config_name = find_or_create_cfs_config(self.name_prefix)
         cfs_session_names_list = []
         url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=self.cfs_version)
         for i in range(self.max_sessions):
@@ -122,15 +83,16 @@ class CfsSessionCreator:
                                                  json=session_payload,
                                                  expected_status=self.expected_http_status, parse_json=True)
             cfs_session_names_list.append(session_name)
-            logger.info(f"Created CFS session: {session_name}")
+            logger.info("Created CFS session: %s", session_name)
 
         # Verify all sessions are in pending state and names match
         sessions = get_cfs_sessions_list(cfs_session_name_contains=self.name_prefix, cfs_version=self.cfs_version, limit=self.page_size)
         pending_cfs_session_names = sorted([s["name"] for s in sessions if s["name"] in cfs_session_names_list])
 
         if sorted(cfs_session_names_list) != sorted(pending_cfs_session_names):
-            logger.error(f"Mismatch in created and pending session names. Created: {cfs_session_names_list}, Pending: {pending_cfs_session_names}")
+            logger.error("Mismatch in created and pending session names. Created: %s, Pending: %s",
+                         cfs_session_names_list, pending_cfs_session_names)
             raise CFSRCException()
 
-        logger.info(f"All {self.max_sessions} CFS sessions created and in pending state")
+        logger.info("All %d CFS sessions created and in pending state", self.max_sessions)
         return cfs_session_names_list

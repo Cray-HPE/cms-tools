@@ -28,13 +28,14 @@ CFS race condition cleanup related functions
 
 from cmstools.lib.k8s import get_deployment_replicas, set_deployment_replicas
 from cmstools.lib.cfs.defs import CFS_OPERATOR_DEPLOYMENT
-from cmstools.test.cfs_sessions_rc_test.cfs.cfs_session import (delete_cfs_session_by_name,
-                                                                delete_cfs_sessions, get_cfs_sessions_list)
+from cmstools.test.cfs_sessions_rc_test.cfs.session import (delete_cfs_session_by_name,
+                                                            delete_cfs_sessions, get_cfs_sessions_list)
 from cmstools.test.cfs_sessions_rc_test.log import logger
-from cmstools.test.cfs_sessions_rc_test.cfs.cfs_options import set_cfs_page_size
-from cmstools.test.cfs_sessions_rc_test.cfs.cfs_configurations import delete_cfs_configuration
+from cmstools.test.cfs_sessions_rc_test.cfs.options import set_cfs_page_size
+from cmstools.test.cfs_sessions_rc_test.cfs.configurations import delete_cfs_configuration
+from cmstools.test.cfs_sessions_rc_test.defs import CFS_VERSIONS_STR
 
-def cleanup_cfs_sessions(name_prefix: str, cfs_version: str, page_size: int) -> None:
+def cleanup_cfs_sessions(name_prefix: str, cfs_version: CFS_VERSIONS_STR , page_size: int) -> None:
     """
     Cleanup function to delete any remaining CFS sessions with the specified name prefix
     """
@@ -45,7 +46,7 @@ def cleanup_cfs_sessions(name_prefix: str, cfs_version: str, page_size: int) -> 
             limit=page_size
         )
     except Exception as ex:
-        logger.error(f"Failed to delete remaining CFS sessions with name prefix {name_prefix}: {str(ex)}")
+        logger.error("Failed to delete remaining CFS sessions with name prefix %s: %s", name_prefix, str(ex))
         logger.info("Deleting session one by one")
         sessions = get_cfs_sessions_list(
             cfs_session_name_contains=name_prefix,
@@ -60,7 +61,7 @@ def cleanup_cfs_sessions(name_prefix: str, cfs_version: str, page_size: int) -> 
             try:
                 delete_cfs_session_by_name(session_name, cfs_version=cfs_version)
             except Exception as ex2:
-                logger.error(f"Failed to delete CFS session {session_name}: {str(ex2)}")
+                logger.error("Failed to delete CFS session %s: %s", session_name, str(ex2))
 
 def cleanup_and_restore(orig_replicas_count: int, orig_page_size: int | None,
                         config_name: str| None) -> None:
@@ -69,13 +70,13 @@ def cleanup_and_restore(orig_replicas_count: int, orig_page_size: int | None,
     """
 
     if orig_replicas_count != get_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT):
-        logger.info(f"Restoring cray-cfs-operator deployment to its original number of replicas: {orig_replicas_count}")
+        logger.info("Restoring cray-cfs-operator deployment to its original number of replicas: %d", orig_replicas_count)
         set_deployment_replicas(deployment_name="cray-cfs-operator", replicas=orig_replicas_count)
 
     if orig_page_size is not None:
-        logger.info(f"Restoring CFS v3 global page-size option to its original value: {orig_page_size}")
+        logger.info("Restoring CFS v3 global page-size option to its original value: %d", orig_page_size)
         set_cfs_page_size(orig_page_size)
 
     if config_name is not None:
-        logger.info(f"Deleting CFS configuration {config_name}")
+        logger.info("Deleting CFS configuration %s", config_name)
         delete_cfs_configuration(config_name)

@@ -1,3 +1,4 @@
+
 # MIT License
 #
 # (C) Copyright 2025 Hewlett Packard Enterprise Development LP
@@ -22,23 +23,41 @@
 #
 
 """
-CFS configuration related functions
+CFS options related functions
 """
 
 from cmstools.lib.api import request
-from cmstools.lib.cfs.defs import CFS_CONFIGS_URL
-from cmstools.lib.defs import CmstoolsException as CFSRCException
+from cmstools.lib.cfs.defs import CFS_OPTIONS_URL, CFS_DEFAULT_PAGE_SIZE
 from cmstools.test.cfs_sessions_rc_test.log import logger
+from cmstools.test.cfs_sessions_rc_test.defs import CFSRCException
 
-
-def delete_cfs_configuration(cfs_configuration_name: str) -> None:
+def get_cfs_options() -> dict:
     """
-    Deletes the specified CFS configuration
+    Returns the current CFS options values
     """
-    url = f"{CFS_CONFIGS_URL}/{cfs_configuration_name}"
-    resp = request("delete", url)
+    resp = request("get", CFS_OPTIONS_URL)
 
-    if resp.status_code != 204:
-        logger.error(f"Failed to delete CFS configuration {cfs_configuration_name}: {resp.text}")
+    if resp.status_code != 200:
+        logger.error("Failed to get CFS options: %d %s", resp.status_code, resp.text)
         raise CFSRCException()
+    return resp.json()
 
+def get_cfs_page_size() -> int:
+    """
+    Returns the current CFS page size option value
+    """
+    options = get_cfs_options()
+    return options.get("default_page_size", CFS_DEFAULT_PAGE_SIZE)
+
+def set_cfs_page_size(page_size: int) -> None:
+    """
+    Sets the CFS page size option value
+    """
+    data = {
+        "default_page_size": page_size
+    }
+    resp = request("patch", CFS_OPTIONS_URL, json=data)
+
+    if resp.status_code != 200:
+        logger.error("Failed to set CFS page size to %d: %s", page_size, resp.text)
+        raise CFSRCException()

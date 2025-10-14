@@ -29,7 +29,7 @@ Class for creating and managing concurrent API requests using threading.
 import threading
 import random
 from collections.abc import Callable
-from typing import List, TypeVar
+from typing import TypeVar
 from dataclasses import dataclass
 
 from cmstools.test.cfs_sessions_rc_test.log import logger
@@ -50,7 +50,7 @@ class ConcurrentRequestManager:
     def __init__(self):
        pass
 
-    def create_batch(self, batch: RequestBatch) -> List[threading.Thread]:
+    def create_batch(self, batch: RequestBatch) -> list[threading.Thread]:
         """
         Create and return a list of worker threads for batch requests.
 
@@ -62,7 +62,7 @@ class ConcurrentRequestManager:
         """
         threads = []
 
-        logger.info(f"Creating {batch.max_parallel} worker threads for batch execution")
+        logger.info("Creating %d worker threads for batch execution", batch.max_parallel)
 
         for _ in range(batch.max_parallel):
             thread = threading.Thread(
@@ -70,10 +70,10 @@ class ConcurrentRequestManager:
             )
             threads.append(thread)
 
-        logger.debug(f"Created {len(threads)} threads")
+        logger.debug("Created %d threads", len(threads))
         return threads
 
-    def execute_batch(self, threads: List[threading.Thread], shuffle: bool = False) -> None:
+    def execute_batch(self, threads: list[threading.Thread], shuffle: bool = False) -> None:
         """
         Start and join all threads in the provided list.
 
@@ -82,7 +82,7 @@ class ConcurrentRequestManager:
             shuffle: If True, randomize thread start order to simulate race conditions
         """
         thread_count = len(threads)
-        logger.info(f"Starting execution of {thread_count} threads")
+        logger.info("Starting execution of %d threads", thread_count)
 
         if shuffle:
             logger.debug("Shuffling thread execution order")
@@ -91,11 +91,11 @@ class ConcurrentRequestManager:
         # Start all threads
         for idx, thread in enumerate(threads):
             thread.start()
-            logger.debug(f"Started thread {idx + 1}/{thread_count}")
+            logger.debug("Started thread %d/%d", (idx+1), thread_count)
 
         # Wait for all threads to complete
         for idx, thread in enumerate(threads):
             thread.join()
-            logger.debug(f"Joined thread {idx + 1}/{thread_count}")
+            logger.debug("Joined thread %d/%d", (idx+1), thread_count)
 
-        logger.info(f"Batch execution complete: all {thread_count} threads finished")
+        logger.info("Batch execution complete: all %d threads finished", thread_count)

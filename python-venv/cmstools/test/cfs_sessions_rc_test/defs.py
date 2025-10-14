@@ -28,6 +28,10 @@ CFS race condition test related definitions
 
 from typing import NamedTuple, Literal
 
+from cmstools.lib.defs import CmstoolsException
+
+CFSRCException = CmstoolsException
+
 DEFAULT_SESSION_NAME_PREFIX = "cfs-race-condition-test-"
 DEFAULT_MAX_SESSIONS = 20
 DEFAULT_MAX_PARALLEL_REQUESTS = 4
