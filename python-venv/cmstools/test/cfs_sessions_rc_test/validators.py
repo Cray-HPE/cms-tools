@@ -64,7 +64,7 @@ def check_subtest_names(value) -> list[str]:
     from .__main__ import get_subtest_functions
 
     names = [name.strip() for name in value.split(",")]
-    invalid_names = [name for name in names if name not in list(get_subtest_functions().keys())]
+    invalid_names = [name for name in names if name not in get_subtest_functions]
     if invalid_names:
-        raise argparse.ArgumentTypeError(f"Invalid subtest names: {', '.join(invalid_names)}, valid names are: {', '.join(list(get_subtest_functions().keys()))}")
+        raise argparse.ArgumentTypeError(f"Invalid subtest names: {', '.join(invalid_names)}; valid names are: {', '.join(list(get_subtest_functions().keys()))}")
     return names

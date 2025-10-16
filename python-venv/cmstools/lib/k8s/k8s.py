@@ -104,16 +104,17 @@ def check_replicas_and_pods_scaled(deployment_name: str, expected_replicas: int)
     """
     Ensure deployment is scaled and all pods are terminated.
     """
-    start_time = time.time()
+    max_minutes = 5
+    max_time = time.time() + max_minutes*60
     while True:
         actual_replicas = get_deployment_replicas(deployment_name=deployment_name)
 
         if actual_replicas == expected_replicas and get_pod_count_for_deployment(deployment_name=deployment_name) == 0:
             logger.info("Deployment %s scaled to %d replicas and all pods terminated", deployment_name, expected_replicas)
             return
-        if time.time() - start_time > 300:
-            logger.error("Timeout: Deployment %s did not scale to %d replicas and terminate pods within 5 minutes",
-                         deployment_name, expected_replicas)
+        if time.time() > max_time:
+            logger.error("Timeout: Deployment %s did not scale to %d replicas and terminate pods within %d minutes",
+                         deployment_name, expected_replicas, max_minutes)
             raise CmstoolsException()
 
         logger.info("Waiting for deployment %s to scale down and pods to terminate.", deployment_name)

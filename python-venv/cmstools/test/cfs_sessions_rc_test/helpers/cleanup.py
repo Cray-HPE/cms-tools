@@ -46,7 +46,7 @@ def cleanup_cfs_sessions(name_prefix: str, cfs_version: CFS_VERSIONS_STR , page_
             limit=page_size
         )
     except Exception as ex:
-        logger.error("Failed to delete remaining CFS sessions with name prefix %s: %s", name_prefix, str(ex))
+        logger.error("Failed to delete remaining CFS sessions with name prefix %s; %s: %s", name_prefix, type(ex), ex)
         logger.info("Deleting session one by one")
         sessions = get_cfs_sessions_list(
             cfs_session_name_contains=name_prefix,
@@ -61,7 +61,7 @@ def cleanup_cfs_sessions(name_prefix: str, cfs_version: CFS_VERSIONS_STR , page_
             try:
                 delete_cfs_session_by_name(session_name, cfs_version=cfs_version)
             except Exception as ex2:
-                logger.error("Failed to delete CFS session %s: %s", session_name, str(ex2))
+                logger.error("Failed to delete CFS session %s; %s: %s", session_name, type(ex2), ex2)
 
 def cleanup_and_restore(orig_replicas_count: int, orig_page_size: int | None,
                         config_name: str| None) -> None:

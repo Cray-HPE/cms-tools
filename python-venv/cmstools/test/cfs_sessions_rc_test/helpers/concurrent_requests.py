@@ -85,7 +85,7 @@ class ConcurrentRequestManager:
         logger.info("Starting execution of %d threads", thread_count)
 
         if shuffle:
-            logger.debug("Shuffling thread execution order")
+            logger.debug("Shuffling thread start order")
             random.shuffle(threads)
 
         # Start all threads

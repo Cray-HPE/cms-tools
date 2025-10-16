@@ -79,8 +79,6 @@ class CFSSessionGDBase(ABC):
         try:
             self._execute_test_logic()
             self._validate_results()
-        except CFSRCException:
-            raise
         except Exception as err:
             logger.exception("Test execution failed: %s", err)
             raise CFSRCException() from err

@@ -147,7 +147,7 @@ def main() -> NoReturn:
        logger.error("Failure in cfs sessions race condition test.")
        sys.exit(1)
    except Exception as err:
-       logger.exception("An unanticipated exception occurred during cfs sessions race condition test: %s;", str(err))
+       logger.exception("An unanticipated exception occurred during cfs sessions race condition test: %s;", err)
        sys.exit(1)
 
    logger.info("Successfully completed cfs sessions race condition test.")

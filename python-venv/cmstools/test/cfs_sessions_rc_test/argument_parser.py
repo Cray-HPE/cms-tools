@@ -100,9 +100,9 @@ def _add_setup_arguments(parser: argparse.ArgumentParser) -> None:
 def _add_subtests_arguments(parser: argparse.ArgumentParser) -> None:
     """
     Add arguments related to subtests
-     --max-sessions	Maximum number of CFS sessions to create (maybe start with a default of 20)
-    --max-multi-delete-reqs	Maximum number of parallel multi-delete requests (maybe start with a default of 4)
-    --max-multi-get-reqs	Maximum number of parallel multi-get requests (maybe start with a default of 4)
+     --max-sessions	Maximum number of CFS sessions to create
+    --max-multi-delete-reqs	Maximum number of parallel multi-delete requests
+    --max-multi-get-reqs	Maximum number of parallel multi-get requests
     """
     parser.add_argument(
         "--max-sessions",
