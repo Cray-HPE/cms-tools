@@ -25,13 +25,12 @@
 CFS configuration related functions
 """
 
-from typing import List, Dict, Any
-from cmstools.lib.cfs.defs import CFS_CONFIGS_URL
 from cmstools.lib.api import request_and_check_status
+from cmstools.lib.cfs.defs import CFS_CONFIGS_URL
 from cmstools.lib.common_logger import logger
+from cmstools.lib.defs import JsonDict
 
-
-def create_cfs_config(config_name: str, layers: List[Dict[str, Any]]) -> Dict[str, Any]:
+def create_cfs_config(config_name: str, layers: list[JsonDict]) -> JsonDict:
     """
     Create a CFS configuration with the specified name and layers.
 

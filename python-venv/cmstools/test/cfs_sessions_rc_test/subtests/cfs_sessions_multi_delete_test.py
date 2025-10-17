@@ -26,9 +26,10 @@
 CFS race condition multi delete test related functions
 """
 
-import requests
 import threading
 from typing import ClassVar
+
+import requests
 
 from cmstools.lib.api.api import API_REQUEST_TIMEOUT, add_api_auth, SYSTEM_CA_CERTS
 from cmstools.lib.cfs.defs import CFS_SESSIONS_URL_TEMPLATE, SessionDeleteResult
@@ -51,7 +52,6 @@ class CfsSessionMultiDeleteTest(CFSSessionBase):
         self.request_manager = ConcurrentRequestManager()
         self.response_handler = ResponseHandler(script_args=script_args, session_names=self._session_names)
         self._tlist: list[threading.Thread] = []
-        # self.delete_result_list: list[Any] = []
         self.delete_result_list: list[SessionDeleteResult] = []
 
     @property

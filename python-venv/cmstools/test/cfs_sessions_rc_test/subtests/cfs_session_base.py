@@ -42,7 +42,7 @@ from cmstools.test.cfs_sessions_rc_test.log import logger
 class CFSSessionBase(ABC):
     """Abstract base class for CFS session race condition tests."""
 
-    _all_subtests: dict[str, type["CFSSessionBase"]] = {}
+    _all_subtests: ClassVar[dict[str, type["CFSSessionBase"]]] = {}
 
     # Actual subtest subclasses must set this class variable to a
     # string value.

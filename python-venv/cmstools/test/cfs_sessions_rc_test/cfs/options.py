@@ -25,15 +25,14 @@
 """
 CFS options related functions
 """
-from typing import Any
-
 from cmstools.lib.api import request
 from cmstools.lib.cfs.defs import CFS_OPTIONS_URL, CFS_DEFAULT_PAGE_SIZE
+from cmstools.lib.defs import JsonDict
 from cmstools.test.cfs_sessions_rc_test.log import logger
 from cmstools.test.cfs_sessions_rc_test.defs import CFSRCException
 
 
-def get_cfs_options() -> dict[str, Any]:
+def get_cfs_options() -> JsonDict:
     """
     Returns the current CFS options values
     """

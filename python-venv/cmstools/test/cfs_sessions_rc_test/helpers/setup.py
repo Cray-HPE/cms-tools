@@ -51,7 +51,6 @@ def get_cfs_config_name() -> Optional[str]:
     """
     Get the CFS configuration name.
     """
-    global cfs_config_name
     return cfs_config_name
 
 def _calculate_v2_page_size(page_size: Optional[int], max_sessions: int, current: int) -> int:

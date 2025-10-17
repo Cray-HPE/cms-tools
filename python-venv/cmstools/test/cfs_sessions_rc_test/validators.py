@@ -35,14 +35,14 @@ from .defs import (MAX_NAME_LENGTH, MIN_NAME_LENGTH)
 
 
 # Validations for command line arguments
-def check_min_page_size(value) -> int:
+def check_min_page_size(value: str) -> int:
     int_value = int(value)
     if int_value < 1:
         raise argparse.ArgumentTypeError("--page-size must be at least 1")
     return int_value
 
 
-def validate_name(value) -> str:
+def validate_name(value: str) -> str:
     pattern = r'^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$'
     # Script appends a number to the name, so allow up to 40 characters here
     if not (MIN_NAME_LENGTH <= len(value) <= MAX_NAME_LENGTH):
@@ -52,25 +52,25 @@ def validate_name(value) -> str:
     return value
 
 
-def check_minimum_max_sessions(value) -> int:
+def check_minimum_max_sessions(value: str) -> int:
     int_value = int(value)
     if int_value < 1:
         raise argparse.ArgumentTypeError("--max-sessions must be at least 1")
     return int_value
 
 
-def check_minimum_max_parallel_reqs(value) -> int:
+def check_minimum_max_parallel_reqs(value: str) -> int:
     int_value = int(value)
     if int_value < 1:
         raise argparse.ArgumentTypeError("--max-multi-delete-reqs must be at least 1")
     return int_value
 
 
-def check_subtest_names(value) -> list[str]:
+def check_subtest_names(value: str) -> list[str]:
     subtest_map = all_subtests()
 
     names = [name.strip() for name in value.split(",")]
     invalid_names = [name for name in names if name not in subtest_map]
     if invalid_names:
-        raise argparse.ArgumentTypeError(f"Invalid subtest names: {', '.join(invalid_names)}; valid names are: {', '.join(subtest_map.keys())}")
+        raise argparse.ArgumentTypeError(f"Invalid subtest names: {', '.join(invalid_names)}; valid names are: {', '.join(subtest_map)}")
     return names

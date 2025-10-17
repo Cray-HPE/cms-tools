@@ -98,16 +98,18 @@ class CFSSessionMultiDeleteMultiGetTest(CfsSessionMultiDeleteTest):
         """
         exceptions = []
 
-        validations = [
-            (self.response_handler.verify_sessions_after_multi_delete, self.delete_result_list),
-            (self.response_handler.validate_multi_get_sessions_response, self.get_result_list)
-        ]
+        try:
+            # Call our parent class to validate the multi-delete portion
+            super()._validate_results()
+        except ExceptionGroup as eg:
+            exceptions.extend(eg.exceptions)
+        except Exception as e:
+            exceptions.append(e)
 
-        for validation_func, *args in validations:
-            try:
-                validation_func(*args)
-            except Exception as e:
-                exceptions.append(e)
+        try:
+            self.response_handler.validate_multi_get_sessions_response(self.get_result_list)
+        except Exception as e:
+            exceptions.append(e)
 
         if exceptions:
             raise ExceptionGroup("Validation errors occurred", exceptions)

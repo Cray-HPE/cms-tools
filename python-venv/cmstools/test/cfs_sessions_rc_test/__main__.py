@@ -40,15 +40,15 @@ from .argument_parser import (add_mutually_exclusive_arguments, add_setup_argume
 
 def get_test_names(script_args: ScriptArgs) -> list[str]:
     """Get the list of subtests to run or skip based on command line arguments."""
-    all_tests = list(all_subtests().keys())
-
     if script_args.run_subtests:
         return script_args.run_subtests
+
+    all_tests = all_subtests()
 
     if script_args.skip_subtests:
         return [name for name in all_tests if name not in script_args.skip_subtests]
 
-    return all_tests
+    return list(all_tests)
 
 
 def _execute_subtests(test_names: list[str], script_args: ScriptArgs) -> None:
@@ -75,7 +75,7 @@ def run(script_args: ScriptArgs) -> None:
     """
     CFS sessions race condition test main processing
     """
-    orig_page_size = None
+    orig_page_size: int | None = None
     orig_replica_count = 0
 
     try:

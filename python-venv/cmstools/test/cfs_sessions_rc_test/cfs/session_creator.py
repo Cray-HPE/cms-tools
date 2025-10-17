@@ -26,10 +26,11 @@
 cfs session creator class for session creation and verification
 """
 
-from cmstools.test.cfs_sessions_rc_test.cfs.session import get_cfs_sessions_list, create_cfs_session
-from cmstools.test.cfs_sessions_rc_test.log import logger
-from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs, CFSRCException
+from cmstools.lib.defs import JsonDict
 from cmstools.test.cfs_sessions_rc_test.cfs.configurations import find_or_create_cfs_config
+from cmstools.test.cfs_sessions_rc_test.cfs.session import get_cfs_sessions_list, create_cfs_session
+from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs, CFSRCException
+from cmstools.test.cfs_sessions_rc_test.log import logger
 
 
 class CfsSessionCreator:
@@ -45,7 +46,7 @@ class CfsSessionCreator:
             return 200
         return 201
 
-    def create_cfs_session_payload(self, session_name: str, config_name: str) -> dict:
+    def create_cfs_session_payload(self, session_name: str, config_name: str) -> JsonDict:
         """
         Create the CFS session payload dictionary based on the CFS version.
         Args:
@@ -80,7 +81,7 @@ class CfsSessionCreator:
         these sessions match the ones we just created.
         """
         config_name = find_or_create_cfs_config(self.name_prefix)
-        cfs_session_names_list = []
+        cfs_session_names_list: list[str] = []
         for i in range(self.max_sessions):
             session_name = f"{self.name_prefix}{i}"
             session_payload = self.create_cfs_session_payload(session_name=session_name, config_name=config_name)

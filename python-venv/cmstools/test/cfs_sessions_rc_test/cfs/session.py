@@ -32,12 +32,13 @@ from cmstools.lib.api import request, request_and_check_status
 from cmstools.lib.cfs.defs import (CFS_SESSIONS_URL_TEMPLATE, HTTP_OK, HTTP_NO_CONTENT, HTTP_BAD_REQUEST,
                                    HTTP_NOT_FOUND, SessionGetWithNameContainsResult)
 from cmstools.lib.api.api import API_REQUEST_TIMEOUT, add_api_auth, SYSTEM_CA_CERTS
+from cmstools.lib.defs import JsonDict
 from cmstools.test.cfs_sessions_rc_test.log import logger
 from cmstools.test.cfs_sessions_rc_test.defs import CFSRCException
 from cmstools.test.cfs_sessions_rc_test.defs import CFS_VERSIONS_STR
 
 
-def get_next_id(data: dict) -> str | None:
+def get_next_id(data: JsonDict) -> str | None:
     """
     Get the next_id from the data if it exists.
     """
@@ -47,7 +48,7 @@ def get_next_id(data: dict) -> str | None:
     return None
 
 
-def get_session_data(cfs_session_data: dict | list[dict]) -> list | None:
+def get_session_data(cfs_session_data: JsonDict | list[JsonDict]) -> list[JsonDict] | None:
     """
     Get sessions list from the data as get cfs session data is different for V2 and V3.
     """
@@ -55,6 +56,7 @@ def get_session_data(cfs_session_data: dict | list[dict]) -> list | None:
         return cfs_session_data
     if isinstance(cfs_session_data, dict) and "sessions" in cfs_session_data:
         return cfs_session_data["sessions"]
+    return None
 
 
 def cfs_session_exists(cfs_session_name_contains: str, cfs_version: CFS_VERSIONS_STR, limit: int) -> bool:
@@ -65,7 +67,7 @@ def cfs_session_exists(cfs_session_name_contains: str, cfs_version: CFS_VERSIONS
     return result.status_code == HTTP_OK and bool(result.session_data)
 
 
-def get_cfs_sessions_list_params(cfs_session_name_contains: str, cfs_version: CFS_VERSIONS_STR, limit: int | None) -> dict:
+def get_cfs_sessions_list_params(cfs_session_name_contains: str, cfs_version: CFS_VERSIONS_STR, limit: int | None) -> dict[str, str | int | None]:
     """
     Returns the URL with parameters to list CFS sessions with the specified name prefix and pending status.
     """
@@ -132,8 +134,8 @@ def get_all_cfs_sessions_v3(cfs_session_name_contains: str, cfs_version: CFS_VER
         cfs_version=cfs_version,
         limit=limit
     )
-    all_sessions = []
-    after_id = None
+    all_sessions: list[JsonDict] = []
+    after_id: str | None = None
 
     try:
         while True:
@@ -223,7 +225,7 @@ def delete_cfs_session_by_name(cfs_session_name: str, cfs_version: CFS_VERSIONS_
 
 
 def create_cfs_session(session_name: str, cfs_version: CFS_VERSIONS_STR,
-                       session_payload: dict, expected_http_status: int = 200) -> dict:
+                       session_payload: dict, expected_http_status: int = 200) -> JsonDict:
     """
     Create a CFS session with the specified name and configuration.
 
