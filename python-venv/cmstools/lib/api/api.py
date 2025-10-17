@@ -42,8 +42,6 @@ API_GW_DNSNAME = "api-gw-service-nmn.local"
 API_GW_SECURE = f"https://{API_GW_DNSNAME}"
 API_BASE_URL = f"{API_GW_SECURE}/apis"
 
-PROTOCOL = "https"
-
 SYSTEM_CA_CERTS = "/etc/ssl/ca-bundle.pem"
 API_REQUEST_TIMEOUT = 30  # seconds
 
