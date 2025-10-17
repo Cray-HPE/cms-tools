@@ -28,6 +28,8 @@ CFS sessions race condition base class and related functions
 
 import threading
 from abc import ABC, abstractmethod
+import inspect
+from typing import ClassVar, Optional
 
 from cmstools.test.cfs_sessions_rc_test.defs import CFSRCException
 from cmstools.test.cfs_sessions_rc_test.helpers.cleanup import cleanup_cfs_sessions
@@ -37,32 +39,37 @@ from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs
 from cmstools.test.cfs_sessions_rc_test.log import logger
 
 
-class CFSSessionGDBase(ABC):
+class CFSSessionBase(ABC):
     """Abstract base class for CFS session race condition tests."""
 
-    _registry: dict[str, type] = {}
+    _all_subtests: dict[str, type["CFSSessionBase"]] = {}
+
+    # Actual subtest subclasses must set this class variable to a
+    # string value.
+    subtest_name: ClassVar[Optional[str]] = None
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        # Only register concrete subclasses
-        if not getattr(cls, '__abstractmethods__', None):
-            cls._registry[cls.get_subtest_name()] = cls
+        # Add the class to our registry if it meets both of the following criteria:
+        # * It is not abstract
+        # * The subtest_name class variable has been over-ridden from its null value
+        if inspect.isabstract(cls):
+            return
+        if cls.subtest_name is None:
+            return
+        # Raise an exception if attempting to re-use an existing subtest name
+        assert cls.subtest_name not in cls._all_subtests, f"Re-defining existing subtest: {cls.subtest_name}"
+        cls._all_subtests[cls.subtest_name] = cls
 
     @classmethod
-    def get_all_subtests(cls) -> dict[str, type]:
+    def get_all_subtests(cls) -> dict[str, type["CFSSessionBase"]]:
         """Return all registered subtest classes."""
-        return cls._registry.copy()
+        return cls._all_subtests.copy()
 
     def __init__(self, script_args: ScriptArgs):
         self.script_args = script_args
         self._session_names: list[str] = self._setup()
         self.lock = threading.Lock()
-
-    @staticmethod
-    @abstractmethod
-    def get_subtest_name() -> str:
-        """Return the unique name identifier for this subtest."""
-        pass
 
     @abstractmethod
     def _execute_test_logic(self) -> None:
@@ -110,10 +117,12 @@ class CFSSessionGDBase(ABC):
                 cfs_session_name_contains=self.script_args.cfs_session_name,
                 cfs_version=self.script_args.cfs_version,
                 limit=self.script_args.page_size):
-            logger.info(f"Cleaning up any remaining CFS sessions with name prefix %s", self.script_args.cfs_session_name)
+            logger.info("Cleaning up any remaining CFS sessions with name prefix %s", self.script_args.cfs_session_name)
             cleanup_cfs_sessions(name_prefix=self.script_args.cfs_session_name,
                                  cfs_version=self.script_args.cfs_version,
                                  page_size=self.script_args.page_size)
 
 
-
+def all_subtests() -> dict[str, type[CFSSessionBase]]:
+    """Return all registered subtest classes."""
+    return CFSSessionBase.get_all_subtests()

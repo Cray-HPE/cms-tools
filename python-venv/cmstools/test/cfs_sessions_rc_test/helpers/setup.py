@@ -25,6 +25,7 @@
 """
 CFS race condition setup related functions
 """
+from typing import Optional
 
 from cmstools.lib.k8s import get_deployment_replicas, set_deployment_replicas, check_replicas_and_pods_scaled
 from cmstools.lib.cfs.defs import CFS_OPERATOR_DEPLOYMENT
@@ -35,6 +36,8 @@ from cmstools.test.cfs_sessions_rc_test.cfs.session import cfs_session_exists, d
 from cmstools.test.cfs_sessions_rc_test.defs import TestSetupResponse
 
 cfs_config_name = None
+
+
 def set_cfs_config_name(config_name: str) -> None:
     """
     Set the CFS configuration to the specified name.
@@ -43,14 +46,25 @@ def set_cfs_config_name(config_name: str) -> None:
     cfs_config_name = config_name
     logger.info("Using CFS configuration %s", config_name)
 
-def get_cfs_config_name() -> str | None:
+
+def get_cfs_config_name() -> Optional[str]:
     """
     Get the CFS configuration name.
     """
     global cfs_config_name
     return cfs_config_name
 
-def set_page_size_if_needed(page_size: int|None, max_sessions: int, cfs_version: str) -> tuple[int, int | None]:
+def _calculate_v2_page_size(page_size: Optional[int], max_sessions: int, current: int) -> int:
+    """Calculate appropriate page size for CFS v2."""
+    if page_size is None:
+        return max(10 * max_sessions, current)
+    return max(page_size, max_sessions)
+
+def _calculate_v3_page_size(page_size: Optional[int], max_sessions: int) -> int:
+    """Calculate appropriate page size for CFS v3."""
+    return page_size if page_size is not None else 10 * max_sessions
+
+def set_page_size_if_needed(page_size: int | None, max_sessions: int, cfs_version: str) -> tuple[int, Optional[int]]:
     """
     Set the CFS global page-size option to the desired value if it is not already set to that value for v2.
     Return the current value if it was changed, otherwise return None.
@@ -61,25 +75,19 @@ def set_page_size_if_needed(page_size: int|None, max_sessions: int, cfs_version:
     """
     current_page_size = None
 
-    if page_size is None:
-        page_size = 10 * max_sessions
-        if cfs_version == "v2":
-            current_page_size = get_cfs_page_size()
-            if current_page_size < page_size:
-                set_cfs_page_size(page_size)
-                logger.info("Using CFS v2 API with page size %d", page_size)
-    else:
-        if cfs_version == "v2":
-            if page_size < max_sessions:
-                logger.info("For CFS v2, setting --page-size to %d to match --max-sessions", max_sessions)
-                page_size = max_sessions
-            current_page_size = get_cfs_page_size()
+    if cfs_version == "v2":
+        current_page_size = get_cfs_page_size()
+        page_size = _calculate_v2_page_size(page_size, max_sessions, current_page_size)
+        if page_size != current_page_size:
             set_cfs_page_size(page_size)
-            logger.info("Using CFS v2 API with page size %d", page_size)
+            logger.info("For CFS v2 API setting the page size %d", page_size)
+    if cfs_version == "v3":
+        page_size = _calculate_v3_page_size(page_size, max_sessions)
+
     return page_size, current_page_size
 
 
-def cfs_sessions_rc_test_setup(script_args: ScriptArgs ) -> TestSetupResponse:
+def cfs_sessions_rc_test_setup(script_args: ScriptArgs) -> TestSetupResponse:
     """
     Perform any setup needed for the CFS sessions race condition test.
     Check the number of cfs-operator instances and, if it is non-0, remember the current value and scale it down to 0.

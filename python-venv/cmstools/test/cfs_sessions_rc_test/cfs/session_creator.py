@@ -26,9 +26,7 @@
 cfs session creator class for session creation and verification
 """
 
-from cmstools.lib.api import request_and_check_status
-from cmstools.lib.cfs.defs import CFS_SESSIONS_URL_TEMPLATE
-from cmstools.test.cfs_sessions_rc_test.cfs.session import get_cfs_sessions_list
+from cmstools.test.cfs_sessions_rc_test.cfs.session import get_cfs_sessions_list, create_cfs_session
 from cmstools.test.cfs_sessions_rc_test.log import logger
 from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs, CFSRCException
 from cmstools.test.cfs_sessions_rc_test.cfs.configurations import find_or_create_cfs_config
@@ -48,26 +46,34 @@ class CfsSessionCreator:
         return 201
 
     def create_cfs_session_payload(self, session_name: str, config_name: str) -> dict:
+        """
+        Create the CFS session payload dictionary based on the CFS version.
+        Args:
+            session_name: Name of the CFS session to create
+            config_name: Name of the CFS configuration to use for the session
+        Returns:
+            Dictionary containing the CFS session payload
+        """
         if self.cfs_version == "v3":
             return {
-            "name": session_name,
-            "configuration_name": config_name,
-            "target": {
-                "definition": "spec",
-                "groups": [ { "name": "Compute", "members": [ "fakexname" ] } ],
+                "name": session_name,
+                "configuration_name": config_name,
+                "target": {
+                    "definition": "spec",
+                    "groups": [{"name": "Compute", "members": ["fakexname"]}],
+                }
             }
-        }
 
         return {
             "name": session_name,
             "configurationName": config_name,
             "target": {
                 "definition": "spec",
-                "groups": [ { "name": "Compute", "members": [ "fakexname" ] } ],
+                "groups": [{"name": "Compute", "members": ["fakexname"]}],
             }
         }
 
-    def create_sessions(self) -> (list[str]):
+    def create_sessions(self) -> list[str]:
         """
         Create CFS sessions up to max_sessions using the specified name prefix.
         List all sessions in pending state that have the text prefix string in their names. Verify that the names of
@@ -75,19 +81,23 @@ class CfsSessionCreator:
         """
         config_name = find_or_create_cfs_config(self.name_prefix)
         cfs_session_names_list = []
-        url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=self.cfs_version)
         for i in range(self.max_sessions):
             session_name = f"{self.name_prefix}{i}"
             session_payload = self.create_cfs_session_payload(session_name=session_name, config_name=config_name)
-            _ = request_and_check_status("post", url,
-                                                 json=session_payload,
-                                                 expected_status=self.expected_http_status, parse_json=True)
+            # Discard the returned session data, since we are just verifying creation
+            _ = create_cfs_session(session_name=session_name, session_payload=session_payload,
+                                   cfs_version=self.cfs_version, expected_http_status=self.expected_http_status)
             cfs_session_names_list.append(session_name)
             logger.info("Created CFS session: %s", session_name)
 
         # Verify all sessions are in pending state and names match
-        sessions = get_cfs_sessions_list(cfs_session_name_contains=self.name_prefix, cfs_version=self.cfs_version, limit=self.page_size)
-        pending_cfs_session_names = sorted([s["name"] for s in sessions if s["name"] in cfs_session_names_list])
+        result = get_cfs_sessions_list(cfs_session_name_contains=self.name_prefix, cfs_version=self.cfs_version, limit=self.page_size)
+        pending_cfs_session_names = sorted([s["name"] for s in result.session_data if s["name"] in cfs_session_names_list])
+
+        if len(pending_cfs_session_names) != len(cfs_session_names_list):
+            logger.error("Expected %d sessions but found %d matching sessions",
+                         len(cfs_session_names_list), len(pending_cfs_session_names))
+            raise CFSRCException()
 
         if sorted(cfs_session_names_list) != sorted(pending_cfs_session_names):
             logger.error("Mismatch in created and pending session names. Created: %s, Pending: %s",

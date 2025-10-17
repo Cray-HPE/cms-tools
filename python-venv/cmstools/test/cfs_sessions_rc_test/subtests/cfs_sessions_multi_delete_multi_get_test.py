@@ -26,12 +26,12 @@
 CFS race condition multi delete multi get test related functions
 """
 
-from typing import Any
+from typing import ClassVar
 
+from cmstools.lib.cfs.defs import SessionGetWithNameContainsResult
 from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs
 from cmstools.test.cfs_sessions_rc_test.log import logger
 from cmstools.test.cfs_sessions_rc_test.cfs.session import get_cfs_sessions_list
-
 from cmstools.test.cfs_sessions_rc_test.subtests.cfs_sessions_multi_delete_test import CfsSessionMultiDeleteTest
 from cmstools.test.cfs_sessions_rc_test.helpers.concurrent_requests import RequestBatch
 
@@ -40,16 +40,20 @@ class CFSSessionMultiDeleteMultiGetTest(CfsSessionMultiDeleteTest):
     """
     Class to handle CFS session multi-delete multi-get test
     """
+
+    subtest_name: ClassVar[str] = "multi_delete_multi_get"
+
     def __init__(self, script_args: ScriptArgs) -> None:
         super().__init__(script_args=script_args)
-        self.get_result_list: list[Any] = []
-
-    @staticmethod
-    def get_subtest_name() -> str:
-        return "multi_delete_multi_get"
+        self.get_result_list: list[SessionGetWithNameContainsResult] = []
 
     def _execute_test_logic(self) -> None:
-        """Execute parallel delete requests."""
+        """
+        Execute parallel delete requests.
+        Create <max-multi-delete-reqs> parallel multi-delete requests, each of which is deleting all pending sessions
+        that have the text prefix string in their names.
+        Issue multiple parallel get requests to get all sessions that have the text prefix string in their names.
+        """
         logger.info("Starting multi-delete test with %d sessions", len(self._session_names))
 
         # Create a batch request for executing parallel delete requests
@@ -72,16 +76,16 @@ class CFSSessionMultiDeleteMultiGetTest(CfsSessionMultiDeleteTest):
         Thread target function to get CFS sessions with the specified name prefix and pending status.
         """
         logger.info("Starting get sessions thread")
-        sessions_list = get_cfs_sessions_list(
+        result = get_cfs_sessions_list(
             cfs_session_name_contains=self.script_args.cfs_session_name,
             cfs_version=self.script_args.cfs_version,
             limit=self.script_args.page_size, retry=False)
 
-        if sessions_list is not None:
-            logger.debug("Got %s sessions in thread with name prefix %s", sessions_list,
+        if result.session_data is not None and result.status_code == 200:
+            logger.debug("Got %s sessions in thread with name prefix %s", result.session_data,
                          self.script_args.cfs_session_name)
             with self.lock:
-                self.get_result_list.append(sessions_list)
+                self.get_result_list.append(result)
 
     def _validate_results(self) -> None:
         """
@@ -92,8 +96,21 @@ class CFSSessionMultiDeleteMultiGetTest(CfsSessionMultiDeleteTest):
         (It is fine if some sessions are not listed in any of the responses. It is fine if no sessions are
         listed in any of the responses.)
         """
-        self.response_handler.verify_sessions_after_multi_delete(self.delete_result_list)
-        self.response_handler.validate_multi_get_sessions_response(multi_get_results=self.get_result_list)
+        exceptions = []
+
+        validations = [
+            (self.response_handler.verify_sessions_after_multi_delete, self.delete_result_list),
+            (self.response_handler.validate_multi_get_sessions_response, self.get_result_list)
+        ]
+
+        for validation_func, *args in validations:
+            try:
+                validation_func(*args)
+            except Exception as e:
+                exceptions.append(e)
+
+        if exceptions:
+            raise ExceptionGroup("Validation errors occurred", exceptions)
 
     @staticmethod
     def execute(script_args: ScriptArgs) -> None:

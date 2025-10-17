@@ -25,13 +25,15 @@
 """
 CFS options related functions
 """
+from typing import Any
 
 from cmstools.lib.api import request
 from cmstools.lib.cfs.defs import CFS_OPTIONS_URL, CFS_DEFAULT_PAGE_SIZE
 from cmstools.test.cfs_sessions_rc_test.log import logger
 from cmstools.test.cfs_sessions_rc_test.defs import CFSRCException
 
-def get_cfs_options() -> dict:
+
+def get_cfs_options() -> dict[str, Any]:
     """
     Returns the current CFS options values
     """
@@ -42,6 +44,7 @@ def get_cfs_options() -> dict:
         raise CFSRCException()
     return resp.json()
 
+
 def get_cfs_page_size() -> int:
     """
     Returns the current CFS page size option value
@@ -49,9 +52,16 @@ def get_cfs_page_size() -> int:
     options = get_cfs_options()
     return options.get("default_page_size", CFS_DEFAULT_PAGE_SIZE)
 
+
 def set_cfs_page_size(page_size: int) -> None:
     """
-    Sets the CFS page size option value
+    Sets the CFS page size option value.
+
+    Args:
+        page_size: The desired page size (must be positive)
+
+    Raises:
+        CFSRCException: If the API request fails
     """
     data = {
         "default_page_size": page_size

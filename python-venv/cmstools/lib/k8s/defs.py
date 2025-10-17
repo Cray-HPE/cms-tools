@@ -26,6 +26,5 @@
 K8s definitions
 """
 
-DEFAULT_CONFIGMAP_NS="services"
-DEFAULT_SEC_NS="services"
-DEFAULT_DEPLOYMENT_NS="services"
+DEFAULT_NS="services"
+

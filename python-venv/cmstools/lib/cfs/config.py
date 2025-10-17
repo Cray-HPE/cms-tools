@@ -1,4 +1,3 @@
-#
 # MIT License
 #
 # (C) Copyright 2025 Hewlett Packard Enterprise Development LP
@@ -22,7 +21,31 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from .cfs_session_base import all_subtests
-# Import all subtests below, so that their classes are defined and added to the all_subtests list
-from .cfs_sessions_multi_delete_multi_get_test import CFSSessionMultiDeleteMultiGetTest
-from .cfs_sessions_multi_delete_test import CfsSessionMultiDeleteTest
+"""
+CFS configuration related functions
+"""
+
+from typing import List, Dict, Any
+from cmstools.lib.cfs.defs import CFS_CONFIGS_URL
+from cmstools.lib.api import request_and_check_status
+from cmstools.lib.common_logger import logger
+
+
+def create_cfs_config(config_name: str, layers: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Create a CFS configuration with the specified name and layers.
+
+    Args:
+        config_name: Name of the configuration to create
+        layers: List of layer dictionaries containing clone_url, commit, playbook, name
+
+    Returns:
+        Dictionary containing the created configuration data
+    """
+    url = f"{CFS_CONFIGS_URL}/{config_name}"
+    cfs_config_json = {"layers": layers}
+
+    resp_data = request_and_check_status("put", url, expected_status=200,
+                                         parse_json=True, json=cfs_config_json)
+    logger.debug("Created CFS config %s: %s", config_name, resp_data)
+    return resp_data

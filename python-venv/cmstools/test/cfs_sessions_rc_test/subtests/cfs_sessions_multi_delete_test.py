@@ -28,33 +28,31 @@ CFS race condition multi delete test related functions
 
 import requests
 import threading
-from typing import Any
+from typing import ClassVar
 
 from cmstools.lib.api.api import API_REQUEST_TIMEOUT, add_api_auth, SYSTEM_CA_CERTS
-from cmstools.lib.cfs.defs import CFS_SESSIONS_URL_TEMPLATE
-from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs, CFSRCException
+from cmstools.lib.cfs.defs import CFS_SESSIONS_URL_TEMPLATE, SessionDeleteResult
+from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs
 from cmstools.test.cfs_sessions_rc_test.log import logger
 
-from cmstools.test.cfs_sessions_rc_test.subtests.cfs_session_gd_base import CFSSessionGDBase
+from cmstools.test.cfs_sessions_rc_test.subtests.cfs_session_base import CFSSessionBase
 from cmstools.test.cfs_sessions_rc_test.helpers.response_handler import ResponseHandler
 from cmstools.test.cfs_sessions_rc_test.helpers.concurrent_requests import ConcurrentRequestManager, RequestBatch
 
 
-
-class CfsSessionMultiDeleteTest(CFSSessionGDBase):
+class CfsSessionMultiDeleteTest(CFSSessionBase):
     """
     Class to handle CFS session multi-delete test
     """
+    subtest_name: ClassVar[str] = "multi_delete"
+
     def __init__(self, script_args: ScriptArgs) -> None:
         super().__init__(script_args=script_args)
         self.request_manager = ConcurrentRequestManager()
         self.response_handler = ResponseHandler(script_args=script_args, session_names=self._session_names)
         self._tlist: list[threading.Thread] = []
-        self.delete_result_list: list[Any] = []
-
-    @staticmethod
-    def get_subtest_name() -> str:
-        return "multi_delete"
+        # self.delete_result_list: list[Any] = []
+        self.delete_result_list: list[SessionDeleteResult] = []
 
     @property
     def expected_http_status(self) -> int:
@@ -81,6 +79,7 @@ class CfsSessionMultiDeleteTest(CFSSessionGDBase):
         Verify that all multi-delete requests returned successful status and did not time out
         """
         logger.info("Starting delete sessions thread")
+        session_delete_result = None
         params = {
             "status": "pending",
             "name_contains": self.script_args.cfs_session_name
@@ -94,21 +93,29 @@ class CfsSessionMultiDeleteTest(CFSSessionGDBase):
             if resp.status_code == self.expected_http_status and self.script_args.cfs_version == "v3":
                 deleted = resp.json() if resp.content else []
                 logger.info("Deleted sessions: %s", deleted)
-                with self.lock:
-                    self.delete_result_list.append(deleted)
-                return
-
-            if resp.status_code == 400:
-                logger.info("Bad request response from Delete to %s: %s", url, resp.text)
-                return
+                session_delete_result = SessionDeleteResult(status_code=resp.status_code, session_data=deleted)
 
             if resp.status_code not in (self.expected_http_status, 400):
                 logger.error("Unexpected return code %d from Delete to %s: %s", resp.status_code, url, resp.text)
-                raise CFSRCException()
+                session_delete_result = SessionDeleteResult(status_code=resp.status_code, timed_out=False)
 
+        except requests.exceptions.Timeout:
+            logger.error("Request timed out for thread %s", threading.current_thread().name)
+            session_delete_result = SessionDeleteResult(
+                status_code=0,
+                timed_out=True,
+                error_message="Request timed out"
+            )
         except Exception as exc:
             logger.exception("Exception during CFS session delete: %s", str(exc))
-            raise
+            session_delete_result = SessionDeleteResult(
+                status_code=0,
+                error_message=str(exc)
+            )
+        finally:
+            with self.lock:
+                if session_delete_result:
+                    self.delete_result_list.append(session_delete_result)
 
     def _validate_results(self) -> None:
         """
@@ -132,4 +139,3 @@ class CfsSessionMultiDeleteTest(CFSSessionGDBase):
         """
         test = CfsSessionMultiDeleteTest(script_args=script_args)
         test.run()
-

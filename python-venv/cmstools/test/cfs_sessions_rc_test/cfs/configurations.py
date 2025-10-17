@@ -26,12 +26,14 @@ CFS configuration related functions
 """
 
 from cmstools.lib.cfs.defs import CFS_CONFIGS_URL
-from cmstools.lib.api import request, request_and_check_status
+from cmstools.lib.cfs.config import create_cfs_config
+from cmstools.lib.api import request
 from cmstools.test.cfs_sessions_rc_test.defs import CFSRCException
 from cmstools.test.cfs_sessions_rc_test.helpers.setup import set_cfs_config_name
 from cmstools.test.cfs_sessions_rc_test.log import logger
 
 DEFAULT_PLAYBOOK = "compute_nodes.yml"
+
 
 def delete_cfs_configuration(cfs_configuration_name: str) -> None:
     """
@@ -44,6 +46,7 @@ def delete_cfs_configuration(cfs_configuration_name: str) -> None:
         logger.error("Failed to delete CFS configuration %s: %s", cfs_configuration_name, resp.text)
         raise CFSRCException()
 
+
 def find_or_create_cfs_config(name_prefix: str) -> str:
     url = CFS_CONFIGS_URL
     resp = request("get", url)
@@ -55,29 +58,26 @@ def find_or_create_cfs_config(name_prefix: str) -> str:
     configs = resp.json()
     configurations_data = configs["configurations"]
 
-    if configs:
+    if configurations_data:
         config_name = configurations_data[0]["name"]
         logger.info("Using existing CFS config: %s", config_name)
         return config_name
 
     # Create a new config
     config_name = f"{name_prefix}config"
-    url = f"{CFS_CONFIGS_URL}/{config_name}"
+
     # Using dummy values for clone_url and commit
-    cfs_config_json = {
-        "layers": [
-            {
-                "clone_url": "https://dummy-server-nmn.local/vcs/cray/example-repo.git",
-                "commit": "43ecfa8236bed625b54325ebb70916f599999999",
-                "playbook": DEFAULT_PLAYBOOK,
-                "name": "compute"
-            }
-        ]
-    }
-    resp_data = request_and_check_status("put", url, expected_status=200,
-                                         parse_json=True, json=cfs_config_json)
+    cfs_config_list = [
+        {
+            "clone_url": "https://dummy-server-nmn.local/vcs/cray/example-repo.git",
+            "commit": "43ecfa8236bed625b54325ebb70916f599999999",
+            "playbook": DEFAULT_PLAYBOOK,
+            "name": "compute"
+        }
+    ]
+
+    resp_data = create_cfs_config(config_name=config_name, layers=cfs_config_list)
     logger.debug("Created %s: %s", config_name, resp_data)
     # Set the created config name globally for cleanup
     set_cfs_config_name(config_name)
     return config_name
-

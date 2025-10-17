@@ -45,12 +45,12 @@ class ScriptArgs(NamedTuple):
     """
     Encapsulates the command line arguments
     """
-    cfs_session_name: str # prefix for cfs session names to "cfs-race-condition-test-"
-    max_cfs_sessions: int # default to 20
-    max_multi_cfs_sessions_delete_requests: int # default to 4
-    max_multi_cfs_sessions_get_requests: int # default to 4
+    cfs_session_name: str  # prefix for cfs session names to "cfs-race-condition-test-"
+    max_cfs_sessions: int  # default to 20
+    max_multi_cfs_sessions_delete_requests: int  # default to 4
+    max_multi_cfs_sessions_get_requests: int  # default to 4
     delete_preexisting_cfs_sessions: bool
-    cfs_version: CFS_VERSIONS_STR # default to v3
+    cfs_version: CFS_VERSIONS_STR  # default to v3
     page_size: int
     run_subtests: list[str] | None = None
     skip_subtests: list[str] | None = None

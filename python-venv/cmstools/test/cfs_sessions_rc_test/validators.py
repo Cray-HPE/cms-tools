@@ -29,7 +29,10 @@ Validation function for parsed arguments
 import re
 import argparse
 
+from cmstools.test.cfs_sessions_rc_test.subtests import all_subtests
+
 from .defs import (MAX_NAME_LENGTH, MIN_NAME_LENGTH)
+
 
 # Validations for command line arguments
 def check_min_page_size(value) -> int:
@@ -37,6 +40,7 @@ def check_min_page_size(value) -> int:
     if int_value < 1:
         raise argparse.ArgumentTypeError("--page-size must be at least 1")
     return int_value
+
 
 def validate_name(value) -> str:
     pattern = r'^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$'
@@ -47,11 +51,13 @@ def validate_name(value) -> str:
         raise argparse.ArgumentTypeError("--name must match pattern: " + pattern)
     return value
 
+
 def check_minimum_max_sessions(value) -> int:
     int_value = int(value)
     if int_value < 1:
         raise argparse.ArgumentTypeError("--max-sessions must be at least 1")
     return int_value
+
 
 def check_minimum_max_parallel_reqs(value) -> int:
     int_value = int(value)
@@ -59,12 +65,12 @@ def check_minimum_max_parallel_reqs(value) -> int:
         raise argparse.ArgumentTypeError("--max-multi-delete-reqs must be at least 1")
     return int_value
 
+
 def check_subtest_names(value) -> list[str]:
-    # Avoiding circular import
-    from .__main__ import get_subtest_functions
+    subtest_map = all_subtests()
 
     names = [name.strip() for name in value.split(",")]
-    invalid_names = [name for name in names if name not in get_subtest_functions]
+    invalid_names = [name for name in names if name not in subtest_map]
     if invalid_names:
-        raise argparse.ArgumentTypeError(f"Invalid subtest names: {', '.join(invalid_names)}; valid names are: {', '.join(list(get_subtest_functions().keys()))}")
+        raise argparse.ArgumentTypeError(f"Invalid subtest names: {', '.join(invalid_names)}; valid names are: {', '.join(subtest_map.keys())}")
     return names

@@ -29,12 +29,13 @@ Function for parsing command line arguments
 import argparse
 from typing import get_args
 
-from .validators import (check_subtest_names, check_minimum_max_sessions, check_minimum_max_parallel_reqs
-                            , check_min_page_size, validate_name)
+from .validators import (check_subtest_names, check_minimum_max_sessions,
+                         check_minimum_max_parallel_reqs, check_min_page_size, validate_name)
 from .defs import (DEFAULT_MAX_SESSIONS, DEFAULT_MAX_PARALLEL_REQUESTS, DEFAULT_CFS_VERSION,
                    DEFAULT_SESSION_NAME_PREFIX, CFS_VERSIONS_STR)
 
-def _add_mutually_exclusive_arguments(parser: argparse.ArgumentParser) -> None:
+
+def add_mutually_exclusive_arguments(parser: argparse.ArgumentParser) -> None:
     """
     --run-subtests	A comma-separated list of subtests. Only these subtests will be run. Mutually exclusive with
     --skip-subtests. If neither is specified, all subtests are run.
@@ -53,7 +54,8 @@ def _add_mutually_exclusive_arguments(parser: argparse.ArgumentParser) -> None:
         help="Comma-separated list of subtests to skip. Mutually exclusive with --run-subtests. If neither is specified, all subtests are run."
     )
 
-def _add_cfs_session_arguments(parser: argparse.ArgumentParser) -> None:
+
+def add_cfs_session_arguments(parser: argparse.ArgumentParser) -> None:
     """
     Add arguments related to CFS sessions
     --name	All sessions used for this test will have names with this prefix.
@@ -66,7 +68,8 @@ def _add_cfs_session_arguments(parser: argparse.ArgumentParser) -> None:
         help="Prefix for all session names (default: %(default)s)"
     )
 
-def _add_setup_arguments(parser: argparse.ArgumentParser) -> None:
+
+def add_setup_arguments(parser: argparse.ArgumentParser) -> None:
     """
     Add arguments related to set up
     --delete-previous-sessions	If true, the test will automatically delete any sessions that exist at the
@@ -97,7 +100,8 @@ def _add_setup_arguments(parser: argparse.ArgumentParser) -> None:
         help="Page size for multi-get requests (default: 10 * max-sessions for v3, min=max-sessions for v2, min=1 for v3)"
     )
 
-def _add_subtests_arguments(parser: argparse.ArgumentParser) -> None:
+
+def add_subtests_arguments(parser: argparse.ArgumentParser) -> None:
     """
     Add arguments related to subtests
      --max-sessions	Maximum number of CFS sessions to create

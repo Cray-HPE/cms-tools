@@ -29,12 +29,9 @@ Class for creating and managing concurrent API requests using threading.
 import threading
 import random
 from collections.abc import Callable
-from typing import TypeVar
 from dataclasses import dataclass
 
 from cmstools.test.cfs_sessions_rc_test.log import logger
-
-T = TypeVar('T')
 
 
 @dataclass
@@ -46,9 +43,6 @@ class RequestBatch:
 
 class ConcurrentRequestManager:
     """Manage parallel API requests using threading."""
-
-    def __init__(self):
-       pass
 
     def create_batch(self, batch: RequestBatch) -> list[threading.Thread]:
         """
@@ -89,13 +83,13 @@ class ConcurrentRequestManager:
             random.shuffle(threads)
 
         # Start all threads
-        for idx, thread in enumerate(threads):
+        for thread in threads:
             thread.start()
-            logger.debug("Started thread %d/%d", (idx+1), thread_count)
+        logger.debug("Started all %d threads", thread_count)
 
         # Wait for all threads to complete
         for idx, thread in enumerate(threads):
             thread.join()
-            logger.debug("Joined thread %d/%d", (idx+1), thread_count)
+            logger.debug("Joined thread %d/%d", (idx + 1), thread_count)
 
         logger.info("Batch execution complete: all %d threads finished", thread_count)
