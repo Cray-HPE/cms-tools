@@ -31,7 +31,7 @@ from kubernetes import client, config
 
 from cmstools.lib.defs import CmstoolsException, JsonDict
 from cmstools.lib.common_logger import logger
-from cmstools.lib.k8s.defs import DEFAULT_NS
+from cmstools.lib.k8s import DEFAULT_NS
 
 
 def get_k8s_configmap_data(cm_name: str, cm_namespace: str = DEFAULT_NS) -> JsonDict:
@@ -109,15 +109,22 @@ def check_replicas_and_pods_scaled(deployment_name: str, expected_replicas: int,
     while True:
         actual_replicas = get_deployment_replicas(deployment_name=deployment_name, namespace=namespace)
 
-        if actual_replicas == expected_replicas and get_pod_count_for_deployment(deployment_name=deployment_name) == 0:
+        if (
+            actual_replicas == expected_replicas and
+            get_pod_count_for_deployment(deployment_name=deployment_name,
+                                         namespace=namespace) == 0
+        ):
             logger.info("Deployment %s scaled to %d replicas and all pods terminated", deployment_name, expected_replicas)
             return
         if time.time() > max_time:
-            logger.error("Timeout: Deployment %s did not scale to %d replicas and terminate pods within %d minutes",
-                         deployment_name, expected_replicas, max_minutes)
+            logger.error(
+                "Timeout: Deployment '%s' in namespace '%s' did not scale to %d replicas and terminate pods within %d minutes",
+                deployment_name, namespace, expected_replicas, max_minutes
+            )
             raise CmstoolsException()
 
-        logger.info("Waiting for deployment %s to scale down and pods to terminate.", deployment_name)
+        logger.info("Waiting for deployment '%s' in namespace '%s' to scale down and pods to terminate.",
+                    deployment_name, namespace)
         time.sleep(5)
 
 # initialize k8s

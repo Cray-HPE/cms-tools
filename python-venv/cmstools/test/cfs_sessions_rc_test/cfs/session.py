@@ -181,7 +181,7 @@ def get_cfs_sessions_list(cfs_session_name_contains: str, cfs_version: CFS_VERSI
 
 def get_expected_delete_sessions_status_codes(cfs_version: CFS_VERSIONS_STR) -> int:
     """
-    Get expected status code for delete sessions based on CFS version.
+    Get expected status code for a successful delete sessions request, based on CFS version.
     """
     if cfs_version == "v2":
         return HTTP_NO_CONTENT

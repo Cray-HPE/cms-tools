@@ -26,7 +26,7 @@ CFS configuration related functions
 """
 
 from cmstools.lib.api import request_and_check_status
-from cmstools.lib.cfs.defs import CFS_CONFIGS_URL
+from cmstools.lib.cfs import CFS_CONFIGS_URL
 from cmstools.lib.common_logger import logger
 from cmstools.lib.defs import JsonDict
 

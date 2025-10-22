@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMCMS-9471: cmsdev: Add multitenancy CFS CRUD tests
 - CASMCMS-9470: cmsdev: Add read-only multitenancy CFS tests
 - CASMCMS-9539: cmsdev: Add --include-cli flag to inlcude CLI tests during health checks
-- CASMCMS-9547: cmsdev: Create cfs-session-race-condition test
+- CASMCMS-9547: cmsdev: Create cfs-session-race-condition test and multi-delete subtest
 - CASMCMS-9548: cmsdev: Create cfs-session-race-condition multi-delete-and-multi-get subtest
 
 ### Changed

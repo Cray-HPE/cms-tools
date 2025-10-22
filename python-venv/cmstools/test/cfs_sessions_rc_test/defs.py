@@ -38,10 +38,10 @@ DEFAULT_MAX_PARALLEL_REQUESTS = 4
 DEFAULT_CFS_VERSION = "v3"
 
 # Create the Literal from the constants
-CFS_VERSIONS_LITERAL = Literal["v2", "v3"]
+CfsVersionsStrLiteral = Literal["v2", "v3"]
 
 # Create the frozenset for runtime validation
-CFS_VERSIONS_STR = frozenset(get_args(CFS_VERSIONS_LITERAL))
+CFS_VERSIONS_STR = frozenset(get_args(CfsVersionsStrLiteral)
 MAX_NAME_LENGTH = 40
 MIN_NAME_LENGTH = 1
 
@@ -55,7 +55,7 @@ class ScriptArgs(NamedTuple):
     max_multi_cfs_sessions_delete_requests: int  # default to 4
     max_multi_cfs_sessions_get_requests: int  # default to 4
     delete_preexisting_cfs_sessions: bool
-    cfs_version: CFS_VERSIONS_STR  # default to v3
+    cfs_version: CfsVersionsStrLiteral  # default to v3
     page_size: Optional[int] = None
     run_subtests: list[str] | None = None
     skip_subtests: list[str] | None = None
