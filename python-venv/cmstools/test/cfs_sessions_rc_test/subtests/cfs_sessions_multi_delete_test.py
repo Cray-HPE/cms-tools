@@ -28,14 +28,13 @@ CFS race condition multi delete test related functions
 
 import threading
 from typing import ClassVar
-
 import requests
 
-from cmstools.lib.api.api import API_REQUEST_TIMEOUT, add_api_auth, SYSTEM_CA_CERTS
-from cmstools.lib.cfs.defs import CFS_SESSIONS_URL_TEMPLATE, SessionDeleteResult
-from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs
+from cmstools.lib.api import add_api_auth, SYSTEM_CA_CERTS
+from cmstools.lib.cfs import (CFS_SESSIONS_URL_TEMPLATE, SessionDeleteResult, HTTP_BAD_REQUEST)
+from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs, API_REQUEST_TIMEOUT
 from cmstools.test.cfs_sessions_rc_test.log import logger
-
+from cmstools.test.cfs_sessions_rc_test.cfs.session import get_expected_delete_sessions_status_codes
 from cmstools.test.cfs_sessions_rc_test.subtests.cfs_session_base import CFSSessionBase
 from cmstools.test.cfs_sessions_rc_test.helpers.response_handler import ResponseHandler
 from cmstools.test.cfs_sessions_rc_test.helpers.concurrent_requests import ConcurrentRequestManager, RequestBatch
@@ -53,12 +52,6 @@ class CfsSessionMultiDeleteTest(CFSSessionBase):
         self.response_handler = ResponseHandler(script_args=script_args, session_names=self._session_names)
         self._tlist: list[threading.Thread] = []
         self.delete_result_list: list[SessionDeleteResult] = []
-
-    @property
-    def expected_http_status(self) -> int:
-        if self.script_args.cfs_version == "v2":
-            return 204
-        return 200
 
     def _execute_test_logic(self) -> None:
         """Execute parallel delete requests."""
@@ -90,17 +83,19 @@ class CfsSessionMultiDeleteTest(CFSSessionBase):
             add_api_auth(headers)
             resp = requests.delete(url=url, params=params, timeout=API_REQUEST_TIMEOUT, headers=headers, verify=SYSTEM_CA_CERTS)
 
-            if resp.status_code == self.expected_http_status and self.script_args.cfs_version == "v3":
+            if (resp.status_code == get_expected_delete_sessions_status_codes(cfs_version=self.script_args.cfs_version) and
+                    self.script_args.cfs_version == "v3"):
                 deleted = resp.json() if resp.content else []
                 logger.info("Deleted sessions: %s", deleted)
                 session_delete_result = SessionDeleteResult(status_code=resp.status_code, session_data=deleted)
 
-            if resp.status_code not in (self.expected_http_status, 400):
+            if (resp.status_code not in
+                    (get_expected_delete_sessions_status_codes(cfs_version=self.script_args.cfs_version), HTTP_BAD_REQUEST)):
                 logger.error("Unexpected return code %d from Delete to %s: %s", resp.status_code, url, resp.text)
                 session_delete_result = SessionDeleteResult(status_code=resp.status_code, timed_out=False)
 
         except requests.exceptions.Timeout:
-            logger.error("Request timed out for thread %s", threading.current_thread().name)
+            logger.error("Delete CFS sessions request timed out")
             session_delete_result = SessionDeleteResult(
                 status_code=0,
                 timed_out=True,
@@ -127,15 +122,3 @@ class CfsSessionMultiDeleteTest(CFSSessionBase):
         Validate that no other session names are included in the lists
         """
         self.response_handler.verify_sessions_after_multi_delete(self.delete_result_list)
-
-    @staticmethod
-    def execute(script_args: ScriptArgs) -> None:
-        """
-        Create <max-multi-delete-reqs> parallel multi-delete requests, each of which is deleting all pending
-        sessions that have the text prefix string in their names.
-        (v3 only) If successful, each delete request will return a list of the session names that it deleted.
-        These lists need to be saved. (This is only true for v3 – for v2 a successful response returns nothing)
-        Wait for all parallel jobs to complete.
-        """
-        test = CfsSessionMultiDeleteTest(script_args=script_args)
-        test.run()

@@ -26,8 +26,8 @@
 Class to validate the response from CFS API calls.
 """
 
-from cmstools.lib.cfs.defs import (SessionDeleteResult, CFS_V3_SESSION_DELETE_CODES,
-                                   CFS_V2_SESSION_DELETE_CODES, SessionGetWithNameContainsResult, HTTP_OK)
+from cmstools.lib.cfs import CFS_V2_SESSIONS_DELETE_CODES, CFS_V3_SESSIONS_DELETE_CODES, HTTP_OK, \
+    SessionDeleteResult, MultiSessionsGetResult
 from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs, CFSRCException
 from cmstools.test.cfs_sessions_rc_test.cfs.session import get_cfs_sessions_list
 from cmstools.test.cfs_sessions_rc_test.log import logger
@@ -40,7 +40,7 @@ class ResponseHandler:
         self.script_args = script_args
         self.session_names = session_names
 
-    def validate_multi_get_sessions_response(self, multi_get_results: list[SessionGetWithNameContainsResult]) -> None:
+    def validate_multi_get_sessions_response(self, multi_get_results: list[MultiSessionsGetResult]) -> None:
         """
         Validate that every entry in each list returned by the multi-get requests is a dict
         and corresponds to one of the sessions we created.
@@ -77,7 +77,7 @@ class ResponseHandler:
             logger.error("%d delete operations timed out", len(timeouts))
             raise CFSRCException()
 
-        expected_codes = CFS_V3_SESSION_DELETE_CODES if self.script_args.cfs_version == "v3" else CFS_V2_SESSION_DELETE_CODES
+        expected_codes = CFS_V3_SESSIONS_DELETE_CODES if self.script_args.cfs_version == "v3" else CFS_V2_SESSIONS_DELETE_CODES
         invalid_responses = [r for r in deleted_sessions_list if r.status_code not in expected_codes]
         if invalid_responses:
             logger.error("%d delete operation returned unexpected status codes", len(invalid_responses))
@@ -107,8 +107,7 @@ class ResponseHandler:
             raise CFSRCException()
 
     def _is_valid_v3_delete_response(self, result: SessionDeleteResult) -> bool:
-        return (result.status_code == HTTP_OK and
-                isinstance(result.session_data, dict) and
+        return (result.status_code == HTTP_OK and isinstance(result.session_data, dict) and
                 'session_ids' in result.session_data)
 
     def verify_v3_api_deleted_cfs_sessions_response(self, deleted_sessions_list: list[SessionDeleteResult]) -> None:

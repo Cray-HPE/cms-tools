@@ -92,10 +92,9 @@ class CFSSessionBase(ABC):
         finally:
             self._cleanup()
 
-    @staticmethod
-    def execute(script_args: ScriptArgs) -> None:
-        """Template method for test execution."""
-        pass
+    @classmethod
+    def execute(cls, script_args: ScriptArgs) -> None:
+        cls(script_args=script_args).run()
 
     def _setup(self) -> list[str]:
         """Creating CFS sessions needed for tests."""

@@ -25,8 +25,8 @@
 CFS configuration related functions
 """
 
-from cmstools.lib.cfs.defs import CFS_CONFIGS_URL
-from cmstools.lib.cfs.config import create_cfs_config
+from cmstools.lib.cfs import (CFS_CONFIGS_URL, HTTP_OK, create_cfs_config,
+                              HTTP_NO_CONTENT)
 from cmstools.lib.api import request
 from cmstools.test.cfs_sessions_rc_test.defs import CFSRCException
 from cmstools.test.cfs_sessions_rc_test.helpers.setup import set_cfs_config_name
@@ -42,7 +42,7 @@ def delete_cfs_configuration(cfs_configuration_name: str) -> None:
     url = f"{CFS_CONFIGS_URL}/{cfs_configuration_name}"
     resp = request("delete", url)
 
-    if resp.status_code != 204:
+    if resp.status_code != HTTP_NO_CONTENT:
         logger.error("Failed to delete CFS configuration %s: %s", cfs_configuration_name, resp.text)
         raise CFSRCException()
 
@@ -51,7 +51,7 @@ def find_or_create_cfs_config(name_prefix: str) -> str:
     url = CFS_CONFIGS_URL
     resp = request("get", url)
 
-    if resp.status_code != 200:
+    if resp.status_code != HTTP_OK:
         logger.error("Failed to list CFS configs: %s", resp.text)
         raise CFSRCException()
 

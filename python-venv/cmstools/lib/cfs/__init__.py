@@ -25,3 +25,10 @@
 """
 CFS module for cmstools tests
 """
+
+from .defs import (CFS_SESSIONS_URL_TEMPLATE, CFS_OPERATOR_DEPLOYMENT, CFS_OPTIONS_URL,
+                   CFS_DEFAULT_PAGE_SIZE, CFS_CONFIGS_URL)
+from .types import (SessionDeleteResult, MultiSessionsGetResult, CFS_V2_SESSIONS_DELETE_CODES,
+                    CFS_V3_SESSIONS_DELETE_CODES, HTTP_OK, HTTP_NO_CONTENT, HTTP_BAD_REQUEST, HTTP_NOT_FOUND,
+                    HTTP_CREATED)
+from .config import create_cfs_config

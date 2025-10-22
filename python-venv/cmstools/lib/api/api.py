@@ -43,14 +43,14 @@ API_GW_SECURE = f"https://{API_GW_DNSNAME}"
 API_BASE_URL = f"{API_GW_SECURE}/apis"
 
 SYSTEM_CA_CERTS = "/etc/ssl/ca-bundle.pem"
-API_REQUEST_TIMEOUT = 30  # seconds
+
 
 def add_api_auth(headers: JsonDict) -> None:
     """
     Get the admin secret from k8s for the api gateway - command line equivalent is:
     #`kubectl get secrets admin-client-auth -o jsonpath='{.data.client-secret}' | base64 -d`
     """
-    secret_data = get_k8s_secret_data("admin-client-auth")
+    secret_data = get_k8s_secret_data(sec_name="admin-client-auth", sec_namespace="default")
     try:
         encoded_admin_secret = secret_data['client-secret']
         admin_secret = base64.b64decode(encoded_admin_secret)

@@ -28,7 +28,7 @@ CFS race condition setup related functions
 from typing import Optional
 
 from cmstools.lib.k8s import get_deployment_replicas, set_deployment_replicas, check_replicas_and_pods_scaled
-from cmstools.lib.cfs.defs import CFS_OPERATOR_DEPLOYMENT
+from cmstools.lib.cfs import CFS_OPERATOR_DEPLOYMENT
 from cmstools.test.cfs_sessions_rc_test.cfs.options import get_cfs_page_size, set_cfs_page_size
 from cmstools.test.cfs_sessions_rc_test.log import logger
 from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs, CFSRCException
@@ -53,37 +53,51 @@ def get_cfs_config_name() -> Optional[str]:
     """
     return cfs_config_name
 
+
 def _calculate_v2_page_size(page_size: Optional[int], max_sessions: int, current: int) -> int:
-    """Calculate appropriate page size for CFS v2."""
+    """
+    Calculate appropriate page size for CFS v2.
+    For v2, if page_size is None, set it to 10 * max_sessions, but if that is less than the current value,
+    leave it unchanged. If page_size is specified and is less than max_sessions, set it to max_sessions.
+    """
     if page_size is None:
         return max(10 * max_sessions, current)
     return max(page_size, max_sessions)
 
+
 def _calculate_v3_page_size(page_size: Optional[int], max_sessions: int) -> int:
-    """Calculate appropriate page size for CFS v3."""
+    """
+    Calculate appropriate page size for CFS v3.
+    For v3, if page_size is None, set it to 10 * max_sessions.
+    """
     return page_size if page_size is not None else 10 * max_sessions
 
-def set_page_size_if_needed(page_size: int | None, max_sessions: int, cfs_version: str) -> tuple[int, Optional[int]]:
+
+def set_page_size_v2(page_size: Optional[int], max_sessions: int) -> tuple[int, Optional[int]]:
     """
     Set the CFS global page-size option to the desired value if it is not already set to that value for v2.
     Return the current value if it was changed, otherwise return None.
-    For v3, if page_size is None, set it to 10 * max_sessions.
-    For v2, if page_size is None, set it to 10 * max_sessions, but if that is less than the current value,
-    leave it unchanged. If page_size is specified and is less than max_sessions, set it to max_sessions.
-    For v2, return the current value if it was changed, otherwise return None.
     """
-    current_page_size = None
+    current_page_size = get_cfs_page_size()
+    page_size = _calculate_v2_page_size(page_size, max_sessions, current_page_size)
+    if page_size != current_page_size:
+        set_cfs_page_size(page_size)
+        logger.info("For CFS v2 API setting the page size %d", page_size)
+        return page_size, current_page_size
+    return page_size, None
 
+
+def set_page_size_if_needed(page_size: int | None, max_sessions: int, cfs_version: str) -> tuple[int, Optional[int]]:
+    """
+    In case of v3, return the calculated page size, It is not required to set global page size
+    because in case of V3 page size is sent in API call. current_page_size is returned as None.
+    For v2, Set the CFS global page-size option to the desired value if it is not already set to that value for v2.
+    Return the current value if it was changed, otherwise return None. None is used to determine if
+    restoration is needed later.
+    """
     if cfs_version == "v2":
-        current_page_size = get_cfs_page_size()
-        page_size = _calculate_v2_page_size(page_size, max_sessions, current_page_size)
-        if page_size != current_page_size:
-            set_cfs_page_size(page_size)
-            logger.info("For CFS v2 API setting the page size %d", page_size)
-    if cfs_version == "v3":
-        page_size = _calculate_v3_page_size(page_size, max_sessions)
-
-    return page_size, current_page_size
+        return set_page_size_v2(page_size, max_sessions)
+    return _calculate_v3_page_size(page_size, max_sessions), None
 
 
 def cfs_sessions_rc_test_setup(script_args: ScriptArgs) -> TestSetupResponse:
@@ -125,10 +139,11 @@ def cfs_sessions_rc_test_setup(script_args: ScriptArgs) -> TestSetupResponse:
     current_replicas = get_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT)
     logger.info("Current number of replicas for cray-cfs-operator deployment: %d", current_replicas)
 
-    # Scale the cray-cfs-operator deployment to 0 replicas to stop it from processing cfs sessions
-    logger.info("Scaling cray-cfs-operator deployment to 0 replicas to stop it from processing CFS sessions")
-    set_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT, replicas=0)
-    check_replicas_and_pods_scaled(deployment_name=CFS_OPERATOR_DEPLOYMENT, expected_replicas=0)
+    if current_replicas > 0:
+        # Scale the cray-cfs-operator deployment to 0 replicas to stop it from processing cfs sessions
+        logger.info("Scaling cray-cfs-operator deployment to 0 replicas to stop it from processing CFS sessions")
+        set_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT, replicas=0)
+        check_replicas_and_pods_scaled(deployment_name=CFS_OPERATOR_DEPLOYMENT, expected_replicas=0)
 
     return TestSetupResponse(
         original_page_size=current_page_size,

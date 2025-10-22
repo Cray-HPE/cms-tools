@@ -22,6 +22,6 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from cmstools.lib.log import get_test_logger
+from cmstools.lib import get_test_logger
 
 logger = get_test_logger("cfs_sessions_rc_test")

@@ -27,6 +27,7 @@ cfs session creator class for session creation and verification
 """
 
 from cmstools.lib.defs import JsonDict
+from cmstools.lib.cfs import HTTP_OK, HTTP_CREATED
 from cmstools.test.cfs_sessions_rc_test.cfs.configurations import find_or_create_cfs_config
 from cmstools.test.cfs_sessions_rc_test.cfs.session import get_cfs_sessions_list, create_cfs_session
 from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs, CFSRCException
@@ -43,8 +44,8 @@ class CfsSessionCreator:
     @property
     def expected_http_status(self) -> int:
         if self.cfs_version == "v2":
-            return 200
-        return 201
+            return HTTP_OK
+        return HTTP_CREATED
 
     def create_cfs_session_payload(self, session_name: str, config_name: str) -> JsonDict:
         """

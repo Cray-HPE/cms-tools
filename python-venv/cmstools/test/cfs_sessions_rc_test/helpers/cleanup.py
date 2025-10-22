@@ -27,7 +27,7 @@ CFS race condition cleanup related functions
 """
 
 from cmstools.lib.k8s import get_deployment_replicas, set_deployment_replicas
-from cmstools.lib.cfs.defs import CFS_OPERATOR_DEPLOYMENT
+from cmstools.lib.cfs import CFS_OPERATOR_DEPLOYMENT, HTTP_OK
 from cmstools.test.cfs_sessions_rc_test.cfs.session import (delete_cfs_session_by_name,
                                                             delete_cfs_sessions, get_cfs_sessions_list)
 from cmstools.test.cfs_sessions_rc_test.log import logger
@@ -54,7 +54,7 @@ def cleanup_cfs_sessions(name_prefix: str, cfs_version: CFS_VERSIONS_STR, page_s
             cfs_version=cfs_version,
             limit=page_size
         )
-        if not result.session_data or result.status_code != 200:
+        if not result.session_data or result.status_code != HTTP_OK:
             logger.info("No remaining CFS sessions found for cleanup")
             return
         cfs_session_list = [s["name"] for s in result.session_data]

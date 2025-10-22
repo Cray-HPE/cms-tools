@@ -100,14 +100,14 @@ def get_pod_count_for_deployment(deployment_name: str, namespace: str = DEFAULT_
         logger.exception("Error retrieving pod count for deployment '%s' in namespace '%s'", deployment_name, namespace)
         raise CmstoolsException from exc
 
-def check_replicas_and_pods_scaled(deployment_name: str, expected_replicas: int) -> None:
+def check_replicas_and_pods_scaled(deployment_name: str, expected_replicas: int, namespace: str = DEFAULT_NS) -> None:
     """
     Ensure deployment is scaled and all pods are terminated.
     """
     max_minutes = 5
     max_time = time.time() + max_minutes*60
     while True:
-        actual_replicas = get_deployment_replicas(deployment_name=deployment_name)
+        actual_replicas = get_deployment_replicas(deployment_name=deployment_name, namespace=namespace)
 
         if actual_replicas == expected_replicas and get_pod_count_for_deployment(deployment_name=deployment_name) == 0:
             logger.info("Deployment %s scaled to %d replicas and all pods terminated", deployment_name, expected_replicas)

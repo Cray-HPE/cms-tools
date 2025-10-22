@@ -28,7 +28,7 @@ CFS race condition multi delete multi get test related functions
 
 from typing import ClassVar
 
-from cmstools.lib.cfs.defs import SessionGetWithNameContainsResult
+from cmstools.lib.cfs import MultiSessionsGetResult, HTTP_OK
 from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs
 from cmstools.test.cfs_sessions_rc_test.log import logger
 from cmstools.test.cfs_sessions_rc_test.cfs.session import get_cfs_sessions_list
@@ -45,7 +45,7 @@ class CFSSessionMultiDeleteMultiGetTest(CfsSessionMultiDeleteTest):
 
     def __init__(self, script_args: ScriptArgs) -> None:
         super().__init__(script_args=script_args)
-        self.get_result_list: list[SessionGetWithNameContainsResult] = []
+        self.get_result_list: list[MultiSessionsGetResult] = []
 
     def _execute_test_logic(self) -> None:
         """
@@ -81,7 +81,7 @@ class CFSSessionMultiDeleteMultiGetTest(CfsSessionMultiDeleteTest):
             cfs_version=self.script_args.cfs_version,
             limit=self.script_args.page_size, retry=False)
 
-        if result.session_data is not None and result.status_code == 200:
+        if result.session_data is not None and result.status_code == HTTP_OK:
             logger.debug("Got %s sessions in thread with name prefix %s", result.session_data,
                          self.script_args.cfs_session_name)
             with self.lock:
@@ -112,18 +112,6 @@ class CFSSessionMultiDeleteMultiGetTest(CfsSessionMultiDeleteTest):
             exceptions.append(e)
 
         if exceptions:
+            if len(exceptions) == 1:
+                raise exceptions[0]
             raise ExceptionGroup("Validation errors occurred", exceptions)
-
-    @staticmethod
-    def execute(script_args: ScriptArgs) -> None:
-        """
-        Create <max-multi-delete-reqs> parallel multi-delete requests, each of which is deleting all pending
-        sessions that have the text prefix string in their names.
-        Issue multiple parallel get requests to get all sessions that have the text prefix string in their names.
-        For the session lists that were returned by the multi-get requests, validate that every entry in each list
-        is a dict object that corresponds to one of the sessions we created.
-        (It is fine if some sessions are not listed in any of the responses. It is fine if no sessions are listed
-        in any of the responses.)
-        """
-        test = CFSSessionMultiDeleteMultiGetTest(script_args=script_args)
-        test.run()

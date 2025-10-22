@@ -23,26 +23,41 @@
 #
 
 """
-CFS URL definitions
+Used to define type hints for CFS related data structures
 """
+from dataclasses import dataclass
+from typing import Literal, Optional
 
-from cmstools.lib.api import API_BASE_URL
+# There was a CFS v1, but it hasn't been in CSM since CSM 1.0
+CFS_VERSION_INT = Literal[ 2, 3 ]
+
+# CFS session operation HTTP return codes
+CFS_V2_SESSIONS_DELETE_CODES = Literal[ 204, 400]
+CFS_V3_SESSIONS_DELETE_CODES = Literal[ 200, 400]
+
+# HTTP Status codes
+HTTP_OK = 200
+HTTP_CREATED = 201
+HTTP_NO_CONTENT = 204
+HTTP_BAD_REQUEST = 400
+HTTP_NOT_FOUND = 404
+
+# Data classes
+@dataclass
+class BaseRequestResult:
+    """Base data class for request result information."""
+    status_code: int
+    timed_out: bool = False
+    error_message: Optional[str] = None
 
 
-# CFS v3 URLs
-CFS_URL = f"{API_BASE_URL}/cfs/v3"
-CFS_CONFIGS_URL = f"{CFS_URL}/configurations"
-CFS_SESSIONS_URL = f"{CFS_URL}/sessions"
-CFS_COMPONENTS_URL = f"{CFS_URL}/components"
-CFS_OPTIONS_URL = f"{CFS_URL}/options"
+@dataclass
+class SessionDeleteResult(BaseRequestResult):
+    """Data class to hold session delete result information."""
+    session_data: Optional[dict] = None  # Filled for v3 only
 
-# CFS formatted URLs for API version as placeholder
-CFS_URL_TEMPLATE = f"{API_BASE_URL}/cfs/{{api_version}}"
-CFS_SESSIONS_URL_TEMPLATE = f"{CFS_URL_TEMPLATE}/sessions"
 
-# Deployments
-CFS_OPERATOR_DEPLOYMENT = "cray-cfs-operator"
-
-# CFS options
-CFS_DEFAULT_PAGE_SIZE = 1000
-
+@dataclass
+class MultiSessionsGetResult(BaseRequestResult):
+    """Data class to hold session GET result information."""
+    session_data: Optional[list[dict]] = None

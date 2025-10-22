@@ -72,5 +72,5 @@ def check_subtest_names(value: str) -> list[str]:
     names = [name.strip() for name in value.split(",")]
     invalid_names = [name for name in names if name not in subtest_map]
     if invalid_names:
-        raise argparse.ArgumentTypeError(f"Invalid subtest names: {', '.join(invalid_names)}; valid names are: {', '.join(subtest_map)}")
-    return names
+        raise argparse.ArgumentTypeError(f"Invalid subtest names: {', '.join(invalid_names)}; valid names are: {', '.join(subtest_map.keys())}")
+    return list(set(names))  # Remove duplicates

@@ -32,7 +32,7 @@ from cmstools.lib.defs import JsonDict
 
 def create_cfs_config(config_name: str, layers: list[JsonDict]) -> JsonDict:
     """
-    Create a CFS configuration with the specified name and layers.
+    Create a CFS configuration using V3 API with the specified name and layers.
 
     Args:
         config_name: Name of the configuration to create

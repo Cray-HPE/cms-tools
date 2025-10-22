@@ -51,15 +51,27 @@ def get_test_names(script_args: ScriptArgs) -> list[str]:
     return list(all_tests)
 
 
-def _execute_subtests(test_names: list[str], script_args: ScriptArgs) -> None:
+def get_tests(script_args: ScriptArgs) -> dict[str, any]:
+    """Get the dictionary of subtests to run based on command line arguments."""
+    all_tests = all_subtests()
+
+    if script_args.run_subtests:
+        return {name: all_tests[name] for name in script_args.run_subtests if name in all_tests}
+
+    if script_args.skip_subtests:
+        return {name: test for name, test in all_tests.items() if name not in script_args.skip_subtests}
+
+    return all_tests
+
+
+def _execute_subtests(tests: dict[str, any], script_args: ScriptArgs) -> None:
     """Execute the specified subtests."""
-    subtest_map = all_subtests()
     failed_tests = []
 
-    for test_name in test_names:
+    for test_name, test_instance in tests.items():
         logger.info("Starting subtest %s", test_name)
         try:
-            subtest_map[test_name].execute(script_args)
+            test_instance.execute(script_args)
             logger.info("Completed subtest %s", test_name)
         except Exception as e:
             logger.exception("Subtest %s failed with exception: %s", test_name, e)
@@ -80,13 +92,13 @@ def run(script_args: ScriptArgs) -> None:
 
     try:
         # Run the tests
-        test_names = get_test_names(script_args)
+        test_names = get_tests(script_args)
 
         if not test_names:
             logger.warning("No subtests to run after applying run/skip filters")
             return
 
-        logger.info("Executing subtests: %s", test_names)
+        logger.info("Executing subtests: %s", list(test_names.keys()))
         # Setting up the test environment
         test_setup_response = cfs_sessions_rc_test_setup(script_args)
         script_args = script_args._replace(page_size=test_setup_response.new_page_size)
@@ -94,7 +106,7 @@ def run(script_args: ScriptArgs) -> None:
         orig_page_size = test_setup_response.original_page_size
         orig_replica_count = test_setup_response.original_replicas_count
 
-        _execute_subtests(test_names=test_names, script_args=script_args)
+        _execute_subtests(tests=test_names, script_args=script_args)
 
     finally:
         cleanup_and_restore(orig_replicas_count=orig_replica_count,

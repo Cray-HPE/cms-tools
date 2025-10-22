@@ -27,7 +27,6 @@ Function for parsing command line arguments
 """
 
 import argparse
-from typing import get_args
 
 from .validators import (check_subtest_names, check_minimum_max_sessions,
                          check_minimum_max_parallel_reqs, check_min_page_size, validate_name)
@@ -90,7 +89,7 @@ def add_setup_arguments(parser: argparse.ArgumentParser) -> None:
         "--cfs-version",
         type=str,
         default=DEFAULT_CFS_VERSION,
-        choices=get_args(CFS_VERSIONS_STR),
+        choices=CFS_VERSIONS_STR,
         help="CFS API version to use (default: %(default)s)"
     )
     parser.add_argument(
