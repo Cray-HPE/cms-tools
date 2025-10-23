@@ -28,8 +28,9 @@ CFS race condition multi delete test related functions
 
 import threading
 from typing import ClassVar
-import requests
 from http import HTTPStatus
+
+import requests
 
 from cmstools.lib.api import add_api_auth, SYSTEM_CA_CERTS
 from cmstools.lib.cfs import (CFS_SESSIONS_URL_TEMPLATE, SessionDeleteResult)

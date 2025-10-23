@@ -26,8 +26,9 @@
 CFS Session related functions
 """
 
-import requests
 from http import HTTPStatus
+
+import requests
 
 from cmstools.lib.api import (request, request_and_check_status,
                               add_api_auth, SYSTEM_CA_CERTS)
