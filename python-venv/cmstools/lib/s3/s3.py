@@ -33,7 +33,7 @@ import boto3
 from urllib3.exceptions import InsecureRequestWarning
 
 from cmstools.lib.defs import JsonDict
-from cmstools.lib.k8s import get_k8s_secret_data, K8_CREDS_SECRET_NS
+from cmstools.lib.k8s import get_k8s_secret_data, S3_CREDS_SECRET_NS
 from cmstools.lib.common_logger import logger
 
 from .defs import S3_CREDS_SECRET_FIELDS, S3_CREDS_SECRET_NAME
@@ -44,7 +44,7 @@ def s3_client_kwargs() -> JsonDict:
     Decode the S3 credentials from the Kubernetes secret, and return
     the kwargs needed to initialize the boto3 client.
     """
-    secret_data = get_k8s_secret_data(sec_name=S3_CREDS_SECRET_NAME, sec_namespace=K8_CREDS_SECRET_NS)
+    secret_data = get_k8s_secret_data(sec_name=S3_CREDS_SECRET_NAME, sec_namespace=S3_CREDS_SECRET_NS)
     logger.debug("Reading fields from Kubernetes secret '%s'", S3_CREDS_SECRET_NAME)
     encoded_s3_secret_fields = { field: secret_data[secret_field]
                                  for field, secret_field in S3_CREDS_SECRET_FIELDS.items() }

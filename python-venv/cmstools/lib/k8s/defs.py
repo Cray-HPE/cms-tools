@@ -27,4 +27,4 @@ K8s definitions
 """
 
 DEFAULT_NS="services"
-K8_CREDS_SECRET_NS="default"
+S3_CREDS_SECRET_NS= "default"

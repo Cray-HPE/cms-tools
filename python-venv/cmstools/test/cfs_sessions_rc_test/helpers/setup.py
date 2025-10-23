@@ -68,7 +68,17 @@ def _calculate_v2_page_size(page_size: Optional[int], max_sessions: int, current
     """
     if page_size is None:
         return max(10 * max_sessions, current)
-    return max(page_size, max_sessions)
+
+    if page_size < max_sessions:
+        error_msg = (
+            f"Specified page_size ({page_size}) is less than max_sessions ({max_sessions}). "
+            f"For API version v2, Page size must be at least equal to max_sessions for the test to work correctly. "
+            f"Either increase page_size, decrease max_sessions, or omit page_size to use auto-calculated value."
+        )
+        logger.error(error_msg)
+        raise CFSRCException()
+
+    return page_size
 
 
 def _calculate_v3_page_size(page_size: Optional[int], max_sessions: int) -> int:
