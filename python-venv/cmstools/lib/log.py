@@ -58,7 +58,7 @@ def get_test_logger(test_name: str) -> logging.Logger:
         # File handler
         file_handler = logging.FileHandler(filename=log_file_path, mode='w')
         file_handler.setLevel(os.environ.get("FILE_LOG_LEVEL", logging.DEBUG))
-        file_handler.setFormatter(logging.Formatter('%(asctime)s: %(levelname)-8s %(message)s'))
+        file_handler.setFormatter(logging.Formatter('%(asctime)-15s - %(process)d - %(thread)d - %(levelname)-8s %(message)s'))
         logger.addHandler(file_handler)
 
         # Console handler

@@ -23,7 +23,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# Run the barebones boot test from the appropriate virtual environment
+# Run the cmstools test from the appropriate virtual environment
 # based on the installed system Python version
 
 # The value for this variable is set by the Makefile during the build
@@ -39,17 +39,23 @@ function err_exit
 [[ -e ${BB_BASE_DIR} ]] || err_exit "Directory '${BB_BASE_DIR}' should exist but it does not"
 [[ -d ${BB_BASE_DIR} ]] || err_exit "'${BB_BASE_DIR}' exists; it should be a directory, but it is not"
 
+TEST_NAME="$1"
+shift
+
+if [[ "${TEST_NAME}" != "barebones_image_test" && "${TEST_NAME}" != "cfs_sessions_rc_test" ]]; then
+    err_exit "First argument must be 'barebones_image_test' or 'cfs_sessions_rc_test'"
+fi
+
 PYTHON3_BASE_VERSION=$(rpm -q --queryformat '%{VERSION}' python3-base | cut -d. -f1-2) || PYTHON3_BASE_VERSION=""
 
 for PYVER in $(ls "${BB_BASE_DIR}" | grep -E '^[1-9][0-9]*[.](0|[1-9][0-9]*)$' | sort -t. -n -k1,1 -k2,2 -r); do
     if [[ ${PYVER} == "${PYTHON3_BASE_VERSION}" ]]; then
-        "${BB_BASE_DIR}/${PYVER}/cmstools-venv/bin/barebones_image_test" "$@"
+        "${BB_BASE_DIR}/${PYVER}/cmstools-venv/bin/${TEST_NAME}" "$@"
         exit $?
-    # Alternatively, see if pythonxxx-base is installed
     elif rpm -q "python${PYVER//.}-base" >/dev/null 2>&1; then
-        "${BB_BASE_DIR}/${PYVER}/cmstools-venv/bin/barebones_image_test" "$@"
+        "${BB_BASE_DIR}/${PYVER}/cmstools-venv/bin/${TEST_NAME}" "$@"
         exit $?
     fi
 done
 
-err_exit "No installed Python version found matching installed barebones boot test"
+err_exit "No installed Python version found matching installed ${TEST_NAME}"

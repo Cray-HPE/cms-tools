@@ -1,4 +1,4 @@
-# Copyright 2019-2024 Hewlett Packard Enterprise Development LP
+# Copyright 2019-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -83,19 +83,27 @@ echo %{install_venv_python_base_dir} | tee -a INSTALLED_FILES
 cp -prv %{local_venv_python_base_dir}/* %{buildroot}%{install_venv_python_base_dir}
 find %{local_venv_python_base_dir} -print | sed 's#^%{local_venv_python_base_dir}#%{install_venv_python_base_dir}#' | tee -a INSTALLED_FILES
 
-# Add script to launch the barebones test in /opt/cray/tests/integration/csm
+# Add script to launch the cmstools test in /opt/cray/tests/integration/csm
 install -m 755 -d %{buildroot}/opt/cray/tests/integration/csm/
 echo /opt/cray/tests/integration/csm | tee -a INSTALLED_FILES
+
 # If the RPM contains just a single Python version, then we can use a simple symlink.
-# Otherwise we should use the run_barebones_image_test.sh script
+# Otherwise we should use the run_cmstools_test.sh script
+# to run the barebones_image_test and cfs_sessions_rc_test
 %if %{num_py_versions} == 1
 pushd %{buildroot}/opt/cray/tests/integration/csm
 ln -s ../../../../..%{install_venv_python_base_dir}/*/%{cmstools_venv_name}/bin/barebones_image_test barebones_image_test
+ln -s ../../../../..%{install_venv_python_base_dir}/*/%{cmstools_venv_name}/bin/cfs_sessions_rc_test cfs_sessions_rc_test
 popd
 %else
-install -m 755 run_barebones_image_test.sh %{buildroot}/opt/cray/tests/integration/csm/barebones_image_test
+install -m 755 run_cmstools_test.sh %{buildroot}/opt/cray/tests/integration/csm/run_cmstools_test.sh
+echo /opt/cray/tests/integration/csm/run_cmstools_test.sh | tee -a INSTALLED_FILES
+install -m 755 barebones_image_test.sh %{buildroot}/opt/cray/tests/integration/csm/barebones_image_test
+install -m 755 cfs_sessions_rc_test.sh  %{buildroot}/opt/cray/tests/integration/csm/cfs_sessions_rc_test
 %endif
+
 echo /opt/cray/tests/integration/csm/barebones_image_test | tee -a INSTALLED_FILES
+echo /opt/cray/tests/integration/csm/cfs_sessions_rc_test | tee -a INSTALLED_FILES
 
 cat INSTALLED_FILES | xargs -i sh -c 'test -L $RPM_BUILD_ROOT{} -o -f $RPM_BUILD_ROOT{} && echo {} || echo %dir {}' | sort -u > FILES
 

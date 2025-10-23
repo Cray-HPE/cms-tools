@@ -52,4 +52,5 @@ class CfsComponents:
         }
         _ = request_and_check_status("patch", url, expected_status=200,
                                              parse_json=True, json=update_data_json)
-        logger.info(f"Updated CFS component '{cfs_component_name}' with desired config '{data.desired_config}'")
+        logger.info("Updated CFS component '%s' with desired config '%s'",
+                    cfs_component_name, data.desired_config)

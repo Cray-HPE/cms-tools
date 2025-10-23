@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,10 +23,35 @@
 #
 
 """
-Kubernetes module for cmstools tests
+Used to define type hints for CFS related data structures
 """
+from dataclasses import dataclass
+from typing import Literal, Optional
 
-from .k8s import (get_k8s_configmap_data, get_k8s_secret_data, get_deployment_replicas, set_deployment_replicas,
-                  get_pod_count_for_deployment, check_replicas_and_pods_scaled)
-from .defs import DEFAULT_NS
-from ..s3.defs import S3_CREDS_SECRET_NS
+# There was a CFS v1, but it hasn't been in CSM since CSM 1.0
+CFS_VERSION_INT = Literal[ 2, 3 ]
+
+# CFS session operation HTTP return codes
+CFS_V2_SESSIONS_DELETE_CODES = Literal[ 204, 400]
+CFS_V3_SESSIONS_DELETE_CODES = Literal[ 200, 400]
+
+
+# Data classes
+@dataclass
+class BaseRequestResult:
+    """Base data class for request result information."""
+    status_code: int
+    timed_out: bool = False
+    error_message: Optional[str] = None
+
+
+@dataclass
+class SessionDeleteResult(BaseRequestResult):
+    """Data class to hold session delete result information."""
+    session_data: Optional[dict] = None  # Filled for v3 only
+
+
+@dataclass
+class MultiSessionsGetResult(BaseRequestResult):
+    """Data class to hold session GET result information."""
+    session_data: Optional[list[dict]] = None

@@ -25,3 +25,6 @@
 """
 lib for cmstools test
 """
+
+from .defs import CmstoolsException
+from .log import get_test_logger

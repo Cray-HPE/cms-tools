@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,11 +22,6 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-"""
-Kubernetes module for cmstools tests
-"""
+from cmstools.lib import get_test_logger
 
-from .k8s import (get_k8s_configmap_data, get_k8s_secret_data, get_deployment_replicas, set_deployment_replicas,
-                  get_pod_count_for_deployment, check_replicas_and_pods_scaled)
-from .defs import DEFAULT_NS
-from ..s3.defs import S3_CREDS_SECRET_NS
+logger = get_test_logger("cfs_sessions_rc_test")
