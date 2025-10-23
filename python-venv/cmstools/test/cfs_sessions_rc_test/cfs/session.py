@@ -190,8 +190,8 @@ def delete_cfs_sessions(cfs_session_name_contains: str, cfs_version: CfsVersions
     result = get_cfs_sessions_list(cfs_session_name_contains, cfs_version, limit)
 
     if result.status_code != HTTPStatus.OK:
-        logger.error("Get CFS sessions list failed: expected %d or %d, got status_code=%d, error=%s",
-                     HTTPStatus.OK, HTTPStatus.BAD_REQUEST, result.status_code, result.error_message)
+        logger.error("Get CFS sessions list failed: expected status_code=%d but got %d; error=%s",
+                     HTTPStatus.OK, result.status_code, result.error_message)
         raise CFSRCException()
 
     if not result.session_data:
