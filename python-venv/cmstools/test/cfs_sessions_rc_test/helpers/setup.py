@@ -38,9 +38,33 @@ from cmstools.test.cfs_sessions_rc_test.defs import TestSetupResponse
 
 def _calculate_v2_page_size(page_size: Optional[int], max_sessions: int, current: int) -> int:
     """
-    Calculate appropriate page size for CFS v2.
-    For v2, if page_size is None, set it to 10 * max_sessions, but if that is less than the current value,
-    leave it unchanged. If page_size is specified and is less than max_sessions, set it to max_sessions.
+    Calculate and return the appropriate page size value for CFS v2.
+    When using CFS v2, GET requests will fail if they would return more values than
+    the global page-size. These failures would prevent the test from working.
+    In the case of CFS v3, it is possible to specify a page-size override along with the
+    GET request, so the global value does not cause us issues in that scenario. This is not
+    supported in CFS v2.
+
+    There are two cases:
+
+    Case 1: <page_size> is None:
+    This means that no page size value was specified by the user as an argument to the test.
+    In this case, we just want to return a value that will definitely be higher than we need.
+    10 * <max_sessions> should be higher than we need, but if the current global value is already
+    higher than that, that's okay too.
+    So the appropriate value is either <current> or 10 * <max_sessions>, whichever is higher.
+
+    Case 2: <page_size> is an integer.
+    This means that the user has called the test with a specific page size value.
+    In this case, we are not really calculating the value, but instead we are validating to make sure
+    that the value that they specified will work. The minimum possible page size that will work
+    is <max_sessions>, because we are potentially going to be creating that many sessions, and
+    listing them.
+    So if <page_size> is greater than or equal to <max_sessions>, then <page_size> is the appropriate
+    value.
+    Otherwise (if <page_size> is less than <max_sessions>) raise an error. In this case, the user
+    can address this by calling the test and not specifying a page_size, or specifying a higher
+    page_size, or specifying a lower max_sessions value.
     """
     if page_size is None:
         return max(10 * max_sessions, current)
@@ -49,16 +73,25 @@ def _calculate_v2_page_size(page_size: Optional[int], max_sessions: int, current
 
 def _calculate_v3_page_size(page_size: Optional[int], max_sessions: int) -> int:
     """
-    Calculate appropriate page size for CFS v3.
-    For v3, if page_size is None, set it to 10 * max_sessions.
+    Calculate and return the appropriate page size value for CFS v3.
+    If <page_size> is None, the appropriate page size is 10 * <max_sessions>.
+    Otherwise, the appropriate page size is <page_size>
     """
     return page_size if page_size is not None else 10 * max_sessions
 
 
 def set_page_size_v2(page_size: Optional[int], max_sessions: int) -> tuple[int, Optional[int]]:
     """
-    Set the CFS global page-size option to the desired value if it is not already set to that value for v2.
-    Returns the page size and the current value. Current value is set to None if global page size is not set.
+    Retrieves the current value of the CFS global page-size option.
+    Calculates the desired global page-size value, based on the input arguments to this function.
+    If the current value matches the desired value, then: return current_value, None
+    If the current value does not match the desired value, then set the CFS global page-size
+    option to the desired value, and return: desired_value, previous value (before we changed it).
+
+    Explanation of return tuple:
+    The first part of the tuple is always the value of CFS global page-size option after this function has run.
+    The second part of the tuple is the value of the CFS global page-size option before this function was run,
+    if this function changed it, otherwise the second value is None.
     """
     current_page_size = get_cfs_page_size()
     new_page_size = _calculate_v2_page_size(page_size, max_sessions, current_page_size)
