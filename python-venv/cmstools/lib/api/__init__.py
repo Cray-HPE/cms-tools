@@ -26,4 +26,5 @@
 API module cmstools tests
 """
 
-from .api import API_GW_SECURE, API_BASE_URL, request, request_and_check_status
+from .api import (API_GW_SECURE, API_BASE_URL,request, request_and_check_status,
+                  add_api_auth, SYSTEM_CA_CERTS)

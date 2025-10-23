@@ -1,7 +1,6 @@
-#
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,10 +22,29 @@
 #
 
 """
-Kubernetes module for cmstools tests
+CFS configuration related functions
 """
 
-from .k8s import (get_k8s_configmap_data, get_k8s_secret_data, get_deployment_replicas, set_deployment_replicas,
-                  get_pod_count_for_deployment, check_replicas_and_pods_scaled)
-from .defs import DEFAULT_NS
-from ..s3.defs import S3_CREDS_SECRET_NS
+from cmstools.lib.api import request_and_check_status
+from cmstools.lib.cfs import CFS_CONFIGS_URL
+from cmstools.lib.common_logger import logger
+from cmstools.lib.defs import JsonDict
+
+def create_cfs_config(config_name: str, layers: list[JsonDict]) -> JsonDict:
+    """
+    Create a CFS configuration using V3 API with the specified name and layers.
+
+    Args:
+        config_name: Name of the configuration to create
+        layers: List of layer dictionaries containing clone_url, commit, playbook, name
+
+    Returns:
+        Dictionary containing the created configuration data
+    """
+    url = f"{CFS_CONFIGS_URL}/{config_name}"
+    cfs_config_json = {"layers": layers}
+
+    resp_data = request_and_check_status("put", url, expected_status=200,
+                                         parse_json=True, json=cfs_config_json)
+    logger.debug("Created CFS config %s: %s", config_name, resp_data)
+    return resp_data

@@ -35,6 +35,7 @@ from urllib3.exceptions import MaxRetryError
 
 from cmstools.lib.defs import CmstoolsException, JsonDict, JsonObject
 from cmstools.lib.k8s import get_k8s_secret_data
+from cmstools.lib.s3.defs import S3_CREDS_SECRET_NS
 from cmstools.lib.common_logger import logger
 
 # set up gateway address
@@ -42,16 +43,15 @@ API_GW_DNSNAME = "api-gw-service-nmn.local"
 API_GW_SECURE = f"https://{API_GW_DNSNAME}"
 API_BASE_URL = f"{API_GW_SECURE}/apis"
 
-PROTOCOL = "https"
-
 SYSTEM_CA_CERTS = "/etc/ssl/ca-bundle.pem"
+
 
 def add_api_auth(headers: JsonDict) -> None:
     """
     Get the admin secret from k8s for the api gateway - command line equivalent is:
     #`kubectl get secrets admin-client-auth -o jsonpath='{.data.client-secret}' | base64 -d`
     """
-    secret_data = get_k8s_secret_data("admin-client-auth")
+    secret_data = get_k8s_secret_data(sec_name="admin-client-auth", sec_namespace=S3_CREDS_SECRET_NS)
     try:
         encoded_admin_secret = secret_data['client-secret']
         admin_secret = base64.b64decode(encoded_admin_secret)
@@ -86,6 +86,7 @@ def request(verb, url, headers=None, add_auth_header=True, verify=SYSTEM_CA_CERT
     else:
         # We don't want the client_secret to be logged
         logger.debug("API %s request to %s (args not logged)", verb, url)
+
     session = requests_retry_session()
     try:
         return session.request(verb, url=url, headers=headers, verify=verify, **kwargs)

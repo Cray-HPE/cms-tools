@@ -28,8 +28,20 @@ CFS URL definitions
 
 from cmstools.lib.api import API_BASE_URL
 
-# CFS URLs
+
+# CFS v3 URLs
 CFS_URL = f"{API_BASE_URL}/cfs/v3"
 CFS_CONFIGS_URL = f"{CFS_URL}/configurations"
 CFS_SESSIONS_URL = f"{CFS_URL}/sessions"
 CFS_COMPONENTS_URL = f"{CFS_URL}/components"
+CFS_OPTIONS_URL = f"{CFS_URL}/options"
+
+# CFS formatted URLs for API version as placeholder
+CFS_URL_TEMPLATE = f"{API_BASE_URL}/cfs/{{api_version}}"
+CFS_SESSIONS_URL_TEMPLATE = f"{CFS_URL_TEMPLATE}/sessions"
+
+# Deployments
+CFS_OPERATOR_DEPLOYMENT = "cray-cfs-operator"
+
+# CFS options
+CFS_DEFAULT_PAGE_SIZE = 1000
