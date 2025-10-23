@@ -33,10 +33,10 @@ import boto3
 from urllib3.exceptions import InsecureRequestWarning
 
 from cmstools.lib.defs import JsonDict
-from cmstools.lib.k8s import get_k8s_secret_data, S3_CREDS_SECRET_NS
+from cmstools.lib.k8s import get_k8s_secret_data
 from cmstools.lib.common_logger import logger
 
-from .defs import S3_CREDS_SECRET_FIELDS, S3_CREDS_SECRET_NAME
+from .defs import S3_CREDS_SECRET_FIELDS, S3_CREDS_SECRET_NAME, S3_CREDS_SECRET_NS
 from .s3_url import S3Url
 
 def s3_client_kwargs() -> JsonDict:

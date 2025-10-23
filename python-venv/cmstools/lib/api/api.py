@@ -34,7 +34,8 @@ from requests_retry_session import requests_retry_session
 from urllib3.exceptions import MaxRetryError
 
 from cmstools.lib.defs import CmstoolsException, JsonDict, JsonObject
-from cmstools.lib.k8s import get_k8s_secret_data, S3_CREDS_SECRET_NS
+from cmstools.lib.k8s import get_k8s_secret_data
+from cmstools.lib.s3.defs import S3_CREDS_SECRET_NS
 from cmstools.lib.common_logger import logger
 
 # set up gateway address
