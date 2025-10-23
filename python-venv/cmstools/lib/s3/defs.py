@@ -34,4 +34,5 @@ S3_CREDS_SECRET_FIELDS = {
     "aws_access_key_id": "access_key",
     "aws_secret_access_key": "secret_key",
     "verify": "ssl_validate" }
+
 S3_CREDS_SECRET_NS= "default"
