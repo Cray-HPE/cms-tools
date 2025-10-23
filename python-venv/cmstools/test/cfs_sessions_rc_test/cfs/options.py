@@ -25,8 +25,11 @@
 """
 CFS options related functions
 """
+
+from http import HTTPStatus
+
 from cmstools.lib.api import request
-from cmstools.lib.cfs import CFS_OPTIONS_URL, CFS_DEFAULT_PAGE_SIZE, HTTP_OK
+from cmstools.lib.cfs import CFS_OPTIONS_URL, CFS_DEFAULT_PAGE_SIZE
 from cmstools.lib.defs import JsonDict
 from cmstools.test.cfs_sessions_rc_test.log import logger
 from cmstools.test.cfs_sessions_rc_test.defs import CFSRCException
@@ -38,7 +41,7 @@ def get_cfs_options() -> JsonDict:
     """
     resp = request("get", CFS_OPTIONS_URL)
 
-    if resp.status_code != HTTP_OK:
+    if resp.status_code != HTTPStatus.OK:
         logger.error("Failed to get CFS options: %d %s", resp.status_code, resp.text)
         raise CFSRCException()
     return resp.json()
@@ -67,6 +70,6 @@ def set_cfs_page_size(page_size: int) -> None:
     }
     resp = request("patch", CFS_OPTIONS_URL, json=data)
 
-    if resp.status_code != HTTP_OK:
+    if resp.status_code != HTTPStatus.OK:
         logger.error("Failed to set CFS page size to %d: %s", page_size, resp.text)
         raise CFSRCException()

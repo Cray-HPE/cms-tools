@@ -27,15 +27,19 @@ CFS Session related functions
 """
 
 import requests
+from http import HTTPStatus
 
-from cmstools.lib.api import request, request_and_check_status
-from cmstools.lib.cfs import CFS_SESSIONS_URL_TEMPLATE
-from cmstools.lib.cfs import (HTTP_OK, HTTP_NO_CONTENT, HTTP_BAD_REQUEST,
-                              HTTP_NOT_FOUND, MultiSessionsGetResult)
+from cmstools.lib.api import (request, request_and_check_status,
+                              add_api_auth, SYSTEM_CA_CERTS)
+from cmstools.lib.cfs import CFS_SESSIONS_URL_TEMPLATE, MultiSessionsGetResult
 from cmstools.lib.defs import JsonDict
-from cmstools.lib.api import add_api_auth, SYSTEM_CA_CERTS
 from cmstools.test.cfs_sessions_rc_test.log import logger
-from cmstools.test.cfs_sessions_rc_test.defs import CFSRCException, API_REQUEST_TIMEOUT, CFS_VERSIONS_STR
+from cmstools.test.cfs_sessions_rc_test.defs import CFSRCException, API_REQUEST_TIMEOUT, CfsVersionsStrLiteral
+
+DELETE_SESSIONS_SUCCESS_STATUS_CODES: dict[CfsVersionsStrLiteral, int] = {
+    "v2": HTTPStatus.NO_CONTENT,
+    "v3": HTTPStatus.OK
+}
 
 
 def get_next_id(data: JsonDict) -> str | None:
@@ -59,15 +63,15 @@ def get_session_data(cfs_session_data: JsonDict | list[JsonDict]) -> list[JsonDi
     return None
 
 
-def cfs_session_exists(cfs_session_name_contains: str, cfs_version: CFS_VERSIONS_STR, limit: int) -> bool:
+def cfs_session_exists(cfs_session_name_contains: str, cfs_version: CfsVersionsStrLiteral, limit: int) -> bool:
     """
     Returns True if any CFS sessions exist with the specified name prefix and pending status.
     """
     result = get_cfs_sessions_list(cfs_session_name_contains, cfs_version, limit)
-    return result.status_code == HTTP_OK and bool(result.session_data)
+    return result.status_code == HTTPStatus.OK and bool(result.session_data)
 
 
-def get_cfs_sessions_list_params(cfs_session_name_contains: str, cfs_version: CFS_VERSIONS_STR, limit: int | None) -> dict[str, str | int | None]:
+def get_cfs_sessions_list_params(cfs_session_name_contains: str, cfs_version: CfsVersionsStrLiteral, limit: int | None) -> dict[str, str | int | None]:
     """
     Returns the URL with parameters to list CFS sessions with the specified name prefix and pending status.
     """
@@ -95,7 +99,7 @@ def make_request(url: str, params: dict, retry: bool) -> requests.Response:
     return request("get", url=url, params=params)
 
 
-def get_all_cfs_sessions_v2(cfs_session_name_contains: str, cfs_version: CFS_VERSIONS_STR, retry: bool) -> MultiSessionsGetResult:
+def get_all_cfs_sessions_v2(cfs_session_name_contains: str, cfs_version: CfsVersionsStrLiteral, retry: bool) -> MultiSessionsGetResult:
     """
     Return all CFS sessions using v2 API.No pagination support in v2.
     """
@@ -109,16 +113,16 @@ def get_all_cfs_sessions_v2(cfs_session_name_contains: str, cfs_version: CFS_VER
     try:
         resp = make_request(url=url, params=params, retry=retry)
 
-        if resp.status_code != HTTP_OK:
+        if resp.status_code != HTTPStatus.OK:
             logger.error("Unexpected return code %d from GET query to %s: %s", resp.status_code, url, resp.text)
             return MultiSessionsGetResult(status_code=resp.status_code, error_message=resp.text)
 
         sessions = resp.json()
         session_data = get_session_data(sessions)
         if not session_data:
-            return MultiSessionsGetResult(status_code=HTTP_OK, session_data=[], error_message="No sessions found")
+            return MultiSessionsGetResult(status_code=HTTPStatus.OK, session_data=[], error_message="No sessions found")
         logger.debug("Session data found: %s", session_data)
-        return MultiSessionsGetResult(status_code=HTTP_OK, session_data=session_data)
+        return MultiSessionsGetResult(status_code=HTTPStatus.OK, session_data=session_data)
     except requests.exceptions.Timeout:
         logger.exception("Request timed out for GET query to %s", url)
         return MultiSessionsGetResult(status_code=0, timed_out=True, error_message="Request timed out")
@@ -127,7 +131,7 @@ def get_all_cfs_sessions_v2(cfs_session_name_contains: str, cfs_version: CFS_VER
         return MultiSessionsGetResult(status_code=0, error_message=str(exc))
 
 
-def get_all_cfs_sessions_v3(cfs_session_name_contains: str, cfs_version: CFS_VERSIONS_STR, limit: int, retry: bool) -> MultiSessionsGetResult:
+def get_all_cfs_sessions_v3(cfs_session_name_contains: str, cfs_version: CfsVersionsStrLiteral, limit: int, retry: bool) -> MultiSessionsGetResult:
     url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=cfs_version)
     params = get_cfs_sessions_list_params(
         cfs_session_name_contains=cfs_session_name_contains,
@@ -142,7 +146,7 @@ def get_all_cfs_sessions_v3(cfs_session_name_contains: str, cfs_version: CFS_VER
             if after_id:
                 params["after_id"] = after_id
             resp = make_request(url=url, params=params, retry=retry)
-            if resp.status_code != HTTP_OK:
+            if resp.status_code != HTTPStatus.OK:
                 logger.error("Unexpected return code %d from GET query to %s: %s", resp.status_code, url, resp.text)
                 return MultiSessionsGetResult(status_code=resp.status_code, error_message=resp.text)
             data = resp.json()
@@ -155,7 +159,7 @@ def get_all_cfs_sessions_v3(cfs_session_name_contains: str, cfs_version: CFS_VER
                 break
             after_id = next_id
         logger.debug("Session data found: %s", all_sessions)
-        return MultiSessionsGetResult(status_code=HTTP_OK, session_data=all_sessions)
+        return MultiSessionsGetResult(status_code=HTTPStatus.OK, session_data=all_sessions)
     except requests.exceptions.Timeout:
         logger.exception("Request timed out for GET query to %s", url)
         return MultiSessionsGetResult(status_code=0, timed_out=True, error_message="Request timed out")
@@ -164,7 +168,7 @@ def get_all_cfs_sessions_v3(cfs_session_name_contains: str, cfs_version: CFS_VER
         return MultiSessionsGetResult(status_code=0, error_message=str(exc))
 
 
-def get_cfs_sessions_list(cfs_session_name_contains: str, cfs_version: CFS_VERSIONS_STR, limit: int, retry: bool = True) -> MultiSessionsGetResult:
+def get_cfs_sessions_list(cfs_session_name_contains: str, cfs_version: CfsVersionsStrLiteral, limit: int, retry: bool = True) -> MultiSessionsGetResult:
     """
     Returns a list of CFS sessions with the specified name prefix and pending status.
     """
@@ -179,22 +183,20 @@ def get_cfs_sessions_list(cfs_session_name_contains: str, cfs_version: CFS_VERSI
         limit=limit, retry=retry)
 
 
-def get_expected_delete_sessions_status_codes(cfs_version: CFS_VERSIONS_STR) -> int:
-    """
-    Get expected status code for a successful delete sessions request, based on CFS version.
-    """
-    if cfs_version == "v2":
-        return HTTP_NO_CONTENT
-    return HTTP_OK
-
-
-def delete_cfs_sessions(cfs_session_name_contains: str, cfs_version: CFS_VERSIONS_STR, limit: int) -> None:
+def delete_cfs_sessions(cfs_session_name_contains: str, cfs_version: CfsVersionsStrLiteral, limit: int) -> None:
     """
     Delete all CFS sessions with the specified name prefix and pending status.
     """
     result = get_cfs_sessions_list(cfs_session_name_contains, cfs_version, limit)
-    if result.status_code != HTTP_OK or not result.session_data:
-        logger.info("No CFS sessions found with name prefix %s and status pending to delete", cfs_session_name_contains)
+
+    if result.status_code not in (HTTPStatus.OK, HTTPStatus.BAD_REQUEST):
+        logger.error("Get CFS sessions list failed: expected %d or %d, got status_code=%d, error=%s",
+                     HTTPStatus.OK, HTTPStatus.BAD_REQUEST, result.status_code, result.error_message)
+        raise CFSRCException()
+
+    if not result.session_data:
+        logger.info("No CFS sessions found with name prefix %s and status pending to delete",
+                    cfs_session_name_contains)
         return
 
     params = {
@@ -204,29 +206,29 @@ def delete_cfs_sessions(cfs_session_name_contains: str, cfs_version: CFS_VERSION
     url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=cfs_version)
     resp = request("delete", url=url, params=params)
 
-    if resp.status_code == get_expected_delete_sessions_status_codes(cfs_version=cfs_version):
+    if resp.status_code == DELETE_SESSIONS_SUCCESS_STATUS_CODES[cfs_version]:
         logger.info("Deleted CFS sessions with name prefix %s and status pending", cfs_session_name_contains)
         return
 
-    if resp.status_code == HTTP_BAD_REQUEST:
+    if resp.status_code == HTTPStatus.BAD_REQUEST:
         return
 
     logger.error("Unexpected return code %d from Delete to %s: %s", resp.status_code, url, resp.text)
     raise CFSRCException()
 
 
-def delete_cfs_session_by_name(cfs_session_name: str, cfs_version: CFS_VERSIONS_STR) -> None:
+def delete_cfs_session_by_name(cfs_session_name: str, cfs_version: CfsVersionsStrLiteral) -> None:
     """
     Delete a CFS session by name.
     """
     url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=cfs_version)
     cfs_sessions_url = f"{url}/{cfs_session_name}"
     resp = request("delete", cfs_sessions_url)
-    if resp.status_code == HTTP_NO_CONTENT:
+    if resp.status_code == HTTPStatus.NO_CONTENT:
         logger.info("Deleted CFS session %s", cfs_session_name)
         return
 
-    if resp.status_code == HTTP_NOT_FOUND:
+    if resp.status_code == HTTPStatus.NOT_FOUND:
         logger.info("CFS session %s not found to delete", cfs_session_name)
         return
 
@@ -234,8 +236,8 @@ def delete_cfs_session_by_name(cfs_session_name: str, cfs_version: CFS_VERSIONS_
     raise CFSRCException()
 
 
-def create_cfs_session(session_name: str, cfs_version: CFS_VERSIONS_STR,
-                       session_payload: dict, expected_http_status: int = HTTP_OK) -> JsonDict:
+def create_cfs_session(session_name: str, cfs_version: CfsVersionsStrLiteral,
+                       session_payload: dict, expected_http_status: int = HTTPStatus.OK) -> JsonDict:
     """
     Create a CFS session with the specified name and configuration.
 

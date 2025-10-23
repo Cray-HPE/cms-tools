@@ -24,12 +24,11 @@
 """
 CFS configuration related functions
 """
+from http import HTTPStatus
 
-from cmstools.lib.cfs import (CFS_CONFIGS_URL, HTTP_OK, create_cfs_config,
-                              HTTP_NO_CONTENT)
+from cmstools.lib.cfs import (CFS_CONFIGS_URL, create_cfs_config)
 from cmstools.lib.api import request
 from cmstools.test.cfs_sessions_rc_test.defs import CFSRCException
-from cmstools.test.cfs_sessions_rc_test.helpers.setup import set_cfs_config_name
 from cmstools.test.cfs_sessions_rc_test.log import logger
 
 DEFAULT_PLAYBOOK = "compute_nodes.yml"
@@ -42,16 +41,16 @@ def delete_cfs_configuration(cfs_configuration_name: str) -> None:
     url = f"{CFS_CONFIGS_URL}/{cfs_configuration_name}"
     resp = request("delete", url)
 
-    if resp.status_code != HTTP_NO_CONTENT:
+    if resp.status_code != HTTPStatus.NO_CONTENT:
         logger.error("Failed to delete CFS configuration %s: %s", cfs_configuration_name, resp.text)
         raise CFSRCException()
 
 
-def find_or_create_cfs_config(name_prefix: str) -> str:
+def find_or_create_cfs_config(name_prefix: str) -> tuple[str, bool]:
     url = CFS_CONFIGS_URL
     resp = request("get", url)
 
-    if resp.status_code != HTTP_OK:
+    if resp.status_code != HTTPStatus.OK:
         logger.error("Failed to list CFS configs: %s", resp.text)
         raise CFSRCException()
 
@@ -61,7 +60,7 @@ def find_or_create_cfs_config(name_prefix: str) -> str:
     if configurations_data:
         config_name = configurations_data[0]["name"]
         logger.info("Using existing CFS config: %s", config_name)
-        return config_name
+        return config_name, False
 
     # Create a new config
     config_name = f"{name_prefix}config"
@@ -78,6 +77,4 @@ def find_or_create_cfs_config(name_prefix: str) -> str:
 
     resp_data = create_cfs_config(config_name=config_name, layers=cfs_config_list)
     logger.debug("Created %s: %s", config_name, resp_data)
-    # Set the created config name globally for cleanup
-    set_cfs_config_name(config_name)
-    return config_name
+    return config_name, True

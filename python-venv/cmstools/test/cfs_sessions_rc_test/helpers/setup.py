@@ -35,24 +35,6 @@ from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs, CFSRCException
 from cmstools.test.cfs_sessions_rc_test.cfs.session import cfs_session_exists, delete_cfs_sessions
 from cmstools.test.cfs_sessions_rc_test.defs import TestSetupResponse
 
-cfs_config_name = None
-
-
-def set_cfs_config_name(config_name: str) -> None:
-    """
-    Set the CFS configuration to the specified name.
-    """
-    global cfs_config_name
-    cfs_config_name = config_name
-    logger.info("Using CFS configuration %s", config_name)
-
-
-def get_cfs_config_name() -> Optional[str]:
-    """
-    Get the CFS configuration name.
-    """
-    return cfs_config_name
-
 
 def _calculate_v2_page_size(page_size: Optional[int], max_sessions: int, current: int) -> int:
     """
@@ -76,28 +58,15 @@ def _calculate_v3_page_size(page_size: Optional[int], max_sessions: int) -> int:
 def set_page_size_v2(page_size: Optional[int], max_sessions: int) -> tuple[int, Optional[int]]:
     """
     Set the CFS global page-size option to the desired value if it is not already set to that value for v2.
-    Return the current value if it was changed, otherwise return None.
+    Returns the page size and the current value. Current value is set to None if global page size is not set.
     """
     current_page_size = get_cfs_page_size()
-    page_size = _calculate_v2_page_size(page_size, max_sessions, current_page_size)
-    if page_size != current_page_size:
-        set_cfs_page_size(page_size)
-        logger.info("For CFS v2 API setting the page size %d", page_size)
-        return page_size, current_page_size
-    return page_size, None
-
-
-def set_page_size_if_needed(page_size: int | None, max_sessions: int, cfs_version: str) -> tuple[int, Optional[int]]:
-    """
-    In case of v3, return the calculated page size, It is not required to set global page size
-    because in case of V3 page size is sent in API call. current_page_size is returned as None.
-    For v2, Set the CFS global page-size option to the desired value if it is not already set to that value for v2.
-    Return the current value if it was changed, otherwise return None. None is used to determine if
-    restoration is needed later.
-    """
-    if cfs_version == "v2":
-        return set_page_size_v2(page_size, max_sessions)
-    return _calculate_v3_page_size(page_size, max_sessions), None
+    new_page_size = _calculate_v2_page_size(page_size, max_sessions, current_page_size)
+    if new_page_size != current_page_size:
+        set_cfs_page_size(new_page_size)
+        logger.info("For CFS v2 API setting the page size %d", new_page_size)
+        return new_page_size, current_page_size
+    return new_page_size, None
 
 
 def cfs_sessions_rc_test_setup(script_args: ScriptArgs) -> TestSetupResponse:
@@ -113,13 +82,16 @@ def cfs_sessions_rc_test_setup(script_args: ScriptArgs) -> TestSetupResponse:
      If there are any, exit with an error, telling the user to delete these sessions, run with a different name string,
      or run with --delete-previous-sessions
     """
+    current_page_size: Optional[int] = None
+    new_page_size: int = script_args.page_size
     # If running CFS v2, set the V3 global CFS page-size option to <page-size>
-    # Update page_size in script_args by creating a new instance
-    new_page_size, current_page_size = set_page_size_if_needed(
-        page_size=script_args.page_size,
-        max_sessions=script_args.max_cfs_sessions,
-        cfs_version=script_args.cfs_version
-    )
+    if script_args.cfs_version == "v2":
+        new_page_size, current_page_size = set_page_size_v2(page_size=script_args.page_size, max_sessions=script_args.max_cfs_sessions)
+
+    #  If running CFS v3, calculate the appropriate page size
+    elif script_args.cfs_version == "v3":
+        current_page_size = None
+        new_page_size = _calculate_v3_page_size(page_size=script_args.page_size, max_sessions=script_args.max_cfs_sessions)
 
     # First check for deleting pre-existing sessions if requested
     logger.info("Checking for pre-existing CFS sessions with name prefix %s", script_args.cfs_session_name)

@@ -26,10 +26,9 @@ import argparse
 import sys
 from typing import NoReturn
 
-from cmstools.test.cfs_sessions_rc_test.helpers.cleanup import cleanup_and_restore
-from cmstools.test.cfs_sessions_rc_test.helpers.setup import get_cfs_config_name
+from cmstools.test.cfs_sessions_rc_test.helpers.cleanup import restore
 from cmstools.test.cfs_sessions_rc_test.helpers.setup import cfs_sessions_rc_test_setup
-from cmstools.test.cfs_sessions_rc_test.subtests import all_subtests
+from cmstools.test.cfs_sessions_rc_test.subtests import all_subtests, CFSSessionBase
 from cmstools.lib.log import LOG_FILE_PATH
 
 from .log import logger
@@ -88,7 +87,7 @@ def run(script_args: ScriptArgs) -> None:
     CFS sessions race condition test main processing
     """
     orig_page_size: int | None = None
-    orig_replica_count = 0
+    orig_replica_count: int | None = None
 
     try:
         # Run the tests
@@ -109,9 +108,7 @@ def run(script_args: ScriptArgs) -> None:
         _execute_subtests(tests=test_names, script_args=script_args)
 
     finally:
-        cleanup_and_restore(orig_replicas_count=orig_replica_count,
-                            orig_page_size=orig_page_size,
-                            config_name=get_cfs_config_name())
+        restore(orig_replicas_count=orig_replica_count, orig_page_size=orig_page_size)
 
 
 def parse_command_line() -> ScriptArgs:

@@ -26,7 +26,9 @@
 Class to validate the response from CFS API calls.
 """
 
-from cmstools.lib.cfs import CFS_V2_SESSIONS_DELETE_CODES, CFS_V3_SESSIONS_DELETE_CODES, HTTP_OK, \
+from http import HTTPStatus
+
+from cmstools.lib.cfs import CFS_V2_SESSIONS_DELETE_CODES, CFS_V3_SESSIONS_DELETE_CODES, \
     SessionDeleteResult, MultiSessionsGetResult
 from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs, CFSRCException
 from cmstools.test.cfs_sessions_rc_test.cfs.session import get_cfs_sessions_list
@@ -52,7 +54,7 @@ class ResponseHandler:
             raise CFSRCException()
 
         # Then check if all requests returned a 200 status code
-        invalid_responses = [r for r in multi_get_results if r.status_code != HTTP_OK]
+        invalid_responses = [r for r in multi_get_results if r.status_code != HTTPStatus.OK]
         if invalid_responses:
             logger.error("%d multi-get operations returned unexpected status codes", len(invalid_responses))
             raise CFSRCException()
@@ -100,14 +102,14 @@ class ResponseHandler:
                                        cfs_version=self.script_args.cfs_version,
                                        limit=self.script_args.page_size)
 
-        if result.status_code == HTTP_OK and result.session_data:
+        if result.status_code == HTTPStatus.OK and result.session_data:
             cfs_session_list = [s["name"] for s in result.session_data]
             logger.error("CFS sessions still exist with name prefix %s: %s", self.script_args.cfs_session_name,
                          cfs_session_list)
             raise CFSRCException()
 
     def _is_valid_v3_delete_response(self, result: SessionDeleteResult) -> bool:
-        return (result.status_code == HTTP_OK and isinstance(result.session_data, dict) and
+        return (result.status_code == HTTPStatus.OK and isinstance(result.session_data, dict) and
                 'session_ids' in result.session_data)
 
     def verify_v3_api_deleted_cfs_sessions_response(self, deleted_sessions_list: list[SessionDeleteResult]) -> None:

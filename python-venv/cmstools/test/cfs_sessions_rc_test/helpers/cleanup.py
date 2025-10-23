@@ -26,17 +26,18 @@
 CFS race condition cleanup related functions
 """
 
+from http import HTTPStatus
+
 from cmstools.lib.k8s import get_deployment_replicas, set_deployment_replicas
-from cmstools.lib.cfs import CFS_OPERATOR_DEPLOYMENT, HTTP_OK
+from cmstools.lib.cfs import CFS_OPERATOR_DEPLOYMENT
 from cmstools.test.cfs_sessions_rc_test.cfs.session import (delete_cfs_session_by_name,
                                                             delete_cfs_sessions, get_cfs_sessions_list)
 from cmstools.test.cfs_sessions_rc_test.log import logger
 from cmstools.test.cfs_sessions_rc_test.cfs.options import set_cfs_page_size, get_cfs_page_size
-from cmstools.test.cfs_sessions_rc_test.cfs.configurations import delete_cfs_configuration
-from cmstools.test.cfs_sessions_rc_test.defs import CFS_VERSIONS_STR
+from cmstools.test.cfs_sessions_rc_test.defs import CfsVersionsStrLiteral
 
 
-def cleanup_cfs_sessions(name_prefix: str, cfs_version: CFS_VERSIONS_STR, page_size: int) -> None:
+def cleanup_cfs_sessions(name_prefix: str, cfs_version: CfsVersionsStrLiteral, page_size: int) -> None:
     """
     Cleanup function to delete any remaining CFS sessions with the specified name prefix
     """
@@ -54,7 +55,7 @@ def cleanup_cfs_sessions(name_prefix: str, cfs_version: CFS_VERSIONS_STR, page_s
             cfs_version=cfs_version,
             limit=page_size
         )
-        if not result.session_data or result.status_code != HTTP_OK:
+        if not result.session_data or result.status_code != HTTPStatus.OK:
             logger.info("No remaining CFS sessions found for cleanup")
             return
         cfs_session_list = [s["name"] for s in result.session_data]
@@ -65,20 +66,15 @@ def cleanup_cfs_sessions(name_prefix: str, cfs_version: CFS_VERSIONS_STR, page_s
                 logger.exception("Failed to delete CFS session %s; %s: %s", session_name, type(ex2), ex2)
 
 
-def cleanup_and_restore(orig_replicas_count: int, orig_page_size: int | None,
-                        config_name: str | None) -> None:
+def restore(orig_replicas_count: int, orig_page_size: int | None) -> None:
     """
     Cleanup function to restore the cray-cfs-operator deployment and CFS page size
     """
 
-    if orig_replicas_count != get_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT):
+    if orig_replicas_count is not None and orig_replicas_count != get_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT):
         logger.info("Restoring cray-cfs-operator deployment to its original number of replicas: %d", orig_replicas_count)
         set_deployment_replicas(deployment_name=CFS_OPERATOR_DEPLOYMENT, replicas=orig_replicas_count)
 
     if orig_page_size is not None and get_cfs_page_size() != orig_page_size:
         logger.info("Restoring CFS v3 global page-size option to its original value: %d", orig_page_size)
         set_cfs_page_size(orig_page_size)
-
-    if config_name is not None:
-        logger.info("Deleting CFS configuration %s", config_name)
-        delete_cfs_configuration(config_name)

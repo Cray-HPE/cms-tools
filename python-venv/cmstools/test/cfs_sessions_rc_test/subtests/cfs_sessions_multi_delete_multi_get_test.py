@@ -26,9 +26,10 @@
 CFS race condition multi delete multi get test related functions
 """
 
+from http import HTTPStatus
 from typing import ClassVar
 
-from cmstools.lib.cfs import MultiSessionsGetResult, HTTP_OK
+from cmstools.lib.cfs import MultiSessionsGetResult
 from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs
 from cmstools.test.cfs_sessions_rc_test.log import logger
 from cmstools.test.cfs_sessions_rc_test.cfs.session import get_cfs_sessions_list
@@ -81,9 +82,10 @@ class CFSSessionMultiDeleteMultiGetTest(CfsSessionMultiDeleteTest):
             cfs_version=self.script_args.cfs_version,
             limit=self.script_args.page_size, retry=False)
 
-        if result.session_data is not None and result.status_code == HTTP_OK:
+        if result.session_data is not None and result.status_code == HTTPStatus.OK:
             logger.debug("Got %s sessions in thread with name prefix %s", result.session_data,
                          self.script_args.cfs_session_name)
+            # Lock is not needed for appending to a list, but added here for future safety
             with self.lock:
                 self.get_result_list.append(result)
 

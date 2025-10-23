@@ -31,7 +31,8 @@ from kubernetes import client, config
 
 from cmstools.lib.defs import CmstoolsException, JsonDict
 from cmstools.lib.common_logger import logger
-from cmstools.lib.k8s import DEFAULT_NS
+
+from .defs import DEFAULT_NS
 
 
 def get_k8s_configmap_data(cm_name: str, cm_namespace: str = DEFAULT_NS) -> JsonDict:

@@ -26,8 +26,10 @@
 cfs session creator class for session creation and verification
 """
 
+from http import HTTPStatus
+from typing import Optional
+
 from cmstools.lib.defs import JsonDict
-from cmstools.lib.cfs import HTTP_OK, HTTP_CREATED
 from cmstools.test.cfs_sessions_rc_test.cfs.configurations import find_or_create_cfs_config
 from cmstools.test.cfs_sessions_rc_test.cfs.session import get_cfs_sessions_list, create_cfs_session
 from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs, CFSRCException
@@ -40,12 +42,13 @@ class CfsSessionCreator:
         self.max_sessions = script_args.max_cfs_sessions
         self.cfs_version = script_args.cfs_version
         self.page_size = script_args.page_size
+        self._config_name: Optional[str] = None
 
     @property
     def expected_http_status(self) -> int:
         if self.cfs_version == "v2":
-            return HTTP_OK
-        return HTTP_CREATED
+            return HTTPStatus.OK
+        return HTTPStatus.CREATED
 
     def create_cfs_session_payload(self, session_name: str, config_name: str) -> JsonDict:
         """
@@ -75,13 +78,21 @@ class CfsSessionCreator:
             }
         }
 
+    def get_config_name(self) -> Optional[str]:
+        """Return the cfs config name"""
+        return self._config_name
+
     def create_sessions(self) -> list[str]:
         """
         Create CFS sessions up to max_sessions using the specified name prefix.
         List all sessions in pending state that have the text prefix string in their names. Verify that the names of
         these sessions match the ones we just created.
         """
-        config_name = find_or_create_cfs_config(self.name_prefix)
+        config_name, created = find_or_create_cfs_config(self.name_prefix)
+        # Set the config name for later cleanup if we created it
+        if created:
+            self._config_name = config_name
+
         cfs_session_names_list: list[str] = []
         for i in range(self.max_sessions):
             session_name = f"{self.name_prefix}{i}"

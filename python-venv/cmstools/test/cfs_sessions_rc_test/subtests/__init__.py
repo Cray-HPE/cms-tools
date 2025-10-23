@@ -22,7 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from .cfs_session_base import all_subtests
+from .cfs_session_base import all_subtests, CFSSessionBase
 # Import all subtests below, so that their classes are defined and added to the all_subtests list
 from .cfs_sessions_multi_delete_multi_get_test import CFSSessionMultiDeleteMultiGetTest
 from .cfs_sessions_multi_delete_test import CfsSessionMultiDeleteTest

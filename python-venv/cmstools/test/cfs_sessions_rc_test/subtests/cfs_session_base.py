@@ -31,11 +31,11 @@ from abc import ABC, abstractmethod
 import inspect
 from typing import ClassVar, Optional
 
-from cmstools.test.cfs_sessions_rc_test.defs import CFSRCException
+from cmstools.test.cfs_sessions_rc_test.defs import CFSRCException, ScriptArgs
+from cmstools.test.cfs_sessions_rc_test.cfs.configurations import delete_cfs_configuration
 from cmstools.test.cfs_sessions_rc_test.helpers.cleanup import cleanup_cfs_sessions
 from cmstools.test.cfs_sessions_rc_test.cfs.session import cfs_session_exists
 from cmstools.test.cfs_sessions_rc_test.cfs.session_creator import CfsSessionCreator
-from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs
 from cmstools.test.cfs_sessions_rc_test.log import logger
 
 
@@ -69,6 +69,7 @@ class CFSSessionBase(ABC):
     def __init__(self, script_args: ScriptArgs):
         self.script_args = script_args
         self._session_names: list[str] = self._setup()
+        self._config_name: Optional[str] = None
         self.lock = threading.Lock()
 
     @abstractmethod
@@ -105,10 +106,17 @@ class CFSSessionBase(ABC):
         if self._session_names:
             self._delete_sessions()
 
+        # If we created a config, delete it
+        if self._config_name:
+            delete_cfs_configuration(cfs_configuration_name=self._config_name)
+
     def _create_sessions(self) -> list[str]:
         """Create CFS sessions for testing."""
         cfs_session_creator = CfsSessionCreator(script_args=self.script_args)
-        return cfs_session_creator.create_sessions()
+        session_list = cfs_session_creator.create_sessions()
+        # Track if a config was created
+        self._config_name = cfs_session_creator.get_config_name()
+        return session_list
 
     def _delete_sessions(self) -> None:
         """Delete specified CFS sessions."""

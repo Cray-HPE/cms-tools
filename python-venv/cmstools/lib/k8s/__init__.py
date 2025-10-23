@@ -28,3 +28,4 @@ Kubernetes module for cmstools tests
 
 from .k8s import (get_k8s_configmap_data, get_k8s_secret_data, get_deployment_replicas, set_deployment_replicas,
                   get_pod_count_for_deployment, check_replicas_and_pods_scaled)
+from .defs import DEFAULT_NS, K8_CREDS_SECRET_NS

@@ -41,7 +41,7 @@ DEFAULT_CFS_VERSION = "v3"
 CfsVersionsStrLiteral = Literal["v2", "v3"]
 
 # Create the frozenset for runtime validation
-CFS_VERSIONS_STR = frozenset(get_args(CfsVersionsStrLiteral)
+CFS_VERSIONS_STR = frozenset(get_args(CfsVersionsStrLiteral))
 MAX_NAME_LENGTH = 40
 MIN_NAME_LENGTH = 1
 
@@ -57,15 +57,15 @@ class ScriptArgs(NamedTuple):
     delete_preexisting_cfs_sessions: bool
     cfs_version: CfsVersionsStrLiteral  # default to v3
     page_size: Optional[int] = None
-    run_subtests: list[str] | None = None
-    skip_subtests: list[str] | None = None
+    run_subtests: Optional[list[str]] = None
+    skip_subtests: Optional[list[str]] = None
 
 
 class TestSetupResponse:
     """
     Encapsulates the response from cfs_sessions_rc_test_setup()
     """
-    def __init__(self, original_page_size: int | None, original_replicas: int | None, new_page_size: int | None):
+    def __init__(self, original_page_size: Optional[int], original_replicas: Optional[int], new_page_size: Optional[int]):
         self.original_page_size = original_page_size
         self.original_replicas_count = original_replicas
         self.new_page_size = new_page_size

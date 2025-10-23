@@ -34,7 +34,7 @@ from requests_retry_session import requests_retry_session
 from urllib3.exceptions import MaxRetryError
 
 from cmstools.lib.defs import CmstoolsException, JsonDict, JsonObject
-from cmstools.lib.k8s import get_k8s_secret_data
+from cmstools.lib.k8s import get_k8s_secret_data, K8_CREDS_SECRET_NS
 from cmstools.lib.common_logger import logger
 
 # set up gateway address
@@ -50,7 +50,7 @@ def add_api_auth(headers: JsonDict) -> None:
     Get the admin secret from k8s for the api gateway - command line equivalent is:
     #`kubectl get secrets admin-client-auth -o jsonpath='{.data.client-secret}' | base64 -d`
     """
-    secret_data = get_k8s_secret_data(sec_name="admin-client-auth", sec_namespace="default")
+    secret_data = get_k8s_secret_data(sec_name="admin-client-auth", sec_namespace=K8_CREDS_SECRET_NS)
     try:
         encoded_admin_secret = secret_data['client-secret']
         admin_secret = base64.b64decode(encoded_admin_secret)
