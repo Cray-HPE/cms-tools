@@ -45,4 +45,3 @@ CFS_OPERATOR_DEPLOYMENT = "cray-cfs-operator"
 
 # CFS options
 CFS_DEFAULT_PAGE_SIZE = 1000
-
