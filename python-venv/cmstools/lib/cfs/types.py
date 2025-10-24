@@ -55,3 +55,8 @@ class SessionDeleteResult(BaseRequestResult):
 class MultiSessionsGetResult(BaseRequestResult):
     """Data class to hold session GET result information."""
     session_data: Optional[list[dict]] = None
+
+@dataclass
+class SessionsGetResponse(BaseRequestResult):
+    """Data class to hold single session GET response information."""
+    session_data: Optional[dict] = None  # Filled for v3 only

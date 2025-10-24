@@ -62,7 +62,7 @@ def check_minimum_max_sessions(value: str) -> int:
 def check_minimum_max_parallel_reqs(value: str) -> int:
     int_value = int(value)
     if int_value < 1:
-        raise argparse.ArgumentTypeError("--max-multi-delete-reqs must be at least 1")
+        raise argparse.ArgumentTypeError("Parallel request value must be at least 1")
     return int_value
 
 
