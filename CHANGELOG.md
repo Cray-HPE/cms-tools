@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMCMS-9569: Update Python dependencies:
   - Use newer `requests_retry_session` version (based on which Python version is being built)
   - Use version of `kubernetes` package that matches the Kubernetes version in CSM 1.7
+- Bump `github/codeql-action` from 3 to 4 ([#320](https://github.com/Cray-HPE/cms-tools/pull/320))
 
 ## [1.33.0] - 2025-06-27
 
