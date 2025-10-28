@@ -38,6 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMCMS-9569: Update Python dependencies:
   - Use newer `requests_retry_session` version (based on which Python version is being built)
   - Use version of `kubernetes` package that matches the Kubernetes version in CSM 1.7
+- Bump `github/codeql-action` from 3 to 4 ([#320](https://github.com/Cray-HPE/cms-tools/pull/320))
+- Bump `github.com/go-openapi/jsonreference` from 0.21.0 to 0.21.2 ([#317](https://github.com/Cray-HPE/cms-tools/pull/317))
+- Bump `stefanzweifel/git-auto-commit-action` from 5 to 7 ([#321](https://github.com/Cray-HPE/cms-tools/pull/321))
+- Bump `github.com/mailru/easyjson` from 0.9.0 to 0.9.1 ([#314](https://github.com/Cray-HPE/cms-tools/pull/314))
 
 ## [1.33.0] - 2025-06-27
 
