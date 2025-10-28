@@ -40,7 +40,7 @@ CFS_V3_SESSIONS_DELETE_CODES = Literal[ 200, 400]
 @dataclass
 class BaseRequestResult:
     """Base data class for request result information."""
-    status_code: int
+    status_code: Optional[int] = None
     timed_out: bool = False
     error_message: Optional[str] = None
 

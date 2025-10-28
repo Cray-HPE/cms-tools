@@ -126,10 +126,10 @@ def get_all_cfs_sessions_v2(cfs_session_name_contains: str, cfs_version: CfsVers
         return MultiSessionsGetResult(status_code=HTTPStatus.OK, session_data=session_data)
     except requests.exceptions.Timeout:
         logger.exception("Request timed out for GET query to %s", url)
-        return MultiSessionsGetResult(status_code=HTTPStatus.REQUEST_TIMEOUT, timed_out=True, error_message="Request timed out")
+        return MultiSessionsGetResult(timed_out=True, error_message="Request timed out")
     except Exception as exc:
         logger.exception("Exception during CFS session get: %s", str(exc))
-        return MultiSessionsGetResult(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, error_message=str(exc))
+        return MultiSessionsGetResult(error_message=str(exc))
 
 
 def get_all_cfs_sessions_v3(cfs_session_name_contains: str, cfs_version: CfsVersionsStrLiteral, limit: int, retry: bool) -> MultiSessionsGetResult:
@@ -163,10 +163,10 @@ def get_all_cfs_sessions_v3(cfs_session_name_contains: str, cfs_version: CfsVers
         return MultiSessionsGetResult(status_code=HTTPStatus.OK, session_data=all_sessions)
     except requests.exceptions.Timeout:
         logger.exception("Request timed out for GET query to %s", url)
-        return MultiSessionsGetResult(status_code=HTTPStatus.REQUEST_TIMEOUT, timed_out=True, error_message="Request timed out")
+        return MultiSessionsGetResult(timed_out=True, error_message="Request timed out")
     except Exception as exc:
         logger.exception("Exception during CFS session get: %s", str(exc))
-        return MultiSessionsGetResult(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, error_message=str(exc))
+        return MultiSessionsGetResult(error_message=str(exc))
 
 
 def get_cfs_sessions_list(cfs_session_name_contains: str, cfs_version: CfsVersionsStrLiteral, limit: int, retry: bool = True) -> MultiSessionsGetResult:
@@ -247,7 +247,6 @@ def get_cfs_session_by_name(cfs_session_name: str, cfs_version: CfsVersionsStrLi
     except requests.exceptions.Timeout:
         logger.exception("Request timed out for CFS session %s", cfs_session_name)
         return SessionsGetResponse(
-            status_code=HTTPStatus.REQUEST_TIMEOUT,
             timed_out=True,
             error_message="Request timed out"
         )

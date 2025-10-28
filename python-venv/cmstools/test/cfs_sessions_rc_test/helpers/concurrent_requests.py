@@ -30,18 +30,15 @@ import threading
 import random
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TypeVar
 
 from cmstools.test.cfs_sessions_rc_test.log import logger
-
-T = TypeVar('T')
 
 
 @dataclass
 class RequestBatch:
     """Configuration for a batch of requests."""
     max_parallel: int
-    request_func: Callable[..., None]
+    request_func: Callable[[], None] | Callable[[object], None]
 
 
 class ConcurrentRequestManager:
@@ -141,7 +138,7 @@ class ConcurrentRequestManager:
             threads.append(thread)
         return threads
 
-    def _thread_pool_worker(self, items: list[T], request_func: Callable[[T], None]) -> None:
+    def _thread_pool_worker(self, items: list[object], request_func: Callable[[object], None]) -> None:
         """
         Worker function that processes a subset of items from the pool.
         Args:

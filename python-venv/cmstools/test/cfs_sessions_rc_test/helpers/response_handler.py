@@ -47,43 +47,52 @@ class ResponseHandler:
         Validate that every entry in each list returned by the multi-get requests is a dict
         and corresponds to one of the sessions we created.
         """
+
+        errors = False
         # First check if none of the requests timed out
         timeouts = [r for r in multi_get_results if r.timed_out]
         if timeouts:
             logger.error("%d multi-get operations timed out", len(timeouts))
-            raise CFSRCException()
+            errors = True
 
         # Then check if all requests returned a 200 status code
         invalid_responses = [r for r in multi_get_results if r.status_code != HTTPStatus.OK]
         if invalid_responses:
             logger.error("%d multi-get operations returned unexpected status codes", len(invalid_responses))
-            raise CFSRCException()
+            errors = True
+
         # Now validate the content of each response
         for idx, session_list in enumerate(multi_get_results):
             for session in session_list.session_data:
                 if not isinstance(session, dict):
                     logger.error("Entry in multi-get result at index %d is not a dict: %s", idx, session)
-                    raise CFSRCException()
+                    errors = True
+
                 if session.get("name") not in self.session_names:
                     logger.error("Session name %s not in created session names", session.get('name'))
-                    raise CFSRCException()
+                    errors = True
+        if errors:
+            raise CFSRCException()
+
         logger.info("All multi-get session entries are valid and correspond to created sessions")
 
     def verify_sessions_after_multi_delete(self, deleted_sessions_list: list[SessionDeleteResult]) -> None:
         """
         Verify that all CFS sessions with the specified name prefix are deleted after multi-delete.
         """
+
+        errors = False
         # Verify if any of the delete operation timeout
         timeouts = [r for r in deleted_sessions_list if r.timed_out]
         if timeouts:
             logger.error("%d delete operations timed out", len(timeouts))
-            raise CFSRCException()
+            errors = True
 
         expected_codes = CFS_V3_SESSIONS_DELETE_CODES if self.script_args.cfs_version == "v3" else CFS_V2_SESSIONS_DELETE_CODES
         invalid_responses = [r for r in deleted_sessions_list if r.status_code not in expected_codes]
         if invalid_responses:
             logger.error("%d delete operation returned unexpected status codes", len(invalid_responses))
-            raise CFSRCException()
+            errors = True
 
         logger.info("Verifying all CFS sessions with name prefix %s are deleted", self.script_args.cfs_session_name)
         self.verify_all_sessions_deleted()
@@ -92,6 +101,9 @@ class ResponseHandler:
             # When deletion is performed via the v3 API, verify the response
             # to make sure that all sessions were deleted with no duplicates
             self.verify_v3_api_deleted_cfs_sessions_response(deleted_sessions_list=deleted_sessions_list)
+
+        if errors:
+            raise CFSRCException()
 
     def verify_all_sessions_deleted(self) -> None:
         """
@@ -153,28 +165,33 @@ class ResponseHandler:
         ️(It is fine if some sessions are not listed in any of the responses.
         It is fine if no sessions are listed in any of the responses.)
         """
+
+        errors = False
         timeouts = [r for r in result if r.timed_out]
         if timeouts:
             logger.error("%d GET requests timed out", len(timeouts))
-            raise CFSRCException()
+            errors = True
 
         invalid_responses = [r for r in result if r.status_code not in [HTTPStatus.OK, HTTPStatus.NOT_FOUND]]
         if invalid_responses:
             status_codes = [r.status_code for r in invalid_responses]
             logger.error("%d GET requests returned unexpected status codes: %s",
                          len(invalid_responses), status_codes)
-            raise CFSRCException()
+            errors = True
 
         # Now validate the successful GET responses and check if they are valid dict or not
         successful_gets = [r for r in result if r.status_code == HTTPStatus.OK]
         for resp in successful_gets:
             if not isinstance(resp.session_data, dict):
                 logger.error("GET response is not a dict: %s", resp.session_data)
-                raise CFSRCException()
+                errors = True
 
             if resp.session_data.get("name") not in self.session_names:
                 logger.error("Session name %s not in expected session names", resp.session_data.get('name'))
-                raise CFSRCException()
+                errors = True
+
+        if errors:
+            raise CFSRCException()
 
         logger.info("Validated %d GET responses: %d successful, %d not found, %d timed out",
                     len(result), len(successful_gets),
