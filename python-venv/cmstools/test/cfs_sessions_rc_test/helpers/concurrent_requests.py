@@ -97,7 +97,7 @@ class ConcurrentRequestManager:
 
         logger.info("Batch execution complete: all %d threads finished", thread_count)
 
-    def create_batch_with_items(self, items: list[T], batch: RequestBatch) -> list[threading.Thread]:
+    def create_batch_with_items(self, items: list, batch: RequestBatch) -> list[threading.Thread]:
         """
         Create and return a list of worker threads for batch requests with items.
         Args:
@@ -118,7 +118,7 @@ class ConcurrentRequestManager:
             threads.append(thread)
         return threads
 
-    def create_batch_with_pool(self, items: list[T], batch: RequestBatch) -> list[threading.Thread]:
+    def create_batch_with_pool(self, items: list, batch: RequestBatch) -> list[threading.Thread]:
         """
         Create and return a list of worker threads for batch requests with items using a thread pool.
         Args:

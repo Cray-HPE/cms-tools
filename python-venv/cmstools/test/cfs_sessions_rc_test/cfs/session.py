@@ -231,7 +231,7 @@ def get_cfs_session_by_name(cfs_session_name: str, cfs_version: CfsVersionsStrLi
 
         if resp.status_code == HTTPStatus.OK:
             session = resp.json()
-            logger.debug("Session data found: %s", session)
+            logger.debug("Data found for CFS session %s: %s", cfs_session_name, session)
             return SessionsGetResponse(status_code=HTTPStatus.OK, session_data=session)
 
         if resp.status_code == HTTPStatus.NOT_FOUND:
@@ -245,14 +245,14 @@ def get_cfs_session_by_name(cfs_session_name: str, cfs_version: CfsVersionsStrLi
         )
 
     except requests.exceptions.Timeout:
-        logger.exception("Request timed out for session %s", cfs_session_name)
+        logger.exception("Request timed out for CFS session %s", cfs_session_name)
         return SessionsGetResponse(
             status_code=HTTPStatus.REQUEST_TIMEOUT,
             timed_out=True,
             error_message="Request timed out"
         )
     except Exception as e:
-        logger.exception("Error getting session %s: %s", cfs_session_name, str(e))
+        logger.exception("Error getting CFS session %s: %s", cfs_session_name, str(e))
         return SessionsGetResponse(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             error_message=str(e)
