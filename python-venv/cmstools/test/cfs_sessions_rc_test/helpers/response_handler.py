@@ -55,14 +55,20 @@ class ResponseHandler:
             logger.error("%d multi-get operations timed out", len(timeouts))
             errors = True
 
+        # Filter out timed-out responses for further validation
+        remaining_responses = [r for r in multi_get_results if not r.timed_out]
+
         # Then check if all requests returned a 200 status code
-        invalid_responses = [r for r in multi_get_results if r.status_code != HTTPStatus.OK]
+        invalid_responses = [r for r in remaining_responses if r.status_code != HTTPStatus.OK]
         if invalid_responses:
             logger.error("%d multi-get operations returned unexpected status codes", len(invalid_responses))
             errors = True
 
+        # Only validate the content of successful responses (OK status)
+        successful_gets = [r for r in remaining_responses if r.status_code == HTTPStatus.OK]
+
         # Now validate the content of each response
-        for idx, session_list in enumerate(multi_get_results):
+        for idx, session_list in enumerate(successful_gets):
             for session in session_list.session_data:
                 if not isinstance(session, dict):
                     logger.error("Entry in multi-get result at index %d is not a dict: %s", idx, session)
@@ -88,8 +94,11 @@ class ResponseHandler:
             logger.error("%d delete operations timed out", len(timeouts))
             errors = True
 
+        # Filter out timed-out responses for further validation
+        remaining_responses = [r for r in deleted_sessions_list if not r.timed_out]
+
         expected_codes = CFS_V3_SESSIONS_DELETE_CODES if self.script_args.cfs_version == "v3" else CFS_V2_SESSIONS_DELETE_CODES
-        invalid_responses = [r for r in deleted_sessions_list if r.status_code not in expected_codes]
+        invalid_responses = [r for r in remaining_responses if r.status_code not in expected_codes]
         if invalid_responses:
             logger.error("%d delete operation returned unexpected status codes", len(invalid_responses))
             errors = True
@@ -98,9 +107,11 @@ class ResponseHandler:
         self.verify_all_sessions_deleted()
 
         if self.script_args.cfs_version == "v3":
+            # # Only validate the content of successful responses (OK status)
+            successful_responses = [r for r in remaining_responses if r.status_code == HTTPStatus.OK]
             # When deletion is performed via the v3 API, verify the response
             # to make sure that all sessions were deleted with no duplicates
-            self.verify_v3_api_deleted_cfs_sessions_response(deleted_sessions_list=deleted_sessions_list)
+            self.verify_v3_api_deleted_cfs_sessions_response(deleted_sessions_list=successful_responses)
 
         if errors:
             raise CFSRCException()
@@ -167,24 +178,31 @@ class ResponseHandler:
         """
 
         errors = False
+
+        # First, check for timeouts and remove them from further validation
         timeouts = [r for r in result if r.timed_out]
         if timeouts:
             logger.error("%d GET requests timed out", len(timeouts))
             errors = True
 
-        invalid_responses = [r for r in result if r.status_code not in [HTTPStatus.OK, HTTPStatus.NOT_FOUND]]
+        # Filter out timed-out responses for further validation
+        remaining_responses = [r for r in result if r not in timeouts]
+
+        # Check for unexpected status codes in the remaining responses
+        invalid_responses = [r for r in remaining_responses if r.status_code not in [HTTPStatus.OK, HTTPStatus.NOT_FOUND]]
         if invalid_responses:
             status_codes = [r.status_code for r in invalid_responses]
             logger.error("%d GET requests returned unexpected status codes: %s",
                          len(invalid_responses), status_codes)
             errors = True
 
-        # Now validate the successful GET responses and check if they are valid dict or not
-        successful_gets = [r for r in result if r.status_code == HTTPStatus.OK]
+        # Only validate the content of successful responses (OK status)
+        successful_gets = [r for r in remaining_responses if r.status_code == HTTPStatus.OK]
         for resp in successful_gets:
             if not isinstance(resp.session_data, dict):
                 logger.error("GET response is not a dict: %s", resp.session_data)
                 errors = True
+                continue
 
             if resp.session_data.get("name") not in self.session_names:
                 logger.error("Session name %s not in expected session names", resp.session_data.get('name'))
@@ -228,3 +246,4 @@ class ResponseHandler:
 
         logger.info("Single-delete validation successful: 1 delete with status %d,"
                     "0 timeouts, 0 unexpected codes", expected_status)
+
