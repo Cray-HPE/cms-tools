@@ -167,24 +167,31 @@ class ResponseHandler:
         """
 
         errors = False
+
+        # First, check for timeouts and remove them from further validation
         timeouts = [r for r in result if r.timed_out]
         if timeouts:
             logger.error("%d GET requests timed out", len(timeouts))
             errors = True
 
-        invalid_responses = [r for r in result if r.status_code not in [HTTPStatus.OK, HTTPStatus.NOT_FOUND]]
+        # Filter out timed-out responses for further validation
+        remaining_responses = [r for r in result if r not in timeouts]
+
+        # Check for unexpected status codes in the remaining responses
+        invalid_responses = [r for r in remaining_responses if r.status_code not in [HTTPStatus.OK, HTTPStatus.NOT_FOUND]]
         if invalid_responses:
             status_codes = [r.status_code for r in invalid_responses]
             logger.error("%d GET requests returned unexpected status codes: %s",
                          len(invalid_responses), status_codes)
             errors = True
 
-        # Now validate the successful GET responses and check if they are valid dict or not
-        successful_gets = [r for r in result if r.status_code == HTTPStatus.OK]
+        # Only validate the content of successful responses (OK status)
+        successful_gets = [r for r in remaining_responses if r.status_code == HTTPStatus.OK]
         for resp in successful_gets:
             if not isinstance(resp.session_data, dict):
                 logger.error("GET response is not a dict: %s", resp.session_data)
                 errors = True
+                continue
 
             if resp.session_data.get("name") not in self.session_names:
                 logger.error("Session name %s not in expected session names", resp.session_data.get('name'))
