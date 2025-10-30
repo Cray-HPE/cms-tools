@@ -230,12 +230,15 @@ class ResponseHandler:
             logger.error("%d delete operations timed out", len(timeouts))
             errors = True
 
-        invalid_responses = [r for r in delete_result if r.status_code not in [expected_status, HTTPStatus.NOT_FOUND]]
+        # Filter out timed-out responses for further validation
+        remaining_responses = [r for r in delete_result if not r.timed_out]
+
+        invalid_responses = [r for r in remaining_responses if r.status_code not in [expected_status, HTTPStatus.NOT_FOUND]]
         if invalid_responses:
             logger.error("%d delete operation returned unexpected status codes", len(invalid_responses))
             errors = True
 
-        successful_deletes = [r for r in delete_result if r.status_code == expected_status]
+        successful_deletes = [r for r in remaining_responses if r.status_code == expected_status]
         if len(successful_deletes) != 1:
             logger.error("Expected exactly 1 successful delete with status %d, but got %d",
                          expected_status, len(successful_deletes))
@@ -244,6 +247,6 @@ class ResponseHandler:
         if errors:
             raise CFSRCException()
 
-        logger.info("Single-delete validation successful: 1 delete with status %d,"
+        logger.info("Single-delete validation successful: 1 delete with status %d, "
                     "0 timeouts, 0 unexpected codes", expected_status)
 
