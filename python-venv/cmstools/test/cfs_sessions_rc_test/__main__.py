@@ -130,6 +130,7 @@ def parse_command_line() -> ScriptArgs:
         max_multi_cfs_sessions_delete_requests=args.max_multi_delete_reqs,
         delete_preexisting_cfs_sessions=args.delete_previous_sessions,
         max_multi_cfs_sessions_get_requests=args.max_multi_get_reqs,
+        max_single_cfs_sessions_get_requests=args.max_single_get_reqs,
         cfs_version=args.cfs_version,
         page_size=args.page_size,
         run_subtests=args.run_subtests,

@@ -99,14 +99,12 @@ class CfsSessionMultiDeleteTest(CFSSessionBase):
         except requests.exceptions.Timeout:
             logger.error("Delete CFS sessions request timed out")
             session_delete_result = SessionDeleteResult(
-                status_code=0,
                 timed_out=True,
                 error_message="Request timed out"
             )
         except Exception as exc:
             logger.exception("Exception during CFS session delete: %s", str(exc))
             session_delete_result = SessionDeleteResult(
-                status_code=0,
                 error_message=str(exc)
             )
         finally:
