@@ -197,3 +197,34 @@ class ResponseHandler:
                     len(result), len(successful_gets),
                     len([r for r in result if r.status_code == HTTPStatus.NOT_FOUND]),
                     len(timeouts))
+
+    def validate_single_delete_response(self, delete_result: list[SessionDeleteResult],
+                                        expected_status: int) -> None:
+        """
+        Verify that exactly 1 of the delete requests returned 204. no request timeouts.
+        No unexpected status codes.
+        Verify that the session no longer exists. If it does, try to delete it.
+        """
+        errors = False
+        # Verify if any of the delete operation timeout
+        timeouts = [r for r in delete_result if r.timed_out]
+        if timeouts:
+            logger.error("%d delete operations timed out", len(timeouts))
+            errors = True
+
+        invalid_responses = [r for r in delete_result if r.status_code not in [expected_status, HTTPStatus.NOT_FOUND]]
+        if invalid_responses:
+            logger.error("%d delete operation returned unexpected status codes", len(invalid_responses))
+            errors = True
+
+        successful_deletes = [r for r in delete_result if r.status_code == expected_status]
+        if len(successful_deletes) != 1:
+            logger.error("Expected exactly 1 successful delete with status %d, but got %d",
+                         expected_status, len(successful_deletes))
+            errors = True
+
+        if errors:
+            raise CFSRCException()
+
+        logger.info("Single-delete validation successful: 1 delete with status %d,"
+                    "0 timeouts, 0 unexpected codes", expected_status)

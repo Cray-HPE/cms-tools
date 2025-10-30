@@ -27,3 +27,4 @@ from .cfs_session_base import all_subtests, CFSSessionBase
 from .cfs_sessions_multi_delete_multi_get_test import CFSSessionMultiDeleteMultiGetTest
 from .cfs_sessions_multi_delete_test import CfsSessionMultiDeleteTest
 from .cfs_sessions_multi_delete_single_get_test import CFSSessionMultiDeleteSingleGetTest
+from .cfs_sessions_single_delete_test import CFSSessionSingleDeleteTest
