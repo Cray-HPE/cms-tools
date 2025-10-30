@@ -54,6 +54,7 @@ class ScriptArgs(NamedTuple):
     max_cfs_sessions: int  # default to 20
     max_multi_cfs_sessions_delete_requests: int  # default to 4
     max_multi_cfs_sessions_get_requests: int  # default to 4
+    max_single_cfs_sessions_get_requests: int  # default to 4
     delete_preexisting_cfs_sessions: bool
     cfs_version: CfsVersionsStrLiteral  # default to v3
     page_size: Optional[int] = None

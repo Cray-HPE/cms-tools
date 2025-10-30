@@ -40,7 +40,7 @@ CFS_V3_SESSIONS_DELETE_CODES = Literal[ 200, 400]
 @dataclass
 class BaseRequestResult:
     """Base data class for request result information."""
-    status_code: int
+    status_code: Optional[int] = None
     timed_out: bool = False
     error_message: Optional[str] = None
 
@@ -55,3 +55,8 @@ class SessionDeleteResult(BaseRequestResult):
 class MultiSessionsGetResult(BaseRequestResult):
     """Data class to hold session GET result information."""
     session_data: Optional[list[dict]] = None
+
+@dataclass
+class SessionsGetResponse(BaseRequestResult):
+    """Data class to hold single session GET response information."""
+    session_data: Optional[dict] = None  # Filled for v3 only

@@ -38,7 +38,7 @@ from cmstools.test.cfs_sessions_rc_test.log import logger
 class RequestBatch:
     """Configuration for a batch of requests."""
     max_parallel: int
-    request_func: Callable[[], None]
+    request_func: Callable[[], None] | Callable[[object], None]
 
 
 class ConcurrentRequestManager:
@@ -93,3 +93,68 @@ class ConcurrentRequestManager:
             logger.debug("Joined thread %d/%d", (idx + 1), thread_count)
 
         logger.info("Batch execution complete: all %d threads finished", thread_count)
+
+    def create_batch_with_items(self, items: list, batch: RequestBatch) -> list[threading.Thread]:
+        """
+        Create and return a list of worker threads for batch requests with items.
+        Args:
+            items: List of items to process
+            batch: RequestBatch configuration containing max_parallel and request function
+        Returns:
+            List of Thread objects ready to be started
+        """
+        threads = []
+
+        logger.info("Creating %d worker threads (one per item) for batch execution", len(items))
+
+        for item in items:
+            thread = threading.Thread(
+                target=batch.request_func,
+                args=(item,)
+            )
+            threads.append(thread)
+        return threads
+
+    def create_batch_with_pool(self, items: list, batch: RequestBatch) -> list[threading.Thread]:
+        """
+        Create and return a list of worker threads for batch requests with items using a thread pool.
+        Args:
+            items: List of items to process
+            batch: RequestBatch configuration containing max_parallel and request function
+        Returns:
+            List of Thread objects ready to be started
+        """
+        threads = []
+        item_count = len(items)
+        pool_size = min(batch.max_parallel, item_count)
+
+        logger.info("Creating thread pool of size %d for batch execution with items", pool_size)
+
+        for i in range(pool_size):
+            thread = threading.Thread(
+                target=self._thread_pool_worker,
+                args=(items[i::pool_size], batch.request_func)
+            )
+            threads.append(thread)
+        return threads
+
+    def _thread_pool_worker(self, items: list[object], request_func: Callable[[object], None]) -> None:
+        """
+        Worker function that processes a subset of items from the pool.
+        Args:
+            items: List of items assigned to this worker thread
+            request_func: Function to call for each item
+        """
+        logger.info("Thread pool worker starting with %d items", len(items))
+        exceptions = []
+        for item in items:
+            try:
+                request_func(item)
+            except Exception as e:
+                exceptions.append(e)
+        if exceptions:
+            if len(exceptions) == 1:
+                raise exceptions[0]
+            raise ExceptionGroup("Thread pool worker encountered exceptions", exceptions)
+
+        logger.info("Thread pool worker completed processing %d items", len(items))

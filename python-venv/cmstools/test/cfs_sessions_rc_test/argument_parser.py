@@ -125,3 +125,9 @@ def add_subtests_arguments(parser: argparse.ArgumentParser) -> None:
         default=DEFAULT_MAX_PARALLEL_REQUESTS,
         help="Maximum number of parallel multi-delete requests (default: %(default)s)"
     )
+    parser.add_argument(
+        "--max-single-get-reqs",
+        type=check_minimum_max_parallel_reqs,
+        default=DEFAULT_MAX_PARALLEL_REQUESTS,
+        help="Maximum number of parallel single-get requests (default: %(default)s)"
+    )
