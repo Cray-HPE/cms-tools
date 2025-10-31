@@ -80,7 +80,7 @@ def _execute_subtests(tests: dict[str, type[CFSSessionBase]], script_args: Scrip
             continue
 
     if successful_tests:
-        logger.info(" Subtests completed successfully: %s", successful_tests)
+        logger.info("Subtests completed successfully: %s", successful_tests)
     if failed_tests:
         logger.error("The following subtests failed: %s", failed_tests)
         raise CFSRCException()
