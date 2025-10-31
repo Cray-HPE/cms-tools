@@ -249,4 +249,3 @@ class ResponseHandler:
 
         logger.info("Single-delete validation successful: 1 delete with status %d, "
                     "0 timeouts, 0 unexpected codes", expected_status)
-

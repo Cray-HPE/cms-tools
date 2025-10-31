@@ -66,17 +66,21 @@ def get_tests(script_args: ScriptArgs) -> dict[str, type[CFSSessionBase]]:
 def _execute_subtests(tests: dict[str, type[CFSSessionBase]], script_args: ScriptArgs) -> None:
     """Execute the specified subtests."""
     failed_tests = []
+    successful_tests = []
 
     for test_name, test_class in tests.items():
         logger.info("Starting subtest %s", test_name)
         try:
             test_class.execute(script_args)
             logger.info("Completed subtest %s", test_name)
+            successful_tests.append(test_name)
         except Exception as e:
             logger.exception("Subtest %s failed with exception: %s", test_name, e)
             failed_tests.append(test_name)
             continue
 
+    if successful_tests:
+        logger.info(" Subtests completed successfully: %s", successful_tests)
     if failed_tests:
         logger.error("The following subtests failed: %s", failed_tests)
         raise CFSRCException()

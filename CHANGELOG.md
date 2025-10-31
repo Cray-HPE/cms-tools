@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMCMS-9548: cmsdev: Create cfs-session-race-condition multi-delete-and-multi-get subtest
 - CASMCMS-9549: cmsdev: Create cfs-session-race-condition multi-delete-and-single-get subtest
 - CASMCMS-9550: cmsdev: Create cfs-session-race-condition single-delete subtest
+- CASMCMS-9551: cmsdev: Create cfs-session-race-condition single-delete-and-single-get subtest
 
 ### Changed
 - CASMCMS-8550: cmsdev: Add timeouts for CLI and API calls
