@@ -32,7 +32,8 @@ import requests
 
 from cmstools.lib.api import (request, request_and_check_status,
                               add_api_auth, SYSTEM_CA_CERTS)
-from cmstools.lib.cfs import CFS_SESSIONS_URL_TEMPLATE, MultiSessionsGetResult, SessionsGetResponse
+from cmstools.lib.cfs import (CFS_SESSIONS_URL_TEMPLATE, MultiSessionsGetResult, SessionsGetResponse,
+                              SessionDeleteResult)
 from cmstools.lib.defs import JsonDict
 from cmstools.test.cfs_sessions_rc_test.log import logger
 from cmstools.test.cfs_sessions_rc_test.defs import CFSRCException, API_REQUEST_TIMEOUT, CfsVersionsStrLiteral
@@ -89,18 +90,19 @@ def get_cfs_sessions_list_params(cfs_session_name_contains: str, cfs_version: Cf
     }
 
 
-def make_request(url: str, params: dict, retry: bool) -> requests.Response:
+def make_request(url: str, params: dict, retry: bool, verb: str = "get") -> requests.Response:
     """Make a GET request with optional retry logic."""
     if not retry:
         logger.debug("No retry for requests")
         headers = {}
         add_api_auth(headers)
-        return requests.get(url=url, params=params, timeout=API_REQUEST_TIMEOUT,
+        return getattr(requests, verb)(url=url, params=params, timeout=API_REQUEST_TIMEOUT,
                             headers=headers, verify=SYSTEM_CA_CERTS)
-    return request("get", url=url, params=params)
+    return request(verb, url=url, params=params)
 
 
-def get_all_cfs_sessions_v2(cfs_session_name_contains: str, cfs_version: CfsVersionsStrLiteral, retry: bool) -> MultiSessionsGetResult:
+def get_all_cfs_sessions_v2(cfs_session_name_contains: str, cfs_version: CfsVersionsStrLiteral,
+                            retry: bool) -> MultiSessionsGetResult:
     """
     Return all CFS sessions using v2 API.No pagination support in v2.
     """
@@ -258,23 +260,45 @@ def get_cfs_session_by_name(cfs_session_name: str, cfs_version: CfsVersionsStrLi
         )
 
 
-def delete_cfs_session_by_name(cfs_session_name: str, cfs_version: CfsVersionsStrLiteral) -> None:
+def delete_cfs_session_by_name(cfs_session_name: str, cfs_version: CfsVersionsStrLiteral, retry: bool = True) -> SessionDeleteResult:
     """
     Delete a CFS session by name.
+    params:
+        cfs_session_name: Name of the session to delete
+        cfs_version: CFS API version to use ("v2" or "v3")
+        retry: Whether to retry the request on failure
+    Returns SessionDeleteByNameResult.
     """
-    url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=cfs_version)
-    cfs_sessions_url = f"{url}/{cfs_session_name}"
-    resp = request("delete", cfs_sessions_url)
-    if resp.status_code == HTTPStatus.NO_CONTENT:
-        logger.info("Deleted CFS session %s", cfs_session_name)
-        return
+    try:
+        url = CFS_SESSIONS_URL_TEMPLATE.format(api_version=cfs_version)
+        cfs_sessions_url = f"{url}/{cfs_session_name}"
 
-    if resp.status_code == HTTPStatus.NOT_FOUND:
-        logger.info("CFS session %s not found to delete", cfs_session_name)
-        return
+        if not retry:
+            resp = make_request(url=cfs_sessions_url, params={}, retry=retry, verb="delete")
+        else:
+            resp = request("delete", cfs_sessions_url)
 
-    logger.error("Unexpected return code %d from Delete to %s: %s", resp.status_code, url, resp.text)
-    raise CFSRCException()
+        if resp.status_code == HTTPStatus.NO_CONTENT:
+            logger.info("Deleted CFS session %s", cfs_session_name)
+            return SessionDeleteResult(status_code=resp.status_code)
+
+        if resp.status_code == HTTPStatus.NOT_FOUND:
+            logger.info("CFS session %s not found to delete", cfs_session_name)
+            return SessionDeleteResult(status_code=resp.status_code)
+
+        logger.error("Unexpected return code %d from Delete to %s: %s", resp.status_code, cfs_sessions_url, resp.text)
+        return SessionDeleteResult(status_code=resp.status_code, error_message=resp.text)
+    except requests.exceptions.Timeout:
+        logger.exception("Request timed out for deleting session %s", cfs_session_name)
+        return SessionDeleteResult(
+            timed_out=True,
+            error_message="Request timed out"
+        )
+    except Exception as e:
+        logger.exception("Error deleting session %s: %s", cfs_session_name, str(e))
+        return SessionDeleteResult(
+            error_message=str(e)
+        )
 
 
 def create_cfs_session(session_name: str, cfs_version: CfsVersionsStrLiteral,
