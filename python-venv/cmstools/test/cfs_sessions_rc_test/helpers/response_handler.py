@@ -224,7 +224,7 @@ class ResponseHandler:
         Verify that the session no longer exists. If it does, try to delete it.
         """
         errors = False
-        # Verify if any of the delete operation timeout
+        # Verify if any of the delete operations timed out
         timeouts = [r for r in delete_result if r.timed_out]
         if timeouts:
             logger.error("%d delete operations timed out", len(timeouts))
@@ -249,3 +249,4 @@ class ResponseHandler:
 
         logger.info("Single-delete validation successful: 1 delete with status %d, "
                     "0 timeouts, 0 unexpected codes", expected_status)
+
