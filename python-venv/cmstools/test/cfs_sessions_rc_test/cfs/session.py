@@ -98,7 +98,6 @@ def make_request(url: str, params: dict, retry: bool, verb: str = "get") -> requ
         add_api_auth(headers)
         return getattr(requests, verb)(url=url, params=params, timeout=API_REQUEST_TIMEOUT,
                                        headers=headers, verify=SYSTEM_CA_CERTS)
-
     return request(verb, url=url, params=params)
 
 

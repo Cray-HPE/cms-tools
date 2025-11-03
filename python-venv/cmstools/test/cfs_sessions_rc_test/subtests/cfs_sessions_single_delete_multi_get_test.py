@@ -118,6 +118,3 @@ class CFSSessionSingleDeleteMultiGetTest(CFSSessionSingleDeleteTest):
             if len(exceptions) == 1:
                 raise exceptions[0]
             raise ExceptionGroup("Validation errors occurred", exceptions)
-
-
-
