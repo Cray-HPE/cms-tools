@@ -95,7 +95,7 @@ class CFSSessionSingleDeleteMultiGetTest(CFSSessionSingleDeleteTest):
     def _validate_results(self) -> None:
         """
         Verify that exactly 1 of the delete requests returned 204.
-        Verify that the session no longer exists. If it does, try to delete it.
+        Verify that the session no longer exists.
         Verify that all multi-get requests returned successful status and did not time out.
         For the session lists that were returned by the multi-get requests, validate that every list
         is either empty, or only contains a dict for the test session we created for this subtest.
