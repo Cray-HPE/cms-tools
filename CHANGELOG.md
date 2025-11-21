@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMCMS-9531: cmsdev: Avoid repeated product catalog lookup for BOS and CFS tests
 - CASMCMS-9532: cmsdev: Avoid skipped CFS tests due to product catalog failure
 - CASMCMS-9558: Refactor python module directory structure
+- CASMCMS-9575: cmsdev: Put logs and artifacts in separate timestamped subdirectory
 
 ### Fixed
 - CASMCMS-9534: cmsdev: Corrected non-impactful but incorrect `kernel_parameters` value
