@@ -48,7 +48,7 @@ echo "Log directory: $CMSDEV_LOGDIR"
 
 # Check if cmsdev.log exists
 if [ ! -f "$CMSDEV_LOGDIR/cmsdev.log" ]; then
-    echo "No existing cmsdev.log file found at $CMSDEV_LOGDIR/cmsdev.log"
+    echo "No existing cmsdev.log file found at $CMSDEV_LOGDIR"
     exit 0
 fi
 
