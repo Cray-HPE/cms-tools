@@ -25,6 +25,12 @@
 
 #
 # convert_cmsdev_logs.sh
+# Manual execution (for testing or troubleshooting):
+# Use default directory
+# /usr/local/bin/convert_cmsdev_logs.sh
+
+# Use custom directory
+# /usr/local/bin/convert_cmsdev_logs.sh /path/to/custom/logdir
 #
 # Convert existing cmsdev log files and artifacts to new timestamped directory convention
 #
@@ -47,7 +53,7 @@ if [ ! -f "$CMSDEV_LOGDIR/cmsdev.log" ]; then
 fi
 
 # Extract unique main run tags (format: run=GGqaQ, excluding subtags like run=GGqaQ-cfs)
-unique_tags=$(grep -oE 'run=[a-zA-Z0-9]{5}' "$CMSDEV_LOGDIR/cmsdev.log" | grep -vE 'run=[a-zA-Z0-9]{5}-[a-z0-9]+' | sort -u | cut -d'=' -f2)
+unique_tags=$(grep -oE 'run=[a-zA-Z0-9]{5}' "$CMSDEV_LOGDIR/cmsdev.log" 2>/dev/null | grep -vE 'run=[a-zA-Z0-9]{5}-[a-z0-9]+' 2>/dev/null | sort -u | cut -d'=' -f2)
 
 if [ -z "$unique_tags" ]; then
     echo "No run tags found in cmsdev.log, keeping original file"
@@ -60,7 +66,7 @@ for tag in $unique_tags; do
     echo "Processing run tag: $tag"
     
     # Find the earliest timestamp for this run tag
-    earliest_time=$(grep -E " run=${tag}( |-[a-z0-9]+ )" "$CMSDEV_LOGDIR/cmsdev.log" | head -1 | cut -d'"' -f2)
+    earliest_time=$(grep -E " run=${tag}( |-[a-z0-9]+ )" "$CMSDEV_LOGDIR/cmsdev.log" 2>/dev/null | head -1 | cut -d'"' -f2)
     
     echo "Earliest timestamp: $earliest_time"
     
@@ -117,42 +123,34 @@ for tag in $unique_tags; do
     fi
     
     # Extract logs for this run tag and strip run= tags
-    grep -E " run=${tag}( |-[a-z0-9]+ )" "$CMSDEV_LOGDIR/cmsdev.log" | sed -E "s/ run=${tag}( |-[a-z0-9]+ )/ /" > "$target_dir/cmsdev.log"
+    grep -E " run=${tag}( |-[a-z0-9]+ )" "$CMSDEV_LOGDIR/cmsdev.log" 2>/dev/null | sed -E "s/ run=${tag}( |-[a-z0-9]+ )/ /" > "$target_dir/cmsdev.log"
     if [ $? -eq 0 ]; then
-        log_count=$(wc -l < "$target_dir/cmsdev.log")
+        log_count=$(wc -l < "$target_dir/cmsdev.log" 2>/dev/null || echo "0")
         echo "Extracted $log_count log entries for run $tag to $target_dir/cmsdev.log"
     else
         echo "Failed to extract logs for tag $tag"
     fi
     
     # Check if there's a "No artifacts saved" message for this run tag
-    no_artifacts_msg=$(grep -E " run=${tag}( |-[a-z0-9]+ )" "$CMSDEV_LOGDIR/cmsdev.log" | grep -E 'msg="No artifacts saved\. Removing empty artifact directory:' || echo "")
+    no_artifacts_msg=$(grep -E " run=${tag}( |-[a-z0-9]+ )" "$CMSDEV_LOGDIR/cmsdev.log" 2>/dev/null | grep -E 'msg="No artifacts saved\. Removing empty artifact directory:' 2>/dev/null || echo "")
     
     if [ -n "$no_artifacts_msg" ]; then
         echo "Found 'No artifacts saved' message for run tag $tag, skipping artifact processing"
     else
         # Look for artifact file references in the logs for this run tag
         # Pattern matches: msg="ARTIFACTS environment variable not set. Defaulting to '/opt/cray/tests/install/logs/cmsdev/artifacts-2025-11-21T17:06:19.842986851Z'"
-        artifact_file=$(grep -E " run=${tag}( |-[a-z0-9]+ )" "$CMSDEV_LOGDIR/cmsdev.log" | grep -oE "'/opt/cray/tests/install/logs/cmsdev/artifacts-[^']*'" | head -1 | tr -d "'" || echo "")
-        
-        if [ -n "$artifact_file" ]; then
-            echo "Found artifact reference: $artifact_file"
+        artifact_file=$(grep -E " run=${tag}( |-[a-z0-9]+ )" "$CMSDEV_LOGDIR/cmsdev.log" 2>/dev/null | grep -oE "'/opt/cray/tests/install/logs/cmsdev/artifacts-[^']*'" 2>/dev/null | head -1 | tr -d "'" || echo "")
+        artifact_compressed="${artifact_file}.tgz"
+
+        if [ -n "$artifact_compressed" ]; then
+            echo "Found artifact reference: $artifact_compressed"
             
-            if [ -f "$artifact_file" ]; then
-                echo "Moving artifact file $artifact_file to $target_dir/"
-                mv "$artifact_file" "$target_dir/" || echo "Failed to move artifact file $artifact_file"
+            if [ -f "$artifact_compressed" ]; then
+                echo "Moving artifact file $artifact_compressed to $target_dir/"
+                mv "$artifact_compressed" "$target_dir/" || echo "Failed to move artifact file $artifact_compressed"
             else
-                echo "Artifact file $artifact_file referenced but not found"
+                echo "Artifact file $artifact_compressed referenced but not found"
             fi
-            
-            # Also look for compressed artifacts (.tgz, .tar.gz)
-            for ext in ".tgz" ".tar.gz"; do
-                artifact_compressed="${artifact_file}${ext}"
-                if [ -f "$artifact_compressed" ]; then
-                    echo "Moving compressed artifact file $artifact_compressed to $target_dir/"
-                    mv "$artifact_compressed" "$target_dir/" || echo "Failed to move artifact file $artifact_compressed"
-                fi
-            done
         else
             echo "No artifact file reference found for run tag $tag"
         fi
