@@ -66,6 +66,9 @@ echo /usr/local/bin/cmsdev | tee -a INSTALLED_FILES
 install -m 755 cmsdev/redact_cmsdev_log.py %{buildroot}/usr/local/bin/redact_cmsdev_log.py
 echo /usr/local/bin/redact_cmsdev_log.py | tee -a INSTALLED_FILES
 
+install -m 755 convert_cmsdev_logs.sh %{buildroot}/usr/local/bin/convert_cmsdev_logs.sh
+echo /usr/local/bin/convert_cmsdev_logs.sh | tee -a INSTALLED_FILES
+
 # Log directory for cmsdev
 install -m 755 -d %{buildroot}%{cmsdev_logdir}
 echo %{cmsdev_logdir} | tee -a INSTALLED_FILES
@@ -110,6 +113,9 @@ cat INSTALLED_FILES | xargs -i sh -c 'test -L $RPM_BUILD_ROOT{} -o -f $RPM_BUILD
 %post
 # Redact any credentials that were logged by earlier cmsdev versions
 /usr/local/bin/redact_cmsdev_log.py
+
+# Convert existing log files and artifacts to new timestamped directory convention
+/usr/local/bin/convert_cmsdev_logs.sh %{cmsdev_logdir}
 
 %clean
 
