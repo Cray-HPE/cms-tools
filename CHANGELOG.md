@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `stefanzweifel/git-auto-commit-action` from 5 to 7 ([#321](https://github.com/Cray-HPE/cms-tools/pull/321))
 - Bump `github.com/mailru/easyjson` from 0.9.0 to 0.9.1 ([#314](https://github.com/Cray-HPE/cms-tools/pull/314))
 - Bump `github.com/go-openapi/swag/jsonname` from 0.25.1 to 0.25.3 ([#328](https://github.com/Cray-HPE/cms-tools/pull/328))
+- Bump `github.com/google/gnostic` from 0.7.0 to 0.7.1 ([#298](https://github.com/Cray-HPE/cms-tools/pull/298))
 
 ## [1.33.0] - 2025-06-27
 
