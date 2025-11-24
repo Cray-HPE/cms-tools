@@ -45,9 +45,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Use newer `requests_retry_session` version (based on which Python version is being built)
   - Use version of `kubernetes` package that matches the Kubernetes version in CSM 1.7
 - Bump `github/codeql-action` from 3 to 4 ([#320](https://github.com/Cray-HPE/cms-tools/pull/320))
-- Bump `github.com/go-openapi/jsonreference` from 0.21.0 to 0.21.2 ([#317](https://github.com/Cray-HPE/cms-tools/pull/317))
+- Bump `github.com/go-openapi/jsonreference` from 0.21.0 to 0.21.3 ([#317](https://github.com/Cray-HPE/cms-tools/pull/317), [#325](https://github.com/Cray-HPE/cms-tools/pull/325))
 - Bump `stefanzweifel/git-auto-commit-action` from 5 to 7 ([#321](https://github.com/Cray-HPE/cms-tools/pull/321))
 - Bump `github.com/mailru/easyjson` from 0.9.0 to 0.9.1 ([#314](https://github.com/Cray-HPE/cms-tools/pull/314))
+- Bump `github.com/go-openapi/swag/jsonname` from 0.25.1 to 0.25.3 ([#328](https://github.com/Cray-HPE/cms-tools/pull/328))
 
 ## [1.33.0] - 2025-06-27
 
