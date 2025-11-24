@@ -47,7 +47,7 @@ func SetProdCatOk(ok bool) {
 	prodCatOk = ok
 }
 
-func IsCFSRunning(includeCLI bool) (passed bool) {
+func IsCFSRunning(includeCLI, includeTenant bool) (passed bool) {
 	passed = true
 	// 2 pods minimum since we expect both an api and operator pod
 	podNames, ok := test.GetPodNamesByPrefixKey("cfs", 2, -1)
@@ -101,9 +101,18 @@ func IsCFSRunning(includeCLI bool) (passed bool) {
 	if !testCFSAPI() {
 		passed = false
 	}
-	if !TestCFSConfigurationsCRUDOperationWithTenantsUsingAPIVersions() {
-		passed = false
+
+	// Tenant tests will be run only if requested using the include-tenant flag
+	if includeTenant {
+		if !TestCFSConfigurationsCRUDOperationWithTenantsUsingAPIVersions() {
+			passed = false
+		}
+	} else {
+		if !TestCFSConfigurationsCRUDOperationUsingAPIVersions() {
+			passed = false
+		}
 	}
+
 	if !TestCFSSourcesCRUDOperation() {
 		passed = false
 	}
@@ -113,9 +122,18 @@ func IsCFSRunning(includeCLI bool) (passed bool) {
 		if !testCFSCLI() {
 			passed = false
 		}
-		if !TestCFSConfigurationsCRUDOperationWithTenantsUsingCLI() {
-			passed = false
+
+		// Tenant tests will be run only if requested using the include-tenant flag
+		if includeTenant {
+			if !TestCFSConfigurationsCRUDOperationWithTenantsUsingCLI() {
+				passed = false
+			}
+		} else {
+			if !TestCFSConfigurationsCRUDOperationUsingCLI() {
+				passed = false
+			}
 		}
+
 		if !TestCFSSourcesCRUDOperationUsingCLI() {
 			passed = false
 		}

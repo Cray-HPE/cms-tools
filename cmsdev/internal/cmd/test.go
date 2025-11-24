@@ -62,12 +62,12 @@ var TestTimeouts = map[string]int64{
 const DefaultTestTimeout int64 = 120
 
 // Run the specified test
-func RunTest(service string, includeCLI bool) bool {
+func RunTest(service string, includeCLI, includeTenant bool) bool {
 	switch service {
 	case "bos":
-		return bos.IsBOSRunning(includeCLI)
+		return bos.IsBOSRunning(includeCLI, includeTenant)
 	case "cfs":
-		return cfs.IsCFSRunning(includeCLI)
+		return cfs.IsCFSRunning(includeCLI, includeTenant)
 	case "conman":
 		return con.IsConmanRunning()
 	case "ims":
@@ -112,7 +112,7 @@ func GetSleepDuration(attempt int, stopTime, timeout int64) time.Duration {
 	return time.Duration(sleepSeconds) * time.Second
 }
 
-func DoTestWithRetry(service string, includeCLI bool) bool {
+func DoTestWithRetry(service string, includeCLI, includeTenant bool) bool {
 	testPassed, finalTry := false, false
 	timeout := GetTimeout(service)
 	common.Infof("Test retry timeout for this service test is %d seconds", timeout)
@@ -125,7 +125,7 @@ func DoTestWithRetry(service string, includeCLI bool) bool {
 			common.Infof("Attempt #%d", n)
 		}
 		common.SetRunSubTag(strconv.Itoa(n))
-		testPassed = RunTest(service, includeCLI)
+		testPassed = RunTest(service, includeCLI, includeTenant)
 		common.UnsetRunSubTag()
 		if testPassed {
 			return true
@@ -143,11 +143,11 @@ func DoTestWithRetry(service string, includeCLI bool) bool {
 	return false
 }
 
-func DoTest(service string, retry, includeCLI bool) bool {
+func DoTest(service string, retry, includeCLI, includeTenant bool) bool {
 	if retry {
-		return DoTestWithRetry(service, includeCLI)
+		return DoTestWithRetry(service, includeCLI, includeTenant)
 	} else {
-		return RunTest(service, includeCLI)
+		return RunTest(service, includeCLI, includeTenant)
 	}
 }
 
@@ -174,7 +174,7 @@ func GetTestNamesString(excludeAliases bool) string {
 	return strings.Join(GetTestNamesList(excludeAliases), " ")
 }
 
-func RunTests(services []string, retry, noclean, includeCLI bool) (passed, failed []string) {
+func RunTests(services []string, retry, noclean, includeCLI, includeTenant bool) (passed, failed []string) {
 	var s string
 
 	// Create temporary directory
@@ -190,7 +190,7 @@ func RunTests(services []string, retry, noclean, includeCLI bool) (passed, faile
 
 	for _, s = range services {
 		common.SetTestService(s)
-		if DoTest(s, retry, includeCLI) {
+		if DoTest(s, retry, includeCLI, includeTenant) {
 			passed = append(passed, s)
 		} else {
 			failed = append(failed, s)
@@ -221,7 +221,9 @@ cmsdev test conman
 cmsdev test tftp --no-log -q
   # runs tftp tests in quiet mode with logging disabled
 cmsdev test cfs -r --verbose
-  # runs cfs tests with verbosity and retry on failure`, GetTestNamesString(false))
+  # runs cfs tests with verbosity and retry on failure
+cmsdev test bos --include-cli --include-tenant
+  # runs bos tests including both CLI and tenant tests`, GetTestNamesString(false))
 
 // testCmd command functions
 var testCmd = &cobra.Command{
@@ -238,6 +240,7 @@ var testCmd = &cobra.Command{
 		listTests, _ := cmd.Flags().GetBool("list")
 		excludeAliases, _ := cmd.Flags().GetBool("exclude-aliases")
 		includeCLI, _ := cmd.Flags().GetBool("include-cli")
+		includeTenant, _ := cmd.Flags().GetBool("include-tenant")
 
 		if quiet && verbose {
 			common.Usagef("--quiet and --verbose are mutually exclusive")
@@ -245,8 +248,8 @@ var testCmd = &cobra.Command{
 
 		if listTests {
 			// --list was passed
-			if noCleanup || noLogs || logsDir != "" || retry || quiet || verbose || includeCLI {
-				common.Usagef("--include-cli, --no-cleanup, --no-log, --log-dir, --retry, --quiet, and --verbose are not valid with --list")
+			if noCleanup || noLogs || logsDir != "" || retry || quiet || verbose || includeCLI || includeTenant {
+				common.Usagef("--include-cli, --include-tenant, --no-cleanup, --no-log, --log-dir, --retry, --quiet, and --verbose are not valid with --list")
 			} else if len(args) > 0 {
 				common.Usagef("Invalid arguments specified with --list: %s", strings.Join(args, " "))
 			}
@@ -290,7 +293,7 @@ var testCmd = &cobra.Command{
 		// Initialize variables related to saving CT test artifacts
 		common.InitArtifacts()
 
-		passed, failed := RunTests(services, retry, noCleanup, includeCLI)
+		passed, failed := RunTests(services, retry, noCleanup, includeCLI, includeTenant)
 
 		if len(failed) == 0 {
 			common.Successf("All %d service tests passed: %s", len(passed), strings.Join(passed, ", "))
@@ -316,4 +319,5 @@ func init() {
 	testCmd.Flags().BoolP("list", "l", false, "list valid service tests")
 	testCmd.Flags().BoolP("exclude-aliases", "", false, "exclude aliases from list of valid service tests")
 	testCmd.Flags().BoolP("include-cli", "", false, "run both CLI and API tests")
+	testCmd.Flags().BoolP("include-tenant", "", false, "run tenant tests")
 }

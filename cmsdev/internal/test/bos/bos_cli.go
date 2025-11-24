@@ -169,7 +169,7 @@ func basicCLIDescribeVerifyStringMapTest(target string, cmdArgs ...string) bool 
 }
 
 // Run all of the BOS CLI subtests. Return true if they all pass, false otherwise.
-func cliTests(tenantList []string) (passed bool) {
+func cliTests(tenantList []string, includeTenant bool) (passed bool) {
 	passed = true
 
 	// Defined in bos_version.go
@@ -193,12 +193,12 @@ func cliTests(tenantList []string) (passed bool) {
 	}
 
 	// Defined in bos_sessiontemplate.go
-	if !sessionTemplatesTestsCLI(tenantList) {
+	if !sessionTemplatesTestsCLI(tenantList, includeTenant) {
 		passed = false
 	}
 
 	// Defined in bos_session.go
-	if !sessionsTestsCLI(tenantList) {
+	if !sessionsTestsCLI(tenantList, includeTenant) {
 		passed = false
 	}
 

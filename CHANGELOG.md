@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMCMS-9551: cmsdev: Create cfs-session-race-condition single-delete-and-single-get subtest
 - CASMCMS-9552: cmsdev: Create cfs-session-race-condition single-delete-and-multi-get subtest
 - CASMCMS-9595: cmsdev: Put existing logs and artifacts in separate timestamped subdirectory
+- CASMCMS-9594: cmsdev: Add --include-tenant flag to include cfs, bos CRUD tenant tests during health checks
 
 ### Changed
 - CASMCMS-8550: cmsdev: Add timeouts for CLI and API calls
