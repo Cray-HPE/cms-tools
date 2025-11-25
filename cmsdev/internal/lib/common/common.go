@@ -48,6 +48,9 @@ const BASEURL = "https://" + BASEHOST
 const LOCALHOST = "http://localhost:5000"
 const NAMESPACE string = "services"
 const CSMPRODCATALOGCMNAME string = "cray-product-catalog"
+const API_TIMEOUT_SECONDS = 120 * time.Second // Timeout for API calls setting it to 2 minutes
+const API_RETRY_COUNT = 3                     // Number of times to retry API calls
+const API_RETRY_WAIT_SECONDS = 5              // Number of seconds to wait between retries
 
 // List of API versions supported by the IMS service
 var IMSAPIVERSIONS = []string{
@@ -57,6 +60,9 @@ var IMSAPIVERSIONS = []string{
 
 // variable to dynamically set the API version to be used in the tests
 var imsAPIVersions string = ""
+
+// variable to dynamically set the tenant name to be used in the tests
+var tenantName string = ""
 
 // List of RPMs version captured at the start of the test. In case of failure, rpm -qa will be captured.
 var RPMLIST = []string{
@@ -154,7 +160,7 @@ var kubernetesThingsToCollect = []string{
 var TmpDir string
 
 var runTags []string
-var runTag, testService string
+var testService string
 var runStartTimes []time.Time
 
 var artifactDirectory, artifactFilePrefix string
@@ -169,6 +175,23 @@ func GetIMSAPIVersion() string {
 	return imsAPIVersions
 }
 
+func SetTenantName(name string) {
+	// Set the tenant name to be used in the tests
+	tenantName = name
+}
+
+func GetTenantName() string {
+	return tenantName
+}
+
+func GetDummyTenantName() string {
+	return "dummy-tenant-" + string(GetRandomString(5))
+}
+
+func IsDummyTenant(tenantName string) bool {
+	return strings.HasPrefix(tenantName, "dummy-tenant")
+}
+
 // Set and unset the run sub-tag
 func SetRunSubTag(tag string) {
 	if len(runTags) < 1 {
@@ -176,18 +199,16 @@ func SetRunSubTag(tag string) {
 	}
 	runStartTimes = append(runStartTimes, time.Now())
 	runTags = append(runTags, tag)
-	runTag = strings.Join(runTags, "-")
-	Printf("Starting sub-run, tag: %s\n", runTag)
+	Printf("Starting sub-run: %s\n", tag)
 }
 
 func UnsetRunSubTag() {
 	if len(runTags) <= 1 {
 		return
 	}
-	Printf("Ended sub-run, tag: %s (duration: %v)\n", runTag, time.Since(runStartTimes[len(runStartTimes)-1]))
+	Printf("Ended sub-run: %s (duration: %v)\n", runTags[len(runTags)-1], time.Since(runStartTimes[len(runStartTimes)-1]))
 	runStartTimes = runStartTimes[:len(runStartTimes)-1]
 	runTags = runTags[:len(runTags)-1]
-	runTag = strings.Join(runTags, "-")
 }
 
 func ChangeRunSubTag(tag string) {
@@ -563,18 +584,32 @@ func doRest(method, url string, params Params, client *resty.Client) (*resty.Res
 // Restful() performs CMS RESTful calls
 func Restful(method, url string, params Params) (*resty.Response, error) {
 	client := resty.New()
+	client.SetTimeout(API_TIMEOUT_SECONDS)
+	client.SetRetryCount(API_RETRY_COUNT)
+	client.SetRetryWaitTime(API_RETRY_WAIT_SECONDS * time.Second)
 	client.SetHeaders(map[string]string{
 		"Accept":       "application/json",
 		"User-Agent":   "cmsdev",
 		"Content-Type": "application/json",
 	})
 	client.SetAuthToken(params.Token)
+	// Add retry condition for HTTP 503 status code
+	client.AddRetryCondition(func(r *resty.Response) (bool, error) {
+		if r.StatusCode() == 503 {
+			fmt.Printf("Received HTTP code 503 from server, Waiting for: %d seconds before retry\n", API_RETRY_WAIT_SECONDS)
+			return true, nil
+		}
+		return false, nil
+	})
 	return doRest(method, url, params, client)
 }
 
 // Restful() performs CMS RESTful calls on behalf of the specified tenant
 func RestfulTenant(method, url, tenant string, params Params) (*resty.Response, error) {
 	client := resty.New()
+	client.SetTimeout(API_TIMEOUT_SECONDS)
+	client.SetRetryCount(API_RETRY_COUNT)
+	client.SetRetryWaitTime(API_RETRY_WAIT_SECONDS * time.Second)
 	client.SetHeaders(map[string]string{
 		"Accept":           "application/json",
 		"User-Agent":       "cmsdev",
@@ -582,6 +617,14 @@ func RestfulTenant(method, url, tenant string, params Params) (*resty.Response, 
 		"Cray-Tenant-Name": tenant,
 	})
 	client.SetAuthToken(params.Token)
+	// Add retry condition for HTTP 503 status code
+	client.AddRetryCondition(func(r *resty.Response) (bool, error) {
+		if r.StatusCode() == 503 {
+			fmt.Printf("Received HTTP code 503 from server, Waiting for: %d seconds before retry\n", API_RETRY_WAIT_SECONDS)
+			return true, nil
+		}
+		return false, nil
+	})
 	return doRest(method, url, params, client)
 }
 
@@ -652,18 +695,18 @@ func InitArtifacts() {
 			Warnf("ARTIFACTS environment variable not set and test logging disabled; no artifacts will be saved")
 			return
 		}
-		// Default to log_directory/timestamp
-		artifactDirectory = logFileDir + "/" + "artifacts-" + time.Now().Format(time.RFC3339Nano)
-		Debugf("ARTIFACTS environment variable not set. Defaulting to '%s'", artifactDirectory)
+		// Default to the same directory as logs (run-specific subdirectory)
+		artifactDirectory = logFileDir
+		Debugf("ARTIFACTS environment variable not set. Using log directory: '%s'", artifactDirectory)
 	} else {
 		Debugf("ARTIFACTS environment variable set to '%s'", artifactDirectory)
-	}
-	err, artifactDirectoryCreated = CreateDirectoryIfNeeded(artifactDirectory)
-	if err != nil {
-		Warnf(err.Error())
-		Warnf("Error with artifact directory \"%s\"; no artifacts will be saved", artifactDirectory)
-		artifactDirectory = ""
-		return
+		err, artifactDirectoryCreated = CreateDirectoryIfNeeded(artifactDirectory)
+		if err != nil {
+			Warnf(err.Error())
+			Warnf("Error with artifact directory \"%s\"; no artifacts will be saved", artifactDirectory)
+			artifactDirectory = ""
+			return
+		}
 	}
 	Infof("artifactDirectory=%s", artifactDirectory)
 }
@@ -689,21 +732,19 @@ func CompressArtifacts() {
 		return
 	}
 	// Artifacts were logged, so compress them and delete the uncompressed artifacts
-	compressedArtifactsFile := artifactDirectory + ".tgz"
+	compressedArtifactsFile := filepath.Join(artifactDirectory, "artifacts.tgz")
 	Infof("Compressing saved test artifacts to '%s'", compressedArtifactsFile)
-	artifactParentDirectory := filepath.Dir(artifactDirectory)
-	artifactDirectoryBasename := filepath.Base(artifactDirectory)
-	Debugf("artifactParentDirectory=%s, artifactDirectoryBasename=%s", artifactParentDirectory,
-		artifactDirectoryBasename)
-	cmdResult, err := RunName("tar", "-C", artifactParentDirectory, "--remove-files",
-		"-czvf", compressedArtifactsFile, artifactDirectoryBasename)
-	artifactDirectory = ""
+
+	// Create tar archive of all files except artifacts.tgz and cmsdev.log, then remove source files
+	cmdResult, err := RunName("tar", "-C", artifactDirectory, "--remove-files",
+		"--exclude=cmsdev.log", "-czf", compressedArtifactsFile, ".")
 	if err != nil {
 		Warnf(err.Error())
 		return
 	}
 	if cmdResult.Rc == 0 {
-		// Command passed
+		// Command passed - artifacts compressed and individual files removed
+		Debugf("Successfully compressed artifacts and removed individual files")
 		return
 	}
 	Warnf("Error compressing artifacts (tar return code = %d)", cmdResult.Rc)
@@ -803,7 +844,7 @@ func init() {
 	logFile, testLog = nil, nil
 	printInfo, printWarn, printError, printResults = true, true, true, true
 	artifactDirectoryCreated, artifactsLogged, printVerbose = false, false, false
-	runTag, artifactDirectory, artifactFilePrefix, testService, logFileDir, TmpDir = "", "", "", "", "", ""
+	artifactDirectory, artifactFilePrefix, testService, logFileDir, TmpDir = "", "", "", "", ""
 	// Call the init function for the printlog source file
 	printlogInit()
 }

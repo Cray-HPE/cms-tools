@@ -31,11 +31,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sort"
 	"strings"
 
+	resty "gopkg.in/resty.v1"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
+	pcu "stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/prod-catalog-utils"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
@@ -52,76 +53,20 @@ var archMap = map[string]string{
 	"ARM": "aarch64",
 }
 
-func GetCsmProductCatalogData() (data map[string]interface{}, err error) {
-	resp, err := k8s.GetConfigMapDataField(common.NAMESPACE, common.CSMPRODCATALOGCMNAME, "csm")
-	if err != nil {
-		return nil, err
-	}
-
-	//convert YAML
-	respMap, err := common.DecodeYAMLIntoStringMap(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	return respMap, nil
-}
-
-func GetCSMLatestVersion(prodCatlogData map[string]interface{}) (version string, err error) {
-	// Sort the keys in the JSON object to ensure consistent ordering
-	keys := make([]string, 0, len(prodCatlogData))
-	for key := range prodCatlogData {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	if len(keys) == 0 {
-		return "", fmt.Errorf("no keys found in the configuration map")
-	}
-	//Get the last key from the sorted keys where version has both configuration and images as keys
-	latestCSMVersion := ""
-	for i := len(keys) - 1; i >= 0; i-- {
-		key := keys[i]
-		if _, ok := prodCatlogData[key].(map[interface{}]interface{})["configuration"]; ok {
-			if _, ok := prodCatlogData[key].(map[interface{}]interface{})["images"]; ok {
-				latestCSMVersion = key
-				break
-			}
-		}
-	}
-
-	common.Infof("Latest CSM version: %s", latestCSMVersion)
-	return latestCSMVersion, nil
-}
-
 func GetLatestImageIdFromCsmProductCatalog(arch string) (string, error) {
-	csmProductCatalogData, err := GetCsmProductCatalogData()
+	latestCSMData, err := pcu.GetLatestProdCatEntry()
 	if err != nil {
 		return "", err
 	}
 
-	// Get the latest CSM version data
-	csmVersion, err := GetCSMLatestVersion(csmProductCatalogData)
-	if err != nil {
-		return "", err
-	}
-
-	lastestCSMDataRaw := csmProductCatalogData[csmVersion]
-
-	common.Debugf("Latest CSM data: %v", lastestCSMDataRaw)
-
-	latestCSMData := lastestCSMDataRaw.(map[interface{}]interface{})
-
-	// Access the "images" field from the unmarshaled map
-	csmImages, ok := latestCSMData["images"].(map[interface{}]interface{})
-	if !ok {
-		return "", fmt.Errorf("failed to retrieve 'images' field from latest CSM data")
-	}
-	common.Infof("CSM images: %v", csmImages)
-	for key := range csmImages {
-		// Return the first key found
-		if strings.Contains(key.(string), archMap[arch]) {
-			common.Debugf("Found image ID for architecture %s: %s", archMap[arch], csmImages[key])
-			return csmImages[key].(map[interface{}]interface{})["id"].(string), nil
+	csmImages := latestCSMData.Images
+	if len(csmImages) != 0 {
+		common.Infof("CSM images: %v", csmImages)
+		for key := range csmImages {
+			if strings.Contains(key, archMap[arch]) && csmImages[key].ID != "" {
+				common.Debugf("Found image ID for architecture %s: %s", archMap[arch], csmImages[key])
+				return csmImages[key].ID, nil
+			}
 		}
 	}
 	return "", fmt.Errorf("no image found in the latest CSM data")
@@ -152,14 +97,6 @@ func GetImageRecord(imageID string) (imagerecord ImsImage, ok bool) {
 }
 
 func GetCreateBOSSessionTemplatePayload(cfsConfigName string, enableCFS bool, arch string, imageId string) (bosSessionTemplatePayload string, ok bool) {
-	// Get the latest image ID from the CSM product catalog
-	// and the image record from the IMS API based on architecture
-	// imageId, err := GetLatestImageIdFromCsmProductCatalog(arch)
-	// if err != nil {
-	// 	common.Error(err)
-	// 	return "", false
-	// }
-	// common.Infof("Using image ID %s with arch: %s", imageId, arch)
 	imageRecord, ok := GetImageRecord(imageId)
 	if !ok {
 		return "", false
@@ -170,8 +107,8 @@ func GetCreateBOSSessionTemplatePayload(cfsConfigName string, enableCFS bool, ar
 			"modprobe.blacklist=amdgpu numa_interleave_omit=headless oops=panic pageblock_order=14 " +
 			"rd.neednet=1 rd.retry=10 rd.shell split_lock_detect=off " +
 			"systemd.unified_cgroup_hierarchy=1 ip=dhcp quiet spire_join_token=${SPIRE_JOIN_TOKEN} " +
-			fmt.Sprintf("root=live:s3://boot-images/%s/rootfs ", imageRecord.Name) +
-			fmt.Sprintf("nmd_data=url=s3://boot-images/%s/rootfs,etag=%s", imageRecord.Name, imageRecord.Link.S3_Etag)
+			fmt.Sprintf("root=live:s3://boot-images/%s/rootfs ", imageRecord.ImageID) +
+			fmt.Sprintf("nmd_data=url=s3://boot-images/%s/rootfs,etag=%s", imageRecord.ImageID, imageRecord.Link.S3_Etag)
 
 	computeSet := map[string]interface{}{
 		"etag":              imageRecord.Link.S3_Etag,
@@ -222,7 +159,8 @@ func CreateUpdateBOSSessiontemplatesAPI(bosSessionTemplatePayload string, sessio
 	url := common.BASEURL + endpoints["bos"]["sessiontemplates"].Url +
 		"/" + endpoints["bos"]["sessiontemplates"].Version +
 		endpoints["bos"]["sessiontemplates"].Uri + "/" + sessionTemplateName
-	resp, err := test.RestfulVerifyStatus(method, url, *params, http.StatusOK)
+
+	resp, err := VerifyRestStatusWithTenant(method, url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
 		return BOSSessionTemplate{}, false
@@ -248,7 +186,7 @@ func DeleteBOSSessionTemplatesAPI(sessionTemplateName string) (ok bool) {
 	url := common.BASEURL + endpoints["bos"]["sessiontemplates"].Url +
 		"/" + endpoints["bos"]["sessiontemplates"].Version +
 		endpoints["bos"]["sessiontemplates"].Uri + "/" + sessionTemplateName
-	_, err := test.RestfulVerifyStatus("DELETE", url, *params, http.StatusNoContent)
+	_, err := VerifyRestStatusWithTenant("DELETE", url, *params, http.StatusNoContent)
 	if err != nil {
 		common.Error(err)
 		return false
@@ -269,7 +207,7 @@ func ValidateBOSSessionTemplateAPI(templateName string) (ok bool) {
 	url := common.BASEURL + endpoints["bos"]["sessiontemplatesvalid"].Url +
 		"/" + endpoints["bos"]["sessiontemplatesvalid"].Version +
 		endpoints["bos"]["sessiontemplatesvalid"].Uri + "/" + templateName
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
 		return false
@@ -298,7 +236,7 @@ func GetBOSSessionTemplatesAPI(templateName string, httpStatus int) (bosSessionT
 	url := common.BASEURL + endpoints["bos"]["sessiontemplates"].Url +
 		"/" + endpoints["bos"]["sessiontemplates"].Version +
 		endpoints["bos"]["sessiontemplates"].Uri + "/" + templateName
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, httpStatus)
 	if err != nil {
 		common.Error(err)
 		return BOSSessionTemplate{}, false
@@ -325,7 +263,7 @@ func GetAllBOSSessionTemplatesAPI() (bosSessionTemplates []BOSSessionTemplate, o
 	url := common.BASEURL + endpoints["bos"]["sessiontemplates"].Url +
 		"/" + endpoints["bos"]["sessiontemplates"].Version +
 		endpoints["bos"]["sessiontemplates"].Uri
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, http.StatusOK)
 	if err != nil {
 		common.Error(err)
 		return []BOSSessionTemplate{}, false
@@ -395,4 +333,44 @@ func VerifyBOSSessionTemplate(sessionTemplate BOSSessionTemplate, sessionTemplat
 	}
 
 	return true
+}
+
+func VerifyRestStatusWithTenant(method, uri string, params common.Params, expectedStatus int) (*resty.Response, error) {
+	tenantName := common.GetTenantName()
+	// Checking if Tenant name is set or not
+	if len(tenantName) == 0 {
+		return test.RestfulVerifyStatus(method, uri, params, expectedStatus)
+	} else {
+		if common.IsDummyTenant(tenantName) {
+			// If the tenant name is a dummy tenant, we can skip the verification
+			return test.TenantRestfulVerifyStatus(method, uri, tenantName, params, http.StatusBadRequest)
+		}
+		return test.TenantRestfulVerifyStatus(method, uri, tenantName, params, expectedStatus)
+	}
+}
+
+func GetExpectedHTTPStatusCode() int {
+	tenantName := common.GetTenantName()
+	if common.IsDummyTenant(tenantName) {
+		// If the tenant name is a dummy tenant, the expected response is StatusBadRequest
+		return http.StatusBadRequest
+	}
+	return http.StatusOK
+}
+
+func GetTenantFromList() string {
+	tenantList, err := k8s.GetTenants()
+	if err != nil {
+		common.Errorf("Error getting tenant list: %s", err.Error())
+		return ""
+	}
+
+	// Set the tenant name to be used in the tests
+	tenantName, err := common.GetRandomStringFromList(tenantList)
+	if err != nil {
+		common.Debugf("Unable to get random tenant from list: %s", err.Error())
+		return ""
+	}
+	common.Infof("Using tenant: %s", tenantName)
+	return tenantName
 }

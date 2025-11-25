@@ -35,9 +35,35 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 )
 
+func TestSessionTemplatesCRUDOperationsUsingTenants() (passed bool) {
+	passed = TestSessionTemplatesCRUDOperations()
+	tenantList := []string{}
+	dummyTenantName := common.GetDummyTenantName()
+	tenantList = append(tenantList, dummyTenantName)
+	// Running the tests with tenants
+	tenantName := GetTenantFromList()
+	if len(tenantName) != 0 {
+		tenantList = append(tenantList, tenantName)
+	}
+
+	for _, tenant := range tenantList {
+		// Set the tenant name for the tests
+		common.SetTenantName(tenant)
+		passed = passed && TestSessionTemplatesCRUDOperations()
+		// Unsetting the tenant name after tests
+		common.SetTenantName("")
+	}
+	return passed
+}
+
 func TestSessionTemplatesCRUDOperations() (passed bool) {
 	passed = true
 	var testRan bool
+	if len(common.GetTenantName()) != 0 {
+		common.PrintLog(fmt.Sprintf("Running BOS session template tests with tenant: %s", common.GetTenantName()))
+	} else {
+		common.PrintLog("Running BOS session template tests without Tenant")
+	}
 	// Range over archMap to create session templates with different architectures
 	for arch := range archMap {
 		imageId, err := GetLatestImageIdFromCsmProductCatalog(arch)
@@ -56,9 +82,11 @@ func TestSessionTemplatesCRUDOperations() (passed bool) {
 			continue
 		}
 
-		passed = TestSessionTemplatesUpdate(sessionTemplateRecord.Name, imageId) &&
-			TestSessionTemplatesDelete(sessionTemplateRecord.Name) &&
-			TestSessionTemplatesGetAll() && passed
+		if len(sessionTemplateRecord.Name) != 0 {
+			passed = TestSessionTemplatesUpdate(sessionTemplateRecord.Name, imageId) &&
+				TestSessionTemplatesDelete(sessionTemplateRecord.Name) &&
+				TestSessionTemplatesGetAll() && passed
+		}
 	}
 
 	if !testRan {
@@ -88,6 +116,10 @@ func TestSessionTemplatesCreate(imageArch string, imageId string) (sessionTempla
 	sessionTemplateRecord, success = CreateUpdateBOSSessiontemplatesAPI(payload, templateName, "PUT")
 	if !success {
 		return BOSSessionTemplate{}, false
+	}
+
+	if GetExpectedHTTPStatusCode() != http.StatusOK {
+		return BOSSessionTemplate{}, true // If creation was expected to fail (e.g. using a dummy tenant), skip verification of created resource
 	}
 
 	// Verify sessiontemplate

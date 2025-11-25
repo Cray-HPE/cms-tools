@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2019-2025 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -72,6 +72,26 @@ func GetRandomStringFromList(stringList []string) (randString string, err error)
 		err = fmt.Errorf("GetRandomStringFromList: Cannot choose a string from an empty list")
 	}
 	return
+}
+
+// Returns a random string from a list of strings except for the one specified
+func GetRandomStringFromListExcept(stringList []string, except string) (randString string, err error) {
+	var filteredList []string
+	if len(stringList) == 0 {
+		err = fmt.Errorf("Provided list is empty")
+		return
+	}
+	// Filter out the excepted string
+	for _, s := range stringList {
+		if s != except {
+			filteredList = append(filteredList, s)
+		}
+	}
+	if len(filteredList) == 0 {
+		err = fmt.Errorf("Every string in the list is the except string (%s)", except)
+		return
+	}
+	return GetRandomStringFromList(filteredList)
 }
 
 // Generate a random string of the specified length from the specified characters

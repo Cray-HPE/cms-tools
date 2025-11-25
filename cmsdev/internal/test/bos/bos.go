@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2019-2025 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -29,10 +29,11 @@ package bos
  */
 
 import (
+	"strings"
+
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
-	"strings"
 )
 
 // For tests which need a tenant name, if they can work even with a nonexistent tenant, use the
@@ -52,10 +53,10 @@ func getAnyTenant(tenantList []string) string {
 	return defaultTenantName
 }
 
-func IsBOSRunning() (passed bool) {
+func IsBOSRunning(includeCLI, includeTenant bool) (passed bool) {
 	var err error
 	var tenantList []string
-
+	artifactsCollected := false
 	passed = true
 
 	// Look for at least 3 bos pods, although we know there are more.
@@ -90,6 +91,8 @@ func IsBOSRunning() (passed bool) {
 			} else {
 				numMigrationPodsNotSucceeded += 1
 			}
+		} else if status == "Succeeded" {
+			common.Warnf("Pod %s has status %s", podName, status)
 		} else if status != "Running" {
 			common.VerboseFailedf("Pod %s has status %s, but we expect it to be Running", podName, status)
 			passed = false
@@ -106,6 +109,7 @@ func IsBOSRunning() (passed bool) {
 		if len(podNames) > 0 {
 			common.ArtifactDescribeNamespacePods(common.NAMESPACE, podNames)
 		}
+		artifactsCollected = true
 	}
 
 	// Get list of defined tenants on the system (if any)
@@ -118,13 +122,23 @@ func IsBOSRunning() (passed bool) {
 	}
 
 	// Defined in bos_api.go
-	if !apiTests(tenantList) {
+	if !apiTests(tenantList, includeTenant) {
 		passed = false
 	}
 
-	// Defined in bos_cli.go
-	if !cliTests(tenantList) {
-		passed = false
+	// CLI tests will be run only if requested using the include-cli flag
+	if includeCLI {
+		// Defined in bos_cli.go
+		if !cliTests(tenantList, includeTenant) {
+			passed = false
+		}
+	}
+
+	if !passed && !artifactsCollected {
+		common.ArtifactsKubernetes()
+		if len(podNames) > 0 {
+			common.ArtifactDescribeNamespacePods(common.NAMESPACE, podNames)
+		}
 	}
 
 	return

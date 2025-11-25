@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -27,7 +27,7 @@
 # prints it. Prints an error to stderr and exits non-0 if there are
 # problems.
 
-SOURCEFILE="barebones_image_test/log.py"
+SOURCEFILE="python-venv/cmstools/lib/log.py"
 
 function err_exit
 {

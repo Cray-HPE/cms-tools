@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+//  (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a
 //  copy of this software and associated documentation files (the "Software"),
@@ -32,15 +32,18 @@ package common
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 var CommandPaths = map[string]string{}
 
 const CmdRcCannotGet = -1
+const CLI_TIMEOUT_SECONDS = 120 * time.Second // Timeout for CLI calls setting it to 2 minutes
 
 // Ran is set to true if the Run command was called on the
 // Cmd object. It does not mean that the command itself actually
@@ -99,13 +102,45 @@ func (cmdResult *CommandResult) SetEnvVars() string {
 	return envVarNames.String()
 }
 
+// RunWithRetry executes the command and retries if Error contains "503 Service Unavailable".
+// maxRetries specifies how many times to retry (not counting the first attempt).
+// retryDelay specifies the delay between retries.
+func RunNameWithRetry(cmdName string, cmdArgs ...string) (*CommandResult, error) {
+	maxRetries := 3
+	retryDelay := 5 * time.Second
+	var cmdResult *CommandResult
+	var err error
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		// If this is not our first attempt, then, print a message that we are retrying, and sleep
+		// before the retry.
+		if attempt > 0 {
+			Infof("Retrying command due to '503 Service Unavailable' (retry attempt %d/%d)", attempt+1, maxRetries)
+			time.Sleep(retryDelay)
+		}
+		cmdResult, err = RunName(cmdName, cmdArgs...)
+		// If the error was "503 Service Unavailable" and return code was 2, go to the next
+		// iteration of the loop (or end the loop, if retries are exhausted)
+		if strings.Contains(cmdResult.ErrString(), "503 Service Unavailable") && cmdResult.Rc == 2 {
+			continue
+		}
+		// If we are here, we had a return code other than 2, or the output did not contain
+		// "503 Service Unavailable" (or both). In this case, return the results
+		return cmdResult, err
+	}
+	return cmdResult, fmt.Errorf("Command failed after %d retries: %v", maxRetries, err)
+}
+
 // The command returning non-0 does NOT constitute an error -- that
 // is communicated back via the command return code, and the calling
 // function is responsible for determining how to handle that
 func (cmdResult *CommandResult) Run() (err error) {
 	var stdout, stderr bytes.Buffer
 
-	cmdResult.ExecCmd = exec.Command(cmdResult.CmdPath, cmdResult.CmdArgs...)
+	// Create a context for CLI command.
+	ctx, cancel := context.WithTimeout(context.Background(), CLI_TIMEOUT_SECONDS)
+	defer cancel()
+
+	cmdResult.ExecCmd = exec.CommandContext(ctx, cmdResult.CmdPath, cmdResult.CmdArgs...)
 	cmdResult.CmdString = fmt.Sprintf("%s", cmdResult.ExecCmd)
 	envVarNames := cmdResult.SetEnvVars()
 	if len(envVarNames) > 0 {
@@ -119,7 +154,13 @@ func (cmdResult *CommandResult) Run() (err error) {
 
 	cmdResult.CmdErr = cmdResult.ExecCmd.Run()
 	cmdResult.Ran = true
-	if cmdResult.CmdErr != nil {
+
+	// Check for timeout first
+	if ctx.Err() == context.DeadlineExceeded {
+		cmdResult.Rc = CmdRcCannotGet
+		Error(fmt.Errorf("CLI command timed out"))
+		err = fmt.Errorf("CLI command timed out")
+	} else if cmdResult.CmdErr != nil {
 		if exitError, ok := cmdResult.CmdErr.(*exec.ExitError); ok {
 			cmdResult.Rc = exitError.ExitCode()
 		} else {
@@ -130,6 +171,7 @@ func (cmdResult *CommandResult) Run() (err error) {
 	} else {
 		cmdResult.Rc = 0
 	}
+
 	cmdResult.OutBytes, cmdResult.ErrBytes = stdout.Bytes(), stderr.Bytes()
 	if cmdResult.Rc != CmdRcCannotGet {
 		Debugf("Command return code: %d", cmdResult.Rc)

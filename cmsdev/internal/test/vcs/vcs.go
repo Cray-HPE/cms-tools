@@ -122,7 +122,13 @@ func IsVCSRunning() (passed bool) {
 			continue
 		}
 		common.Infof("Pod status is %s", status)
-		if status != expectedStatus {
+		if status == "Succeeded" && expectedStatus != "Succeeded" {
+			if !listedPodsOnError {
+				common.Printf("Found %d vcs pods: %s", len(podNames), strings.Join(podNames, ", "))
+				listedPodsOnError = true
+			}
+			common.Warnf("Pod %s has status %s", podName, status)
+		} else if status != expectedStatus {
 			if !listedPodsOnError {
 				common.Printf("Found %d vcs pods: %s", len(podNames), strings.Join(podNames, ", "))
 				listedPodsOnError = true

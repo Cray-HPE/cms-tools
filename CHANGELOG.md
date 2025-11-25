@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.34.0] - 2025-11-25
+
+### Added
+- CASMCMS-9472: cmsdev: Add multitenancy BOS CRUD tests
+- CASMCMS-9471: cmsdev: Add multitenancy CFS CRUD tests
+- CASMCMS-9470: cmsdev: Add read-only multitenancy CFS tests
+- CASMCMS-9539: cmsdev: Add --include-cli flag to inlcude CLI tests during health checks
+- CASMCMS-9547: cmsdev: Create cfs-session-race-condition test and multi-delete subtest
+- CASMCMS-9548: cmsdev: Create cfs-session-race-condition multi-delete-and-multi-get subtest
+- CASMCMS-9549: cmsdev: Create cfs-session-race-condition multi-delete-and-single-get subtest
+- CASMCMS-9550: cmsdev: Create cfs-session-race-condition single-delete subtest
+- CASMCMS-9551: cmsdev: Create cfs-session-race-condition single-delete-and-single-get subtest
+- CASMCMS-9552: cmsdev: Create cfs-session-race-condition single-delete-and-multi-get subtest
+- CASMCMS-9595: cmsdev: Put existing logs and artifacts in separate timestamped subdirectory
+- CASMCMS-9594: cmsdev: Add --include-tenant flag to include cfs, bos CRUD tenant tests during health checks
+
+### Changed
+- CASMCMS-8550: cmsdev: Add timeouts for CLI and API calls
+- CASMCMS-9518: cmsdev: Retry 503s limited number of times for API and CLI calls
+- CASMCMS-9529: added -q option to Only print output from the remote session during kubectl exec
+- CASMCMS-9523: cmsdev Log a warning instead of failure if a pod is in Succeeded state
+- CASMCMS-9531: cmsdev: Avoid repeated product catalog lookup for BOS and CFS tests
+- CASMCMS-9532: cmsdev: Avoid skipped CFS tests due to product catalog failure
+- CASMCMS-9558: Refactor python module directory structure
+- CASMCMS-9575: cmsdev: Put logs and artifacts in separate timestamped subdirectory
+
+### Fixed
+- CASMCMS-9534: cmsdev: Corrected non-impactful but incorrect `kernel_parameters` value
+  for session template being created.
+- CASMCMS-9537: cmsdev: Remove misleading error messages in BOS and CFS tests
+- CASMCMS-9530: Capture K8s log after `bos` failure
+- CASMCMS-8777: Check for conatiner status to determine if pod is in `Running` state
+
+### Dependencies
+- Bump `github.com/go-openapi/jsonpointer` from 0.21.1 to 0.22.3 ([#296](https://github.com/Cray-HPE/cms-tools/pull/296), [#326](https://github.com/Cray-HPE/cms-tools/pull/326), [#327](https://github.com/Cray-HPE/cms-tools/pull/327))
+- Bump `github.com/spf13/pflag` from 1.0.6 to 1.0.7 ([#295](https://github.com/Cray-HPE/cms-tools/pull/295))
+- Bump `github.com/go-openapi/jsonpointer` from 0.21.1 to 0.21.2 ([#296](https://github.com/Cray-HPE/cms-tools/pull/296))
+- Bump `actions/checkout` from 4 to 5 ([#297](https://github.com/Cray-HPE/cms-tools/pull/297))
+- CASMCMS-9569: Update Python dependencies:
+  - Use newer `requests_retry_session` version (based on which Python version is being built)
+  - Use version of `kubernetes` package that matches the Kubernetes version in CSM 1.7
+- Bump `github/codeql-action` from 3 to 4 ([#320](https://github.com/Cray-HPE/cms-tools/pull/320))
+- Bump `github.com/go-openapi/jsonreference` from 0.21.0 to 0.21.3 ([#317](https://github.com/Cray-HPE/cms-tools/pull/317), [#325](https://github.com/Cray-HPE/cms-tools/pull/325))
+- Bump `stefanzweifel/git-auto-commit-action` from 5 to 7 ([#321](https://github.com/Cray-HPE/cms-tools/pull/321))
+- Bump `github.com/mailru/easyjson` from 0.9.0 to 0.9.1 ([#314](https://github.com/Cray-HPE/cms-tools/pull/314))
+- Bump `github.com/go-openapi/swag/jsonname` from 0.25.1 to 0.25.3 ([#328](https://github.com/Cray-HPE/cms-tools/pull/328))
+
 ## [1.33.0] - 2025-06-27
 
 ### Changed

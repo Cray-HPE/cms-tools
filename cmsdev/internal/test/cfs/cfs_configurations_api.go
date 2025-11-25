@@ -31,77 +31,46 @@ package cfs
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"sort"
 
+	resty "gopkg.in/resty.v1"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/common"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/k8s"
+	pcu "stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/prod-catalog-utils"
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
-func GetCsmProductCatalogData() (data map[string]interface{}, err error) {
-	resp, err := k8s.GetConfigMapDataField(common.NAMESPACE, common.CSMPRODCATALOGCMNAME, "csm")
-	if err != nil {
-		return nil, err
-	}
-
-	//convert YAML
-	respMap, err := common.DecodeYAMLIntoStringMap(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	return respMap, nil
-}
-
-func GetCSMLatestVersion(prodCatlogData map[string]interface{}) (version string, err error) {
-	// Sort the keys in the JSON object to ensure consistent ordering
-	keys := make([]string, 0, len(prodCatlogData))
-	for key := range prodCatlogData {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	if len(keys) == 0 {
-		return "", fmt.Errorf("no keys found in the configuration map")
-	}
-	//Get the last key from the sorted keys where version has both configuration and images as keys
-	latestCSMVersion := ""
-	for i := len(keys) - 1; i >= 0; i-- {
-		key := keys[i]
-		if _, ok := prodCatlogData[key].(map[interface{}]interface{})["configuration"]; ok {
-			if _, ok := prodCatlogData[key].(map[interface{}]interface{})["images"]; ok {
-				latestCSMVersion = key
-				break
-			}
-		}
-	}
-
-	common.Infof("Latest CSM version: %s", latestCSMVersion)
-	return latestCSMVersion, nil
-}
-
+// GetProdCatalogConfigData fetches the CSM product catalog configuration layer data from the product catalog config map
+// It returns the CsmProductCatalogConfiguration struct and error if any
 func GetProdCatalogConfigData() (cfsConfigLayerData CsmProductCatalogConfiguration, err error) {
-	pordCatalogData, err := GetCsmProductCatalogData()
+	latestCSMData, err := pcu.GetLatestProdCatEntry()
 	if err != nil {
-		return CsmProductCatalogConfiguration{}, err
+		// This means that there was an error accessing the actual product catalog data
+		SetProdCatOk(false)
+		common.Errorf("Unable to get latest CSM product catalog entry: %v", err)
+		if !latestCSMData.Initialized {
+			// This means that for some reason, fake data was unable to be generated
+			// to use in place of the actual product catalog data. In this case, the
+			// error is fatal
+			return CsmProductCatalogConfiguration{}, err
+		}
+		// This means that it was able to provide fake data for the test
+		// We've set the prodCatOk variable, which will ensure the CFS test fails.
+		// We can use the fake data to proceed with this test
+		common.Infof("Using fake data in place of the actual product catalog data")
 	}
 
-	// Get the latest CSM version data
-	csmVersion, err := GetCSMLatestVersion(pordCatalogData)
-	if err != nil {
-		return CsmProductCatalogConfiguration{}, err
+	if latestCSMData.Configuration.CloneURL == "" || latestCSMData.Configuration.Commit == "" {
+		return CsmProductCatalogConfiguration{}, fmt.Errorf("CloneURL and/or Commit value not set: %v", latestCSMData.Configuration)
 	}
-	latestCSMDataRaw := pordCatalogData[csmVersion]
-	common.Infof("Latest CSM data: %v", latestCSMDataRaw)
-	latestCSMData := latestCSMDataRaw.(map[interface{}]interface{})
+
 	return CsmProductCatalogConfiguration{
-		Clone_url: latestCSMData["configuration"].(map[interface{}]interface{})["clone_url"].(string),
-		Commit:    latestCSMData["configuration"].(map[interface{}]interface{})["commit"].(string),
+		Clone_url: latestCSMData.Configuration.CloneURL,
+		Commit:    latestCSMData.Configuration.Commit,
 	}, nil
-
 }
 
-func GetCreateCFGConfigurationPayload(apiVersion string) (payload string, ok bool) {
+// GetCreateCFGConfigurationPayload returns the payload for creating a CFS configuration
+func GetCreateCFGConfigurationPayload(apiVersion string, addTenant bool) (payload string, ok bool) {
 	common.Infof("Getting product catalog configuration layer data")
 	configData, err := GetProdCatalogConfigData()
 	if err != nil {
@@ -119,6 +88,11 @@ func GetCreateCFGConfigurationPayload(apiVersion string) (payload string, ok boo
 				"name":     cfgLayerName,
 			},
 		},
+	}
+
+	// add the tenant in the payload body if the configuration is created by admin
+	if addTenant {
+		cfsPayload["tenant_name"] = common.GetTenantName()
 	}
 
 	// Setting the clone_url in the payload based on the API version
@@ -145,7 +119,17 @@ func GetCreateCFGConfigurationPayload(apiVersion string) (payload string, ok boo
 	return string(jsonPayload), true
 }
 
-func CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, payload string) (cfsConfig CFSConfiguration, ok bool) {
+// CreateUpdateCFSConfigurationRecordAPI creates or updates a CFS configuration record using the provided payload
+// It takes cfs config name, apiVersion, payload, and expected http status code as parameters
+// It returns true and CFSConfiguration struct with data for following cases:
+// - If the create/update operation is successful and expectedHttpStatus matches the actual http status code
+// It returns true and empty CFSConfiguration struct for following cases:
+// - If the create/update operation is not successful and expectedHttpStatus matches the actual http status code
+// It returns false and empty CFSConfiguration struct for following cases:
+// - If the create/update operation is not successful and expectedHttpStatus does not match the actual http status code
+// - If there is an error in getting access token params
+// - If there is an error in unmarshalling the response body into CFSConfiguration struct
+func CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, payload string, httpStatus int) (cfsConfig CFSConfiguration, ok bool) {
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		common.Error(fmt.Errorf("Unable to get access token params"))
@@ -155,7 +139,7 @@ func CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, payload string) 
 	// Set the payload for the request
 	params.JsonStr = payload
 	url := constructCFSURL("configurations", apiVersion) + "/" + cfgName
-	resp, err := test.RestfulVerifyStatus("PUT", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("PUT", url, *params, httpStatus)
 
 	if err != nil {
 		common.Error(err)
@@ -172,6 +156,16 @@ func CreateUpdateCFSConfigurationRecordAPI(cfgName, apiVersion, payload string) 
 	return
 }
 
+// GetCFSConfigurationRecordAPI retrieves a CFS configuration record by name
+// It takes cfs config name, apiVersion, and expected http status code as parameters
+// It returns true and CFSConfiguration struct with data for following cases:
+// - If the get operation is successful and expectedHttpStatus matches the actual http status code
+// It returns true and empty CFSConfiguration struct for following cases:
+// - If the get operation is not successful and expectedHttpStatus matches the actual http status code
+// It returns false and empty CFSConfiguration struct for following cases:
+// - If the get operation is not successful and expectedHttpStatus does not match the actual http status code
+// - If there is an error in getting access token params
+// - If there is an error in unmarshalling the response body into CFSConfiguration struct
 func GetCFSConfigurationRecordAPI(cfgName, apiVersion string, httpStatus int) (cfsConfig CFSConfiguration, ok bool) {
 	params := test.GetAccessTokenParams()
 	if params == nil {
@@ -180,7 +174,7 @@ func GetCFSConfigurationRecordAPI(cfgName, apiVersion string, httpStatus int) (c
 	}
 
 	url := constructCFSURL("configurations", apiVersion) + "/" + cfgName
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, httpStatus)
 
 	if err != nil {
 		common.Error(err)
@@ -197,7 +191,15 @@ func GetCFSConfigurationRecordAPI(cfgName, apiVersion string, httpStatus int) (c
 	return
 }
 
-func GetCFSConfigurationsListAPIV2(apiVersion string) (cfsConfigurations []CFSConfiguration, ok bool) {
+// GetCFSConfigurationsListAPIV2 retrieves the list of CFS configurations for API version v2
+// It takes apiVersion and expected http status code as parameters
+// It returns true and a slice of CFSConfiguration structs with data for following cases:
+// - If the get operation is successful and expectedHttpStatus matches the actual http status code
+// It returns false and empty slice of CFSConfiguration structs for following cases:
+// - If the get operation is not successful and expectedHttpStatus does not match the actual http status code
+// - If there is an error in getting access token params
+// - If there is an error in unmarshalling the response body into slice of CFSConfiguration structs
+func GetCFSConfigurationsListAPIV2(apiVersion string, expectedHttpStatus int) (cfsConfigurations []CFSConfiguration, ok bool) {
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		common.Error(fmt.Errorf("Unable to get access token params"))
@@ -205,7 +207,7 @@ func GetCFSConfigurationsListAPIV2(apiVersion string) (cfsConfigurations []CFSCo
 	}
 
 	url := constructCFSURL("configurations", apiVersion)
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, expectedHttpStatus)
 
 	if err != nil {
 		common.Error(err)
@@ -222,7 +224,15 @@ func GetCFSConfigurationsListAPIV2(apiVersion string) (cfsConfigurations []CFSCo
 	return
 }
 
-func GetCFSConfigurationsListAPI(apiVersion string) (cfsConfigurations CFSConfigurationsList, ok bool) {
+// GetCFSConfigurationsListAPI retrieves the list of CFS configurations for API version v3
+// It takes apiVersion and expected http status code as parameters
+// It returns true and CFSConfigurationsList struct with data for following cases:
+// - If the get operation is successful and expectedHttpStatus matches the actual http status code
+// It returns false and empty CFSConfigurationsList struct for following cases:
+// - If the get operation is not successful and expectedHttpStatus does not match the actual http status code
+// - If there is an error in getting access token params
+// - If there is an error in unmarshalling the response body into CFSConfigurationsList struct
+func GetCFSConfigurationsListAPI(apiVersion string, expectedHttpStatus int) (cfsConfigurations CFSConfigurationsList, ok bool) {
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		common.Error(fmt.Errorf("Unable to get access token params"))
@@ -230,7 +240,7 @@ func GetCFSConfigurationsListAPI(apiVersion string) (cfsConfigurations CFSConfig
 	}
 
 	url := constructCFSURL("configurations", apiVersion)
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, expectedHttpStatus)
 
 	if err != nil {
 		common.Error(err)
@@ -247,17 +257,19 @@ func GetCFSConfigurationsListAPI(apiVersion string) (cfsConfigurations CFSConfig
 	return
 }
 
-func GetAPIBasedCFSConfigurationRecordList(apiVersion string) (cfsConfig []CFSConfiguration, ok bool) {
+// GetAPIBasedCFSConfigurationRecordList gets the list of CFS configurations based on the API version
+// It takes apiVersion and expected http status code as parameters
+func GetAPIBasedCFSConfigurationRecordList(apiVersion string, expectedHttpStatus int) (cfsConfig []CFSConfiguration, ok bool) {
 	// Get the CFS configurations list based on the API version. The response will be different for v2 and v3.
 	// For v3, the response will be a list of CFSConfigurationsList, while for v2, it will be a CFSConfigurations struct.
 	if apiVersion == "v3" {
-		cfsConfigV3, ok := GetCFSConfigurationsListAPI(apiVersion)
+		cfsConfigV3, ok := GetCFSConfigurationsListAPI(apiVersion, expectedHttpStatus)
 		if !ok {
 			return []CFSConfiguration{}, false
 		}
 		cfsConfig = cfsConfigV3.Configurations
 	} else {
-		cfsConfig, ok = GetCFSConfigurationsListAPIV2(apiVersion)
+		cfsConfig, ok = GetCFSConfigurationsListAPIV2(apiVersion, expectedHttpStatus)
 		if !ok {
 			return []CFSConfiguration{}, false
 		}
@@ -265,7 +277,12 @@ func GetAPIBasedCFSConfigurationRecordList(apiVersion string) (cfsConfig []CFSCo
 	return cfsConfig, true
 }
 
-func DeleteCFSConfigurationRecordAPI(cfgName, apiVersion string) (ok bool) {
+// DeleteCFSConfigurationRecordAPI deletes a CFS configuration record by name
+// It takes cfs config name, apiVersion, and expected http status code as parameters
+// It returns true if the actual http status code from the API delete call matches the
+// expected http status code (whether or not the API call was successful). It returns
+// false otherwise.
+func DeleteCFSConfigurationRecordAPI(cfgName, apiVersion string, httpStatus int) (ok bool) {
 	params := test.GetAccessTokenParams()
 	if params == nil {
 		common.Error(fmt.Errorf("Unable to get access token params"))
@@ -273,7 +290,7 @@ func DeleteCFSConfigurationRecordAPI(cfgName, apiVersion string) (ok bool) {
 	}
 
 	url := constructCFSURL("configurations", apiVersion) + "/" + cfgName
-	_, err := test.RestfulVerifyStatus("DELETE", url, *params, http.StatusNoContent)
+	_, err := VerifyRestStatusWithTenant("DELETE", url, *params, httpStatus)
 
 	if err != nil {
 		common.Error(err)
@@ -284,6 +301,7 @@ func DeleteCFSConfigurationRecordAPI(cfgName, apiVersion string) (ok bool) {
 	return
 }
 
+// CFSConfigurationExists checks if a CFS configuration with the given name exists in the list of configurations
 func CFSConfigurationExists(cfsConfigurations []CFSConfiguration, cfgName string) (ok bool) {
 	for _, cfsConfig := range cfsConfigurations {
 		if cfsConfig.Name == cfgName {
@@ -295,6 +313,7 @@ func CFSConfigurationExists(cfsConfigurations []CFSConfiguration, cfgName string
 	return false
 }
 
+// VerifyCFSConfigurationRecord verifies that the CFS configuration record matches the payload used for create/update operation
 func VerifyCFSConfigurationRecord(cfsConfig CFSConfiguration, cfsPayload, cfgName, apiVersion string) (ok bool) {
 	ok = true
 	// Verify the CFS configuration record
@@ -352,10 +371,58 @@ func VerifyCFSConfigurationRecord(cfsConfig CFSConfiguration, cfsPayload, cfgNam
 	return
 }
 
+// constructCFSURL constructs the CFS API URL based on the endpoint and API version
 func constructCFSURL(endpoint, apiVersion string) string {
 	base := common.BASEURL + endpoints["cfs"][endpoint].Url
 	if apiVersion != "" {
 		return base + "/" + apiVersion + endpoints["cfs"][endpoint].Uri
 	}
 	return base + endpoints["cfs"][endpoint].Uri
+}
+
+// VerifyRestStatusWithTenant is a wrapper function that checks if a tenant name is set and calls the appropriate function
+func VerifyRestStatusWithTenant(method, uri string, params common.Params, expectedStatus int) (*resty.Response, error) {
+	tenantName := common.GetTenantName()
+	// Checking if Tenant name is set or not
+	if len(tenantName) == 0 {
+		return test.RestfulVerifyStatus(method, uri, params, expectedStatus)
+	} else {
+		return test.TenantRestfulVerifyStatus(method, uri, tenantName, params, expectedStatus)
+	}
+}
+
+// GetTenantFromList gets a random tenant name from the list of tenants
+func GetTenantFromList() string {
+	tenantList, err := k8s.GetTenants()
+	if err != nil {
+		common.Errorf("Error getting tenant list: %s", err.Error())
+		return ""
+	}
+
+	// Set the tenant name to be used in the tests
+	tenantName, err := common.GetRandomStringFromList(tenantList)
+	if err != nil {
+		common.Debugf("Unable to get random tenant from list: %s", err.Error())
+		return ""
+	}
+	common.Infof("Using tenant: %s", tenantName)
+	return tenantName
+}
+
+// GetAnotherTenantFromList gets a random tenant name from the list of tenants excluding the current tenant
+func GetAnotherTenantFromList(currentTenant string) string {
+	tenantList, err := k8s.GetTenants()
+	if err != nil {
+		common.Errorf("Error getting tenant list: %s", err.Error())
+		return ""
+	}
+
+	// Set the tenant name to be used in the tests
+	tenantName, err := common.GetRandomStringFromListExcept(tenantList, currentTenant)
+	if err != nil {
+		common.Debugf("Unable to get random tenant from list excluding %s: %s", currentTenant, err.Error())
+		return ""
+	}
+	common.Infof("Using another tenant: %s", tenantName)
+	return tenantName
 }

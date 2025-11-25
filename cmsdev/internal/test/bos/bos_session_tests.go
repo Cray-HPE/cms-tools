@@ -43,7 +43,7 @@ import (
 // 4. Do a GET/describe on that particular session
 // 5. Verify that this succeeds and returns something of the right general form. Also verify that it has the expected name
 
-func sessionsTestsAPI(params *common.Params, tenantList []string) (passed bool) {
+func sessionsTestsAPI(params *common.Params, tenantList []string, includeTenant bool) (passed bool) {
 	passed = true
 
 	// v2 sessions
@@ -51,6 +51,15 @@ func sessionsTestsAPI(params *common.Params, tenantList []string) (passed bool) 
 		passed = false
 	}
 
+	// Tenant tests will be run only if requested using the include-tenant flag
+	if includeTenant {
+		if !TestBOSSessionsCRUDOperationsUsingTenants() {
+			passed = false
+		}
+		return
+	}
+
+	// BOS sessions CRUD operations tests
 	if !TestBOSSessionsCRUDOperations() {
 		passed = false
 	}
@@ -58,7 +67,7 @@ func sessionsTestsAPI(params *common.Params, tenantList []string) (passed bool) 
 	return
 }
 
-func sessionsTestsCLI(tenantList []string) (passed bool) {
+func sessionsTestsCLI(tenantList []string, includeTenant bool) (passed bool) {
 	passed = true
 
 	// v2 sessions
@@ -71,6 +80,15 @@ func sessionsTestsCLI(tenantList []string) (passed bool) {
 		passed = false
 	}
 
+	// Tenant tests will be run only if requested using the include-tenant flag
+	if includeTenant {
+		if !TestSessionsCRUDOperationsWithTenantUsingCLI() {
+			passed = false
+		}
+		return
+	}
+
+	// BOS sessions CRUD operations tests
 	if !TestSessionsCRUDOperationsUsingCLI() {
 		passed = false
 	}

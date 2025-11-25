@@ -37,7 +37,17 @@ import (
 	"stash.us.cray.com/SCMS/cms-tools/cmsdev/internal/lib/test"
 )
 
-func IsCFSRunning() (passed bool) {
+// This value indicates if the CFS test should fail
+// because of a problem with the product catalog.
+var prodCatOk = true
+
+// This setter function is called by a subtest if it
+// encounters an error getting product catalog data.
+func SetProdCatOk(ok bool) {
+	prodCatOk = ok
+}
+
+func IsCFSRunning(includeCLI, includeTenant bool) (passed bool) {
 	passed = true
 	// 2 pods minimum since we expect both an api and operator pod
 	podNames, ok := test.GetPodNamesByPrefixKey("cfs", 2, -1)
@@ -72,7 +82,9 @@ func IsCFSRunning() (passed bool) {
 		}
 		common.Infof("Pod status is %s", status)
 		if re.MatchString(podName) {
-			if status != "Running" {
+			if status == "Succeeded" {
+				common.Warnf("Pod %s has status %s", podName, status)
+			} else if status != "Running" {
 				common.VerboseFailedf("expected status=Running, found status=%s for podName=%s", status, podName)
 				passed = false
 			} else {
@@ -91,21 +103,49 @@ func IsCFSRunning() (passed bool) {
 	if !testCFSAPI() {
 		passed = false
 	}
-	if !TestCFSConfigurationsCRUDOperationUsingAPIVersions() {
-		passed = false
+
+	// Tenant tests will be run only if requested using the include-tenant flag
+	if includeTenant {
+		if !TestCFSConfigurationsCRUDOperationWithTenantsUsingAPIVersions() {
+			passed = false
+		}
+	} else {
+		if !TestCFSConfigurationsCRUDOperationUsingAPIVersions() {
+			passed = false
+		}
 	}
+
 	if !TestCFSSourcesCRUDOperation() {
 		passed = false
 	}
-	if !testCFSCLI() {
-		passed = false
+
+	// CLI tests will be run only if requested using the include-cli flag
+	if includeCLI {
+		if !testCFSCLI() {
+			passed = false
+		}
+
+		// Tenant tests will be run only if requested using the include-tenant flag
+		if includeTenant {
+			if !TestCFSConfigurationsCRUDOperationWithTenantsUsingCLI() {
+				passed = false
+			}
+		} else {
+			if !TestCFSConfigurationsCRUDOperationUsingCLI() {
+				passed = false
+			}
+		}
+
+		if !TestCFSSourcesCRUDOperationUsingCLI() {
+			passed = false
+		}
 	}
-	if !TestCFSConfigurationsCRUDOperationUsingCLI() {
-		passed = false
-	}
-	if !TestCFSSourcesCRUDOperationCLI() {
-		passed = false
-	}
+
+	// Fail if any subtest got an error trying to get product catalog data.
+	// This is not covered by the subtest itself, because it may have been
+	// able to run successfully even without that data.
+	passed = passed && prodCatOk
+
 	if !passed {
 		common.ArtifactsKubernetes()
 		if len(podNames) > 0 {

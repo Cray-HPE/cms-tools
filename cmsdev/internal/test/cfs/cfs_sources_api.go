@@ -68,7 +68,7 @@ func CreateCFSSourceRecordAPI(sourceName string) (cfsSourceRecord CFSSources, pa
 	common.Infof("CFS configuration payload: %s", string(jsonPayload))
 
 	url := common.BASEURL + endpoints["cfs"]["sources"].Url + "/" + endpoints["cfs"]["sources"].Version + endpoints["cfs"]["sources"].Uri
-	resp, err := test.RestfulVerifyStatus("POST", url, *params, http.StatusCreated)
+	resp, err := VerifyRestStatusWithTenant("POST", url, *params, http.StatusCreated)
 
 	if err != nil {
 		common.Error(err)
@@ -107,7 +107,7 @@ func UpdateCFSSourceRecordAPI(sourceName string) (cfsSourceRecord CFSSources, pa
 	common.Infof("CFS configuration payload: %s", string(jsonPayload))
 
 	url := common.BASEURL + endpoints["cfs"]["sources"].Url + "/" + endpoints["cfs"]["sources"].Version + endpoints["cfs"]["sources"].Uri + "/" + sourceName
-	resp, err := test.RestfulVerifyStatus("PATCH", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("PATCH", url, *params, http.StatusOK)
 
 	if err != nil {
 		common.Error(err)
@@ -132,7 +132,7 @@ func DeleteCFSSourceRecordAPI(sourceName string) (passed bool) {
 	}
 
 	url := common.BASEURL + endpoints["cfs"]["sources"].Url + "/" + endpoints["cfs"]["sources"].Version + endpoints["cfs"]["sources"].Uri + "/" + sourceName
-	_, err := test.RestfulVerifyStatus("DELETE", url, *params, http.StatusNoContent)
+	_, err := VerifyRestStatusWithTenant("DELETE", url, *params, http.StatusNoContent)
 
 	if err != nil {
 		common.Error(err)
@@ -150,7 +150,7 @@ func GetCFSSourceRecordAPI(sourceName string, httpStatus int) (cfsSourceRecord C
 	}
 
 	url := common.BASEURL + endpoints["cfs"]["sources"].Url + "/" + endpoints["cfs"]["sources"].Version + endpoints["cfs"]["sources"].Uri + "/" + sourceName
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, httpStatus)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, httpStatus)
 
 	if err != nil {
 		common.Error(err)
@@ -176,7 +176,7 @@ func GetCFSSourcesListAPI() (cfsSources []CFSSources, passed bool) {
 	}
 
 	url := common.BASEURL + endpoints["cfs"]["sources"].Url + "/" + endpoints["cfs"]["sources"].Version + endpoints["cfs"]["sources"].Uri
-	resp, err := test.RestfulVerifyStatus("GET", url, *params, http.StatusOK)
+	resp, err := VerifyRestStatusWithTenant("GET", url, *params, http.StatusOK)
 
 	if err != nil {
 		common.Error(err)
