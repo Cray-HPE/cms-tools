@@ -91,6 +91,8 @@ func IsBOSRunning(includeCLI, includeTenant bool) (passed bool) {
 			} else {
 				numMigrationPodsNotSucceeded += 1
 			}
+		} else if status == "Succeeded" {
+			common.Warnf("Pod %s has status %s", podName, status)
 		} else if status != "Running" {
 			common.VerboseFailedf("Pod %s has status %s, but we expect it to be Running", podName, status)
 			passed = false
