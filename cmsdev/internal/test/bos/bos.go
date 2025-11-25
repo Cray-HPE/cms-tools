@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2019-2025 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -53,7 +53,7 @@ func getAnyTenant(tenantList []string) string {
 	return defaultTenantName
 }
 
-func IsBOSRunning(includeCLI bool) (passed bool) {
+func IsBOSRunning(includeCLI, includeTenant bool) (passed bool) {
 	var err error
 	var tenantList []string
 	artifactsCollected := false
@@ -122,14 +122,14 @@ func IsBOSRunning(includeCLI bool) (passed bool) {
 	}
 
 	// Defined in bos_api.go
-	if !apiTests(tenantList) {
+	if !apiTests(tenantList, includeTenant) {
 		passed = false
 	}
 
 	// CLI tests will be run only if requested using the include-cli flag
 	if includeCLI {
 		// Defined in bos_cli.go
-		if !cliTests(tenantList) {
+		if !cliTests(tenantList, includeTenant) {
 			passed = false
 		}
 	}
