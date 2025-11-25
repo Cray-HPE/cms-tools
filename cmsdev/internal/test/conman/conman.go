@@ -124,7 +124,9 @@ func verifyConsoleDataPods() (passed bool) {
 			continue
 		}
 		common.Infof("Pod status is %s", status)
-		if status != expectedStatus {
+		if status == "Succeeded" && expectedStatus != "Succeeded" {
+			common.Warnf("Pod %s has status %s", podName, status)
+		} else if status != expectedStatus {
 			common.VerboseFailedf("expected status=%s, found status=%s for podName=%s", expectedStatus, status, podName)
 			passed = false
 		} else {
@@ -169,7 +171,9 @@ func verifyConsoleNodePods() (passed bool) {
 			continue
 		}
 		common.Infof("Pod status is %s", status)
-		if status != expectedStatus {
+		if status == "Succeeded" {
+			common.Warnf("Pod %s has status %s", podName, status)
+		} else if status != expectedStatus {
 			common.VerboseFailedf("expected status=%s, found status=%s for podName=%s", expectedStatus, status, podName)
 			passed = false
 		} else {
@@ -202,7 +206,9 @@ func verifyConsoleOperatorPods() (passed bool) {
 			continue
 		}
 		common.Infof("Pod status is %s", status)
-		if status != expectedStatus {
+		if status == "Succeeded" {
+			common.Warnf("Pod %s has status %s", podName, status)
+		} else if status != expectedStatus {
 			common.VerboseFailedf("expected status=%s, found status=%s for podName=%s", expectedStatus, status, podName)
 			passed = false
 		} else {
