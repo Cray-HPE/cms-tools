@@ -42,7 +42,7 @@ import (
 // 4. Do a GET/describe on that particular session template
 // 5. Verify that this succeeds and returns something of the right general form
 
-func sessionTemplatesTestsAPI(params *common.Params, tenantList []string) (passed bool) {
+func sessionTemplatesTestsAPI(params *common.Params, tenantList []string, includeTenant bool) (passed bool) {
 	passed = true
 
 	// session template template API tests
@@ -61,14 +61,22 @@ func sessionTemplatesTestsAPI(params *common.Params, tenantList []string) (passe
 		passed = false
 	}
 
-	if !TestSessionTemplatesCRUDOperationsUsingTenants() {
+	// Tenant tests will be run only if requested using the include-tenant flag
+	if includeTenant {
+		if !TestSessionTemplatesCRUDOperationsUsingTenants() {
+			passed = false
+		}
+		return
+	}
+	// session templates CRUD operations tests
+	if !TestSessionTemplatesCRUDOperations() {
 		passed = false
 	}
 
 	return
 }
 
-func sessionTemplatesTestsCLI(tenantList []string) (passed bool) {
+func sessionTemplatesTestsCLI(tenantList []string, includeTenant bool) (passed bool) {
 	passed = true
 
 	// session template template CLI tests
@@ -96,8 +104,17 @@ func sessionTemplatesTestsCLI(tenantList []string) (passed bool) {
 		passed = false
 	}
 
+	// Tenant tests will be run only if requested using the include-tenant flag
+	if includeTenant {
+		// sessiontemplates CRUD operations tests
+		if !TestSessionTemplatesCRUDOperationsWithTenantUsingCLI() {
+			passed = false
+		}
+		return
+	}
+
 	// sessiontemplates CRUD operations tests
-	if !TestSessionTemplatesCRUDOperationsWithTenantUsingCLI() {
+	if !TestSessionTemplatesCRUDOperationsUsingCLI() {
 		passed = false
 	}
 

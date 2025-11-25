@@ -1,6 +1,6 @@
 // MIT License
 //
-// (C) Copyright 2022-2024 Hewlett Packard Enterprise Development LP
+// (C) Copyright 2022-2025 Hewlett Packard Enterprise Development LP
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -86,7 +86,7 @@ func basicTenantGetUriVerifyStringMapTest(uri, tenant string, params *common.Par
 }
 
 // Run all of the BOS API subtests. Return true if they all pass, false otherwise.
-func apiTests(tenantList []string) (passed bool) {
+func apiTests(tenantList []string, includeTenant bool) (passed bool) {
 	passed = true
 
 	params := test.GetAccessTokenParams()
@@ -115,12 +115,12 @@ func apiTests(tenantList []string) (passed bool) {
 	}
 
 	// Defined in bos_sessiontemplate.go
-	if !sessionTemplatesTestsAPI(params, tenantList) {
+	if !sessionTemplatesTestsAPI(params, tenantList, includeTenant) {
 		passed = false
 	}
 
 	// Defined in bos_session.go
-	if !sessionsTestsAPI(params, tenantList) {
+	if !sessionsTestsAPI(params, tenantList, includeTenant) {
 		passed = false
 	}
 
