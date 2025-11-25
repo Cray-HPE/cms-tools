@@ -160,7 +160,7 @@ var kubernetesThingsToCollect = []string{
 var TmpDir string
 
 var runTags []string
-var runTag, testService string
+var testService string
 var runStartTimes []time.Time
 
 var artifactDirectory, artifactFilePrefix string
@@ -199,18 +199,16 @@ func SetRunSubTag(tag string) {
 	}
 	runStartTimes = append(runStartTimes, time.Now())
 	runTags = append(runTags, tag)
-	runTag = strings.Join(runTags, "-")
-	Printf("Starting sub-run, tag: %s\n", runTag)
+	Printf("Starting sub-run: %s\n", tag)
 }
 
 func UnsetRunSubTag() {
 	if len(runTags) <= 1 {
 		return
 	}
-	Printf("Ended sub-run, tag: %s (duration: %v)\n", runTag, time.Since(runStartTimes[len(runStartTimes)-1]))
+	Printf("Ended sub-run: %s (duration: %v)\n", runTags[len(runTags)-1], time.Since(runStartTimes[len(runStartTimes)-1]))
 	runStartTimes = runStartTimes[:len(runStartTimes)-1]
 	runTags = runTags[:len(runTags)-1]
-	runTag = strings.Join(runTags, "-")
 }
 
 func ChangeRunSubTag(tag string) {
@@ -697,18 +695,18 @@ func InitArtifacts() {
 			Warnf("ARTIFACTS environment variable not set and test logging disabled; no artifacts will be saved")
 			return
 		}
-		// Default to log_directory/timestamp
-		artifactDirectory = logFileDir + "/" + "artifacts-" + time.Now().Format(time.RFC3339Nano)
-		Debugf("ARTIFACTS environment variable not set. Defaulting to '%s'", artifactDirectory)
+		// Default to the same directory as logs (run-specific subdirectory)
+		artifactDirectory = logFileDir
+		Debugf("ARTIFACTS environment variable not set. Using log directory: '%s'", artifactDirectory)
 	} else {
 		Debugf("ARTIFACTS environment variable set to '%s'", artifactDirectory)
-	}
-	err, artifactDirectoryCreated = CreateDirectoryIfNeeded(artifactDirectory)
-	if err != nil {
-		Warnf(err.Error())
-		Warnf("Error with artifact directory \"%s\"; no artifacts will be saved", artifactDirectory)
-		artifactDirectory = ""
-		return
+		err, artifactDirectoryCreated = CreateDirectoryIfNeeded(artifactDirectory)
+		if err != nil {
+			Warnf(err.Error())
+			Warnf("Error with artifact directory \"%s\"; no artifacts will be saved", artifactDirectory)
+			artifactDirectory = ""
+			return
+		}
 	}
 	Infof("artifactDirectory=%s", artifactDirectory)
 }
@@ -734,21 +732,19 @@ func CompressArtifacts() {
 		return
 	}
 	// Artifacts were logged, so compress them and delete the uncompressed artifacts
-	compressedArtifactsFile := artifactDirectory + ".tgz"
+	compressedArtifactsFile := filepath.Join(artifactDirectory, "artifacts.tgz")
 	Infof("Compressing saved test artifacts to '%s'", compressedArtifactsFile)
-	artifactParentDirectory := filepath.Dir(artifactDirectory)
-	artifactDirectoryBasename := filepath.Base(artifactDirectory)
-	Debugf("artifactParentDirectory=%s, artifactDirectoryBasename=%s", artifactParentDirectory,
-		artifactDirectoryBasename)
-	cmdResult, err := RunName("tar", "-C", artifactParentDirectory, "--remove-files",
-		"-czvf", compressedArtifactsFile, artifactDirectoryBasename)
-	artifactDirectory = ""
+
+	// Create tar archive of all files except artifacts.tgz and cmsdev.log, then remove source files
+	cmdResult, err := RunName("tar", "-C", artifactDirectory, "--remove-files",
+		"--exclude=cmsdev.log", "-czf", compressedArtifactsFile, ".")
 	if err != nil {
 		Warnf(err.Error())
 		return
 	}
 	if cmdResult.Rc == 0 {
-		// Command passed
+		// Command passed - artifacts compressed and individual files removed
+		Debugf("Successfully compressed artifacts and removed individual files")
 		return
 	}
 	Warnf("Error compressing artifacts (tar return code = %d)", cmdResult.Rc)
@@ -848,7 +844,7 @@ func init() {
 	logFile, testLog = nil, nil
 	printInfo, printWarn, printError, printResults = true, true, true, true
 	artifactDirectoryCreated, artifactsLogged, printVerbose = false, false, false
-	runTag, artifactDirectory, artifactFilePrefix, testService, logFileDir, TmpDir = "", "", "", "", "", ""
+	artifactDirectory, artifactFilePrefix, testService, logFileDir, TmpDir = "", "", "", "", ""
 	// Call the init function for the printlog source file
 	printlogInit()
 }

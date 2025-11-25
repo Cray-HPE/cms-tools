@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,7 @@
 set -exuo pipefail
 
 source ./vars.sh
-sed -i "s#@BB_BASE_DIR@#${INSTALL_VENV_PYTHON_BASE_DIR}#" run_barebones_image_test.sh
+sed -i "s#@BB_BASE_DIR@#${INSTALL_VENV_PYTHON_BASE_DIR}#" barebones_image_test.sh cfs_sessions_rc_test.sh run_cmstools_test.sh
 if [[ -d ./${LOCAL_VENV_PYTHON_SUBDIR_NAME} ]]; then
     rm -rvf "./${LOCAL_VENV_PYTHON_SUBDIR_NAME}"
 fi

@@ -35,6 +35,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -90,7 +91,7 @@ func srcString(callerFileName string, callerLineNum int) string {
 }
 
 func logFields(callerFileName string, callerLineNum int) logrus.Fields {
-	return logrus.Fields{"src": srcString(callerFileName, callerLineNum), "run": runTag, "service": testService}
+	return logrus.Fields{"src": srcString(callerFileName, callerLineNum), "service": testService}
 }
 
 // Wrappers to Debugf, Infof,  Warnf, and Errorf test log functions
@@ -159,11 +160,7 @@ func InfoOverridef(format string, a ...interface{}) {
 
 func WarnfWithCallerInfo(callerFileName string, callerLineNum int, format string, a ...interface{}) {
 	if printWarn {
-		if runTag != "" {
-			fmt.Printf("WARNING (run tag "+runTag+"): "+format+"\n", a...)
-		} else {
-			fmt.Printf("WARNING: "+format+"\n", a...)
-		}
+		fmt.Printf("WARNING: "+format+"\n", a...)
 	}
 	if testLog != nil {
 		TestLogWarnf(callerFileName, callerLineNum, format, a...)
@@ -177,11 +174,7 @@ func Warnf(format string, a ...interface{}) {
 
 func ErrorfWithCallerInfo(callerFileName string, callerLineNum int, format string, a ...interface{}) {
 	if printError {
-		if runTag != "" {
-			fmt.Printf("ERROR (run tag "+runTag+"): "+format+"\n", a...)
-		} else {
-			fmt.Printf("ERROR: "+format+"\n", a...)
-		}
+		fmt.Printf("ERROR: "+format+"\n", a...)
 	}
 	if testLog != nil {
 		TestLogErrorf(callerFileName, callerLineNum, format, a...)
@@ -268,11 +261,7 @@ func PrettyPrintJSON(resp *resty.Response) {
 
 func ResultsfWithCallerInfo(callerFileName string, callerLineNum int, format string, a ...interface{}) {
 	if printResults {
-		if runTag != "" {
-			fmt.Printf("(run tag "+runTag+"): "+format+"\n", a...)
-		} else {
-			fmt.Printf(format+"\n", a...)
-		}
+		fmt.Printf(format+"\n", a...)
 	}
 	if testLog != nil {
 		TestLogInfof(callerFileName, callerLineNum, format, a...)
@@ -291,10 +280,9 @@ func ExitfWithCallerInfo(callerFileName string, callerLineNum, rc int, format st
 		UnsetRunSubTag()
 	}
 	if len(runTags) == 1 {
-		fmt.Printf("Ended run, tag: %s (duration: %v)\n", runTag, time.Since(runStartTimes[len(runStartTimes)-1]))
+		fmt.Printf("Ended run (duration: %v)\n", time.Since(runStartTimes[len(runStartTimes)-1]))
 		runStartTimes = runStartTimes[:len(runStartTimes)-1]
 		runTags = runTags[:len(runTags)-1]
-		runTag = ""
 	}
 
 	switch rc {
@@ -364,13 +352,32 @@ func CreateLogFile(path, version string, logs, retry, quiet, verbose, includeCLI
 	} else if len(path) == 0 {
 		path = DEFAULT_LOG_FILE_DIR
 	}
+
+	// Create base log directory
 	err, _ = CreateDirectoryIfNeeded(path)
 	if err != nil {
-		fmt.Printf("Error with log directory: %s\n", path)
+		fmt.Printf("Error with base log directory: %s\n", path)
 		panic(err)
 	}
-	logfile := path + "/cmsdev.log"
-	f, err := os.OpenFile(logfile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+
+	// Create timestamp-based subdirectory: YYMMDD_HHMMSS_microseconds_PID
+	now := time.Now()
+	pid := os.Getpid()
+	microseconds := now.Nanosecond() / 1000
+	timestampDir := fmt.Sprintf("%02d%02d%02d_%02d%02d%02d_%06d_%d",
+		now.Year()%100, now.Month(), now.Day(),
+		now.Hour(), now.Minute(), now.Second(),
+		microseconds, pid)
+
+	runSpecificDir := filepath.Join(path, timestampDir)
+	err, _ = CreateDirectoryIfNeeded(runSpecificDir)
+	if err != nil {
+		fmt.Printf("Error creating run-specific log directory: %s\n", runSpecificDir)
+		panic(err)
+	}
+
+	logfile := filepath.Join(runSpecificDir, "cmsdev.log")
+	f, err := os.OpenFile(logfile, os.O_CREATE|os.O_WRONLY, 0644)
 	logFile = logrus.New()
 	if err != nil {
 		panic(err)
@@ -399,12 +406,11 @@ func CreateLogFile(path, version string, logs, retry, quiet, verbose, includeCLI
 	if noCleanup {
 		args = append(args, "no-cleanup")
 	}
-	runTag = strings.Join(runTags, "-")
 	testLog = logFile.WithFields(logrus.Fields{"version": version, "args": strings.Join(args, ",")})
-	logFileDir = path
+	logFileDir = runSpecificDir
 	Infof("cmsdev starting")
 	for _, pkg := range RPMLIST {
 		Debugf("%s version: %s", pkg, GetPackageVersion(pkg))
 	}
-	fmt.Printf("Starting main run, version: %s, tag: %s\n", version, runTag)
+	fmt.Printf("Starting main run, version: %s, log directory: %s\n", version, runSpecificDir)
 }

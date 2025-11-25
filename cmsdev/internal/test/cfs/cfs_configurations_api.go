@@ -44,7 +44,19 @@ import (
 func GetProdCatalogConfigData() (cfsConfigLayerData CsmProductCatalogConfiguration, err error) {
 	latestCSMData, err := pcu.GetLatestProdCatEntry()
 	if err != nil {
-		return CsmProductCatalogConfiguration{}, err
+		// This means that there was an error accessing the actual product catalog data
+		SetProdCatOk(false)
+		common.Errorf("Unable to get latest CSM product catalog entry: %v", err)
+		if !latestCSMData.Initialized {
+			// This means that for some reason, fake data was unable to be generated
+			// to use in place of the actual product catalog data. In this case, the
+			// error is fatal
+			return CsmProductCatalogConfiguration{}, err
+		}
+		// This means that it was able to provide fake data for the test
+		// We've set the prodCatOk variable, which will ensure the CFS test fails.
+		// We can use the fake data to proceed with this test
+		common.Infof("Using fake data in place of the actual product catalog data")
 	}
 
 	if latestCSMData.Configuration.CloneURL == "" || latestCSMData.Configuration.Commit == "" {

@@ -1,0 +1,121 @@
+#
+# MIT License
+#
+# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+#
+
+"""
+cfs session creator class for session creation and verification
+"""
+
+from http import HTTPStatus
+from typing import Optional
+
+from cmstools.lib.defs import JsonDict
+from cmstools.test.cfs_sessions_rc_test.cfs.configurations import find_or_create_cfs_config
+from cmstools.test.cfs_sessions_rc_test.cfs.session import get_cfs_sessions_list, create_cfs_session
+from cmstools.test.cfs_sessions_rc_test.defs import ScriptArgs, CFSRCException
+from cmstools.test.cfs_sessions_rc_test.log import logger
+
+
+class CfsSessionCreator:
+    def __init__(self, script_args: ScriptArgs):
+        self.name_prefix = script_args.cfs_session_name
+        self.max_sessions = script_args.max_cfs_sessions
+        self.cfs_version = script_args.cfs_version
+        self.page_size = script_args.page_size
+        self._config_name: Optional[str] = None
+
+    @property
+    def expected_http_status(self) -> int:
+        if self.cfs_version == "v2":
+            return HTTPStatus.OK
+        return HTTPStatus.CREATED
+
+    def create_cfs_session_payload(self, session_name: str, config_name: str) -> JsonDict:
+        """
+        Create the CFS session payload dictionary based on the CFS version.
+        Args:
+            session_name: Name of the CFS session to create
+            config_name: Name of the CFS configuration to use for the session
+        Returns:
+            Dictionary containing the CFS session payload
+        """
+        if self.cfs_version == "v3":
+            return {
+                "name": session_name,
+                "configuration_name": config_name,
+                "target": {
+                    "definition": "spec",
+                    "groups": [{"name": "Compute", "members": ["fakexname"]}],
+                }
+            }
+
+        return {
+            "name": session_name,
+            "configurationName": config_name,
+            "target": {
+                "definition": "spec",
+                "groups": [{"name": "Compute", "members": ["fakexname"]}],
+            }
+        }
+
+    def get_config_name(self) -> Optional[str]:
+        """Return the cfs config name"""
+        return self._config_name
+
+    def create_sessions(self) -> list[str]:
+        """
+        Create CFS sessions up to max_sessions using the specified name prefix.
+        List all sessions in pending state that have the text prefix string in their names. Verify that the names of
+        these sessions match the ones we just created.
+        """
+        config_name, created = find_or_create_cfs_config(self.name_prefix)
+        # Set the config name for later cleanup if we created it
+        if created:
+            self._config_name = config_name
+
+        cfs_session_names_list: list[str] = []
+        for i in range(self.max_sessions):
+            session_name = f"{self.name_prefix}{i}"
+            session_payload = self.create_cfs_session_payload(session_name=session_name, config_name=config_name)
+            # Discard the returned session data, since we are just verifying creation
+            _ = create_cfs_session(session_name=session_name, session_payload=session_payload,
+                                   cfs_version=self.cfs_version, expected_http_status=self.expected_http_status)
+            cfs_session_names_list.append(session_name)
+            logger.info("Created CFS session: %s", session_name)
+
+        # Verify all sessions are in pending state and names match
+        result = get_cfs_sessions_list(cfs_session_name_contains=self.name_prefix, cfs_version=self.cfs_version, limit=self.page_size)
+        pending_cfs_session_names = sorted([s["name"] for s in result.session_data if s["name"] in cfs_session_names_list])
+
+        if len(pending_cfs_session_names) != len(cfs_session_names_list):
+            logger.error("Expected %d sessions but found %d matching sessions",
+                         len(cfs_session_names_list), len(pending_cfs_session_names))
+            raise CFSRCException()
+
+        if sorted(cfs_session_names_list) != sorted(pending_cfs_session_names):
+            logger.error("Mismatch in created and pending session names. Created: %s, Pending: %s",
+                         cfs_session_names_list, pending_cfs_session_names)
+            raise CFSRCException()
+
+        logger.info("All %d CFS sessions created and in pending state", self.max_sessions)
+        return cfs_session_names_list
