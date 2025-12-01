@@ -32,7 +32,7 @@ from cmstools.lib import CmstoolsException
 
 CFSRCException = CmstoolsException
 
-DEFAULT_SESSION_NAME_PREFIX = "cfs-race-condition-test-"
+DEFAULT_SESSION_NAME_PREFIX = "cfs-race-condition-test"
 DEFAULT_MAX_SESSIONS = 20
 DEFAULT_MAX_PARALLEL_REQUESTS = 4
 DEFAULT_CFS_VERSION = "v3"
