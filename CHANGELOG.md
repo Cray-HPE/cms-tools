@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.34.1] - 2025-12-02
+
 ### Fixed
 - CASMCMS-9605: cfs race condition test fails if using the default cfs session name
 
