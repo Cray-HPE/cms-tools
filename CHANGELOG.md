@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dependencies
+
+- Bump `github.com/go-openapi/swag/jsonname` from 0.25.3 to 0.25.4 ([#335](https://github.com/Cray-HPE/cms-tools/pull/335))
+
 ## [1.34.1] - 2025-12-02
 
 ### Fixed
