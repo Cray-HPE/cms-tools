@@ -600,6 +600,6 @@ done
 
 - [cms-tools Developer Guide](cms-tools-developer-guide.md) -- Repository structure, build process, code walkthrough
 - [cms-tools Issue Triage Guide](cms-tools-issue-triage-guide.md) -- Debugging failures, log analysis, escalation
-- [cmsdev Tests (docs-csm)](https://github.com/Cray-HPE/docs-csm/blob/main/troubleshooting/cmsdev_tests.md)
-- [Barebones Image Boot (docs-csm)](https://github.com/Cray-HPE/docs-csm/blob/main/troubleshooting/cms_barebones_image_boot.md)
-- [CFS Race Condition Test (docs-csm)](https://github.com/Cray-HPE/docs-csm/blob/main/troubleshooting/cfs_sessions_race_condition_test.md)
+- [cmsdev Tests (docs-csm)](https://github.com/Cray-HPE/docs-csm/blob/release/1.7/troubleshooting/cmsdev_tests.md)
+- [Barebones Image Boot (docs-csm)](https://github.com/Cray-HPE/docs-csm/blob/release/1.7/troubleshooting/cms_barebones_image_boot.md)
+- [CFS Race Condition Test (docs-csm)](https://github.com/Cray-HPE/docs-csm/blob/release/1.7/troubleshooting/cfs_sessions_race_condition_test.md)

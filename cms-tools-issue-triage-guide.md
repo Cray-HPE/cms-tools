@@ -518,9 +518,9 @@ ls -lt /opt/cray/tests/integration/logs/csm/cmstools/cfs_sessions_rc_test/
 
 ## Additional Resources
 
-- [cmsdev Tests Documentation](https://github.com/Cray-HPE/docs-csm/blob/main/troubleshooting/cmsdev_tests.md)
-- [Barebones Image Boot Test](https://github.com/Cray-HPE/docs-csm/blob/main/troubleshooting/cms_barebones_image_boot.md)
-- [CFS Race Condition Test](https://github.com/Cray-HPE/docs-csm/blob/main/troubleshooting/cfs_sessions_race_condition_test.md)
-- [SMS Health Check Known Issues](https://github.com/Cray-HPE/docs-csm/blob/main/troubleshooting/known_issues/sms_health_check.md)
-- [Validate CSM Health](https://github.com/Cray-HPE/docs-csm/blob/main/operations/validate_csm_health.md)
-- [Configure Cray CLI](https://github.com/Cray-HPE/docs-csm/blob/main/operations/configure_cray_cli.md)
+- [cmsdev Tests Documentation](https://github.com/Cray-HPE/docs-csm/blob/release/1.7/troubleshooting/cmsdev_tests.md)
+- [Barebones Image Boot Test](https://github.com/Cray-HPE/docs-csm/blob/release/1.7/troubleshooting/cms_barebones_image_boot.md)
+- [CFS Race Condition Test](https://github.com/Cray-HPE/docs-csm/blob/release/1.7/troubleshooting/cfs_sessions_race_condition_test.md)
+- [SMS Health Check Known Issues](https://github.com/Cray-HPE/docs-csm/blob/release/1.7/troubleshooting/known_issues/sms_health_check.md)
+- [Validate CSM Health](https://github.com/Cray-HPE/docs-csm/blob/release/1.7/operations/validate_csm_health.md)
+- [Configure Cray CLI](https://github.com/Cray-HPE/docs-csm/blob/release/1.7/operations/configure_cray_cli.md)

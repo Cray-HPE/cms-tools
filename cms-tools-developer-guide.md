@@ -378,10 +378,10 @@ less /opt/cray/tests/install/logs/cmsdev/<timestamp>/cmsdev.log
 
 ## Related Documentation
 
-- [cmsdev Tests](https://github.com/Cray-HPE/docs-csm/blob/main/troubleshooting/cmsdev_tests.md)
-- [Barebones Image Boot Test](https://github.com/Cray-HPE/docs-csm/blob/main/troubleshooting/cms_barebones_image_boot.md)
-- [CFS Race Condition Test](https://github.com/Cray-HPE/docs-csm/blob/main/troubleshooting/cfs_sessions_race_condition_test.md)
-- [Configure Cray CLI](https://github.com/Cray-HPE/docs-csm/blob/main/operations/configure_cray_cli.md)
+- [cmsdev Tests](https://github.com/Cray-HPE/docs-csm/blob/release/1.7/troubleshooting/cmsdev_tests.md)
+- [Barebones Image Boot Test](https://github.com/Cray-HPE/docs-csm/blob/release/1.7/troubleshooting/cms_barebones_image_boot.md)
+- [CFS Race Condition Test](https://github.com/Cray-HPE/docs-csm/blob/release/1.7/troubleshooting/cfs_sessions_race_condition_test.md)
+- [Configure Cray CLI](https://github.com/Cray-HPE/docs-csm/blob/release/1.7/operations/configure_cray_cli.md)
 
 ## Contributing
 
