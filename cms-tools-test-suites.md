@@ -596,10 +596,35 @@ done
 | `CONSOLE_LOG_LEVEL` | Console output log level | `INFO` | Python tests |
 | `FILE_LOG_LEVEL` | File output log level | `DEBUG` | Python tests |
 
+
+## Dependencies with csm-testing
+
+The [`csm-testing`](https://github.com/Cray-HPE/csm-testing) repository has a **runtime dependency** on the `cmsdev` binary built and packaged by `cms-tools`. There is no source-level import or build-time dependency between the two repos — the coupling is entirely at the deployed system level via the installed `cray-cmstools-crayctldeploy` RPM.
+
+### How csm-testing uses cms-tools tests
+
+| Dependency | csm-testing File | Mechanism | Details |
+|------------|------------------|-----------|---------|
+| **Goss CMS health tests** | `goss-testing/tests/ncn/goss-cms-tests.yaml` | Executes `/usr/local/bin/cmsdev test -v <service>` | Iterates over a `cms_tests` variable (e.g., `bos`, `cfs`, `conman`, `ims`, `tftp`, `vcs`) and runs `cmsdev` for each service with a 600-second timeout. Included by the `ncn-cms-tests.yaml` and `ncn-healthcheck-worker-single.yaml` test suites. |
+| **Dynamic test discovery** | `goss-testing/automated/run-ncn-tests.sh` | Runs `cmsdev test -l --exclude-aliases` | At runtime, queries `cmsdev` for the canonical list of testable services and merges it with a hardcoded default list (`bos cfs conman ims tftp vcs`) to populate the `cms_tests` Goss variable. Falls back to the hardcoded list if `cmsdev` is not installed. |
+| **iPXE test scope** | `goss-testing/tests/ncn/goss-k8s-ipxe-pod-running.yaml` | Documentation reference only | `csm-testing` limits its own iPXE test to the `cray-ipxe-x86-64` pod, noting that broader iPXE/aarch64 coverage is handled by `cmsdev`'s `ipxe`/`tftp` test. |
+
+### Reverse dependency (cms-tools → csm-testing)
+
+`cms-tools` has a soft informational dependency back on `csm-testing`: on test failure, `cmsdev` captures the installed RPM versions of `csm-testing` and `goss-servers` (see `RPMLIST` in `cmsdev/internal/lib/common/common.go`) as debug artifacts. This is purely diagnostic and does not affect test execution.
+
+### Key points
+
+- **`csm-testing` delegates all CMS service health checking to `cmsdev`.** It does not reimplement BOS, CFS, IMS, etc. health checks — it treats `cmsdev` as a black box.
+- **The dependency is fault-tolerant.** If `cmsdev` is not installed, `run-ncn-tests.sh` still populates the test list from hardcoded defaults, but the Goss test execution will fail since it tries to exec the binary.
+- **The two repos ship as separate RPMs** (`csm-testing` and `cray-cmstools-crayctldeploy`) that are both installed on NCNs. There is no Go/Python import dependency, no shared library, and no build-time linkage.
+- **`csm-testing`'s own Python-based tests** (SAT functional tests, IUF tests, etc.) are completely independent of `cms-tools`. The dependency exists only in the Goss-based CMS health check path.
+
 ## Related Documentation
 
 - [cms-tools Developer Guide](cms-tools-developer-guide.md) -- Repository structure, build process, code walkthrough
 - [cms-tools Issue Triage Guide](cms-tools-issue-triage-guide.md) -- Debugging failures, log analysis, escalation
+- [csm-testing repository](https://github.com/Cray-HPE/csm-testing) -- Goss-based CSM health checks and automated NCN testing (runtime consumer of `cmsdev`)
 - [cmsdev Tests (docs-csm)](https://github.com/Cray-HPE/docs-csm/blob/release/1.7/troubleshooting/cmsdev_tests.md)
 - [Barebones Image Boot (docs-csm)](https://github.com/Cray-HPE/docs-csm/blob/release/1.7/troubleshooting/cms_barebones_image_boot.md)
 - [CFS Race Condition Test (docs-csm)](https://github.com/Cray-HPE/docs-csm/blob/release/1.7/troubleshooting/cfs_sessions_race_condition_test.md)
