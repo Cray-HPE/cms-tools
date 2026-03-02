@@ -45,8 +45,6 @@ cms-tools/
 |   |       +-- barebones_image_test/ # Barebones image boot test
 |   |       +-- cfs_sessions_rc_test/ # CFS sessions race condition test
 +-- cms-tftp/                        # TFTP upload scripts
-+-- tmp/                             # Reference documentation
-+-- docs/                            # Additional documentation
 ```
 
 ## Technology Stack
