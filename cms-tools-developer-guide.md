@@ -113,7 +113,6 @@ After RPM installation:
 - `cmsdev` binary: `/usr/local/bin/cmsdev`
 - Barebones image test: `/opt/cray/tests/integration/csm/barebones_image_test`
 - CFS race condition test: `/opt/cray/tests/integration/csm/cfs_sessions_rc_test`
-- Shell wrapper scripts: `/opt/cray/tests/install/ncn/scripts/`
 
 ## Key Components -- Go (cmsdev)
 
