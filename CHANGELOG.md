@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.34.2] - 2026-03-12
+
+### Fixed
+
+- CASMCMS-9636: cfs_sessions_rc_test: Fix bug causing multi-delete validation to always fail
+
 ## [1.34.1] - 2025-12-02
 
 ### Fixed
