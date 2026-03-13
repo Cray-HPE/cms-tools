@@ -30,7 +30,7 @@ require (
 	github.com/fatih/color v1.17.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pin/tftp v2.1.0+incompatible
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
 	gopkg.in/resty.v1 v1.12.0
