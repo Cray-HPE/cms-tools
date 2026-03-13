@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2025-2026 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -26,8 +26,22 @@
 CFS module for cmstools tests
 """
 
-from .defs import (CFS_SESSIONS_URL_TEMPLATE, CFS_OPERATOR_DEPLOYMENT, CFS_OPTIONS_URL,
-                   CFS_DEFAULT_PAGE_SIZE, CFS_CONFIGS_URL)
-from .types import (SessionDeleteResult, MultiSessionsGetResult, CFS_V2_SESSIONS_DELETE_CODES,
-                    CFS_V3_SESSIONS_DELETE_CODES, SessionsGetResponse)
+from .defs import (
+                    CFS_CONFIGS_URL,
+                    CFS_DEFAULT_PAGE_SIZE,
+                    CFS_SESSIONS_URL_TEMPLATE,
+                    CFS_OPERATOR_DEPLOYMENT,
+                    CFS_OPTIONS_URL,
+                    CFS_V2_SESSIONS_DELETE_CODES,
+                    CFS_V3_SESSIONS_DELETE_CODES,
+                    CFS_VERSIONS_INT
+                  )
+from .types import (
+                    CfsV2SessionsDeleteCode,
+                    CfsV3SessionsDeleteCode,
+                    CfsVersionInt,
+                    MultiSessionsGetResult,
+                    SessionDeleteResult,
+                    SessionsGetResponse
+                   )
 from .config import create_cfs_config
