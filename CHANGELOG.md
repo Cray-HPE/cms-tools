@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `github.com/go-openapi/swag/jsonname` from 0.25.3 to 0.25.4 ([#335](https://github.com/Cray-HPE/cms-tools/pull/335))
 - Bump `gopkg.in/ini.v1` from 1.67.0 to 1.67.1 ([#345](https://github.com/Cray-HPE/cms-tools/pull/345))
 - Bump `github.com/go-openapi/swag/jsonname` from 0.25.3 to 0.25.4 ([#335](https://github.com/Cray-HPE/cms-tools/pull/335))
+- Bump `github.com/sirupsen/logrus` from 1.9.3 to 1.9.4 ([#346](https://github.com/Cray-HPE/cms-tools/pull/346))
 
 ## [1.34.2] - 2026-03-12
 
