@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2026 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -26,8 +26,11 @@
 CFS URL definitions
 """
 
+from typing import get_args
+
 from cmstools.lib.api import API_BASE_URL
 
+from .types import CfsV2SessionsDeleteCode, CfsV3SessionsDeleteCode, CfsVersionInt
 
 # CFS v3 URLs
 CFS_URL = f"{API_BASE_URL}/cfs/v3"
@@ -45,3 +48,12 @@ CFS_OPERATOR_DEPLOYMENT = "cray-cfs-operator"
 
 # CFS options
 CFS_DEFAULT_PAGE_SIZE = 1000
+
+# CFS versions
+# (using get_args allows us to avoid hard-coding the list in the types file and here)
+CFS_VERSIONS_INT: frozenset[CfsVersionInt] = frozenset(get_args(CfsVersionInt))
+
+# CFS sessions delete expected status codes
+# (using get_args allows us to avoid hard-coding the list in the types file and here)
+CFS_V2_SESSIONS_DELETE_CODES: frozenset[CfsV2SessionsDeleteCode] = frozenset(get_args(CfsV2SessionsDeleteCode))
+CFS_V3_SESSIONS_DELETE_CODES: frozenset[CfsV3SessionsDeleteCode] = frozenset(get_args(CfsV3SessionsDeleteCode))

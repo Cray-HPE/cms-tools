@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2026 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -29,12 +29,11 @@ from dataclasses import dataclass
 from typing import Literal, Optional
 
 # There was a CFS v1, but it hasn't been in CSM since CSM 1.0
-CFS_VERSION_INT = Literal[ 2, 3 ]
+CfsVersionInt = Literal[ 2, 3 ]
 
 # CFS session operation HTTP return codes
-CFS_V2_SESSIONS_DELETE_CODES = Literal[ 204, 400]
-CFS_V3_SESSIONS_DELETE_CODES = Literal[ 200, 400]
-
+CfsV2SessionsDeleteCode = Literal[ 204, 400 ]
+CfsV3SessionsDeleteCode = Literal[ 200, 400 ]
 
 # Data classes
 @dataclass

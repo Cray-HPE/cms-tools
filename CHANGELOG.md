@@ -11,8 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Knowledge transfer docs for the repo
 
 ### Dependencies
-
+- Bump `github.com/go-openapi/swag/jsonname` from 0.25.3 to 0.25.5 ([#335](https://github.com/Cray-HPE/cms-tools/pull/335), [#348](https://github.com/Cray-HPE/cms-tools/pull/348))
+- Bump `gopkg.in/ini.v1` from 1.67.0 to 1.67.1 ([#345](https://github.com/Cray-HPE/cms-tools/pull/345))
 - Bump `github.com/go-openapi/swag/jsonname` from 0.25.3 to 0.25.4 ([#335](https://github.com/Cray-HPE/cms-tools/pull/335))
+- Bump `github.com/sirupsen/logrus` from 1.9.3 to 1.9.4 ([#346](https://github.com/Cray-HPE/cms-tools/pull/346))
+- Bump `github.com/go-openapi/jsonreference` from 0.21.3 to 0.21.5 ([#349](https://github.com/Cray-HPE/cms-tools/pull/349))
+- Bump `github.com/mailru/easyjson` from 0.9.1 to 0.9.2 ([#353](https://github.com/Cray-HPE/cms-tools/pull/353))
+
+## [1.34.2] - 2026-03-12
+
+### Fixed
+
+- CASMCMS-9636: cfs_sessions_rc_test: Fix bug causing multi-delete validation to always fail
 
 ## [1.34.1] - 2025-12-02
 
