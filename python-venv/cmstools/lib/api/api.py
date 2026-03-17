@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024-2026 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -28,6 +28,7 @@ API module cmstools tests
 
 import base64
 import json
+from threading import Lock
 
 import requests
 from requests_retry_session import requests_retry_session
@@ -45,12 +46,21 @@ API_BASE_URL = f"{API_GW_SECURE}/apis"
 
 SYSTEM_CA_CERTS = "/etc/ssl/ca-bundle.pem"
 
+# Cache the API access token, since it has a 1 year expiration timeout
+_access_token_lock = Lock()
+_ACCESS_TOKEN: str | None = None
 
-def add_api_auth(headers: JsonDict) -> None:
+def _get_access_token(lock_held: bool=False) -> str:
     """
     Get the admin secret from k8s for the api gateway - command line equivalent is:
     #`kubectl get secrets admin-client-auth -o jsonpath='{.data.client-secret}' | base64 -d`
     """
+    if _ACCESS_TOKEN is not None:
+        return _ACCESS_TOKEN
+    if not lock_held:
+        with _access_token_lock:
+            return _get_access_token(lock_held=True)
+
     secret_data = get_k8s_secret_data(sec_name="admin-client-auth", sec_namespace=S3_CREDS_SECRET_NS)
     try:
         encoded_admin_secret = secret_data['client-secret']
@@ -68,7 +78,18 @@ def add_api_auth(headers: JsonDict) -> None:
                                          expected_status=200, parse_json=True)
 
     # pull the access token from the return data
-    headers["Authorization"] = f"Bearer {resp_json['access_token']}"
+    _ACCESS_TOKEN = resp_json['access_token']
+    return _ACCESS_TOKEN
+
+
+def add_api_auth(headers: JsonDict) -> None:
+    """
+    Get the admin secret from k8s for the api gateway - command line equivalent is:
+    #`kubectl get secrets admin-client-auth -o jsonpath='{.data.client-secret}' | base64 -d`
+    """
+    # pull the access token from the return data
+    headers["Authorization"] = f"Bearer {_get_access_token()}"
+
 
 def request(verb, url, headers=None, add_auth_header=True, verify=SYSTEM_CA_CERTS,
             **kwargs) -> requests.Response:
