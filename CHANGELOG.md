@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `github.com/go-openapi/jsonreference` from 0.21.3 to 0.21.5 ([#349](https://github.com/Cray-HPE/cms-tools/pull/349))
 - Bump `github.com/mailru/easyjson` from 0.9.1 to 0.9.2 ([#353](https://github.com/Cray-HPE/cms-tools/pull/353))
 - Bump `github.com/mattn/go-isatty` from 0.0.20 to 0.0.21 ([#354](https://github.com/Cray-HPE/cms-tools/pull/354))
+- Bump `github.com/mattn/go-colorable` from 0.1.14 to 0.1.15 ([#357](https://github.com/Cray-HPE/cms-tools/pull/357))
 
 ## [1.34.2] - 2026-03-12
 
