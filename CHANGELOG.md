@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `gopkg.in/ini.v1` from 1.67.0 to 1.67.1 ([#345](https://github.com/Cray-HPE/cms-tools/pull/345))
 - Bump `github.com/go-openapi/swag/jsonname` from 0.25.3 to 0.25.4 ([#335](https://github.com/Cray-HPE/cms-tools/pull/335))
 - Bump `github.com/sirupsen/logrus` from 1.9.3 to 1.9.4 ([#346](https://github.com/Cray-HPE/cms-tools/pull/346))
-- Bump `github.com/go-openapi/jsonreference` from 0.21.3 to 0.21.5 ([#349](https://github.com/Cray-HPE/cms-tools/pull/349))
+- Bump `github.com/go-openapi/jsonreference` from 0.21.3 to 0.21.6 ([#349](https://github.com/Cray-HPE/cms-tools/pull/349), [#358](https://github.com/Cray-HPE/cms-tools/pull/358))
 - Bump `github.com/mailru/easyjson` from 0.9.1 to 0.9.2 ([#353](https://github.com/Cray-HPE/cms-tools/pull/353))
 - Bump `github.com/mattn/go-isatty` from 0.0.20 to 0.0.21 ([#354](https://github.com/Cray-HPE/cms-tools/pull/354))
 
