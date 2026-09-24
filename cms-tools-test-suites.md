@@ -12,19 +12,17 @@ Python-based tests focus on end-to-end workflows and integration testing for spe
 
 #### 1. Barebones Image Boot Test
 
-**Purpose**: Validates the complete boot workflow using a minimal barebones image, testing the integration of BOS (Boot Orchestration Service), CFS (Configuration Framework Service), IMS (Image Management Service), BSS (Boot Script Service), iPXE, and TFTP.
-
-**Entry point**: `cmstools.test.barebones_image_test.__main__:main`
-**Script location**: `/opt/cray/tests/integration/csm/barebones_image_test`
-**Source**: `python-venv/cmstools/test/barebones_image_test/__main__.py` (~450 lines)
+- **Purpose**: Validates the complete boot workflow using a minimal barebones image, testing the integration of BOS (Boot Orchestration Service), CFS (Configuration Framework Service), IMS (Image Management Service), BSS (Boot Script Service), iPXE, and TFTP.
+- **Entry point**: `cmstools.test.barebones_image_test.__main__:main`
+- **Script location**: `/opt/cray/tests/integration/csm/barebones_image_test`
+- **Source**: `python-venv/cmstools/test/barebones_image_test/__main__.py` (~450 lines)
 
 #### 2. CFS Sessions Race Condition Test
 
-**Purpose**: Tests CFS API behavior under concurrent access patterns, verifying proper handling of simultaneous DELETE and GET operations against CFS session endpoints.
-
-**Entry point**: `cmstools.test.cfs_sessions_rc_test.__main__:main`
-**Script location**: `/opt/cray/tests/integration/csm/cfs_sessions_rc_test`
-**Source**: `python-venv/cmstools/test/cfs_sessions_rc_test/`
+- **Purpose**: Tests CFS API behavior under concurrent access patterns, verifying proper handling of simultaneous DELETE and GET operations against CFS session endpoints.
+- **Entry point**: `cmstools.test.cfs_sessions_rc_test.__main__:main`
+- **Script location**: `/opt/cray/tests/integration/csm/cfs_sessions_rc_test`
+- **Source**: `python-venv/cmstools/test/cfs_sessions_rc_test/`
 
 ### Go Tests
 
@@ -32,10 +30,9 @@ Go-based tests perform comprehensive health checks on individual CMS services.
 
 #### 3. cmsdev Test Suite
 
-**Purpose**: Validates the health and functionality of all CMS services including pod status, API endpoints, CLI operations, and multi-tenancy support.
-
-**Binary location**: `/usr/local/bin/cmsdev`
-**Source**: `cmsdev/`
+- **Purpose**: Validates the health and functionality of all CMS services including pod status, API endpoints, CLI operations, and multi-tenancy support.
+- **Binary location**: `/usr/local/bin/cmsdev`
+- **Source**: `cmsdev/`
 
 ---
 
@@ -380,12 +377,13 @@ done
 
 ### BOS (Boot Orchestration Service)
 
-**Function**: `bos.IsBOSRunning(includeCLI, includeTenant bool) bool`
-**Source**: `cmsdev/internal/test/bos/bos.go` (~146 lines)
-**Pod prefix**: `cray-bos`
-**Minimum pods**: 3
+- **Function**: `bos.IsBOSRunning(includeCLI, includeTenant bool) bool`
+- **Source**: `cmsdev/internal/test/bos/bos.go` (~146 lines)
+- **Pod prefix**: `cray-bos`
+- **Minimum pods**: 3
 
-**Test Steps**:
+#### BOS Test Steps
+
 1. Verify at least 3 pods with prefix `cray-bos` are running
 2. Check migration pod status is `Succeeded`
 3. Test API endpoints:
@@ -399,12 +397,13 @@ done
 
 ### CFS (Configuration Framework Service)
 
-**Function**: `cfs.IsCFSRunning(includeCLI, includeTenant bool) bool`
-**Source**: `cmsdev/internal/test/cfs/cfs.go` (~157 lines)
-**Pod prefix**: `cray-cfs`
-**Minimum pods**: 2
+- **Function**: `cfs.IsCFSRunning(includeCLI, includeTenant bool) bool`
+- **Source**: `cmsdev/internal/test/cfs/cfs.go` (~157 lines)
+- **Pod prefix**: `cray-cfs`
+- **Minimum pods**: 2
 
-**Test Steps**:
+#### CFS Test Steps
+
 1. Verify at least 2 pods with prefix `cray-cfs` are running
 2. Test API endpoints:
    - `GET /apis/cfs/v3/healthz` -- Health check
@@ -420,13 +419,14 @@ done
 
 ### IMS (Image Management Service)
 
-**Function**: `ims.IsIMSRunning(includeCLI bool) bool`
-**Source**: `cmsdev/internal/test/ims/ims.go` (~419 lines)
-**Pod prefix**: `cray-ims`
-**Minimum pods**: 1
-**PVC**: `cray-ims-data-claim`
+- **Function**: `ims.IsIMSRunning(includeCLI bool) bool`
+- **Source**: `cmsdev/internal/test/ims/ims.go` (~419 lines)
+- **Pod prefix**: `cray-ims`
+- **Minimum pods**: 1
+- **PVC**: `cray-ims-data-claim`
 
-**Test Steps**:
+#### IMS Test Steps
+
 1. Verify 1 pod with prefix `cray-ims` is running
 2. Verify PVC `cray-ims-data-claim` is Bound
 3. Test API endpoints:
@@ -444,10 +444,11 @@ done
 
 ### Console Services (Conman)
 
-**Function**: `con.IsConmanRunning() bool`
-**Source**: `cmsdev/internal/test/conman/conman.go` (~222 lines)
+- **Function**: `con.IsConmanRunning() bool`
+- **Source**: `cmsdev/internal/test/conman/conman.go` (~222 lines)
 
-**Test Steps**:
+#### Console Test Steps
+
 1. Verify `cray-console-operator` pods are running
 2. Verify `cray-console-node` pods are running
 3. Verify PVCs are Bound:
@@ -457,12 +458,13 @@ done
 
 ### VCS (Version Control Service / Gitea)
 
-**Function**: `vcs.IsVCSRunning() bool`
-**Source**: `cmsdev/internal/test/vcs/vcs.go` (~198 lines)
-**Pod prefix**: `gitea-vcs`
-**Minimum pods**: 2
+- **Function**: `vcs.IsVCSRunning() bool`
+- **Source**: `cmsdev/internal/test/vcs/vcs.go` (~198 lines)
+- **Pod prefix**: `gitea-vcs`
+- **Minimum pods**: 2
 
-**Test Steps**:
+#### VCS Test Steps
+
 1. Verify at least 2 pods with prefix `gitea-vcs` are running
 2. Get VCS credentials from `vcs-user-credentials` K8s secret
 3. Test VCS API:
@@ -474,10 +476,11 @@ done
 
 ### iPXE/TFTP
 
-**Function**: `ipxe_tftp.AreTheyRunning() bool`
-**Source**: `cmsdev/internal/test/ipxe_tftp/ipxe_tftp.go` (~138 lines)
+- **Function**: `ipxe_tftp.AreTheyRunning() bool`
+- **Source**: `cmsdev/internal/test/ipxe_tftp/ipxe_tftp.go` (~138 lines)
 
-**Test Steps**:
+#### iPXE/TFTP Test Steps
+
 1. Verify BSS iPXE pods per architecture:
    - `cray-bss-ipxe-aarch64` pods
    - `cray-bss-ipxe-x86-64` pods
@@ -534,11 +537,12 @@ On test failure, cmsdev automatically collects:
 **Kubernetes resources**: nodes, namespaces, pods, pv, pvc, services, daemonsets, statefulsets, deployments, etcd, configmaps, secrets, endpoints, postgresqls, cronjobs, jobs, sealedsecrets, etcdbackups
 
 **Per-service artifacts**:
+
 - Pod descriptions with events
 - Pod logs (all containers, timestamped)
 - PVC descriptions with events
 
-**RPM versions**: craycli, docs-csm, csm-testing, goss-servers
+**RPM versions**: `craycli`, `docs-csm`, `csm-testing`, `goss-servers`
 
 Artifacts are packaged as `artifacts.tgz` in the log directory.
 
@@ -599,9 +603,9 @@ done
 
 ## Dependencies with csm-testing
 
-The [`csm-testing`](https://github.com/Cray-HPE/csm-testing) repository has a **runtime dependency** on the `cmsdev` binary built and packaged by `cms-tools`. There is no source-level import or build-time dependency between the two repos — the coupling is entirely at the deployed system level via the installed `cray-cmstools-crayctldeploy` RPM.
+The [`csm-testing` repository](https://github.com/Cray-HPE/csm-testing) has a **runtime dependency** on the `cmsdev` binary built and packaged by `cms-tools`. There is no source-level import or build-time dependency between the two repos — the coupling is entirely at the deployed system level via the installed `cray-cmstools-crayctldeploy` RPM.
 
-### How csm-testing uses cms-tools tests
+### How `csm-testing` uses `cms-tools` tests
 
 | Dependency | csm-testing File | Mechanism | Details |
 |------------|------------------|-----------|---------|
