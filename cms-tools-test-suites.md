@@ -12,7 +12,7 @@ Python-based tests focus on end-to-end workflows and integration testing for spe
 
 #### 1. Barebones Image Boot Test
 
-**Purpose**: Validates the complete boot workflow using a minimal barebones image, testing the integration of BOS (Boot Orchestration Service), IMS (Image Management Service), and BSS (Boot Script Service).
+**Purpose**: Validates the complete boot workflow using a minimal barebones image, testing the integration of BOS (Boot Orchestration Service), CFS (Configuration Framework Service), IMS (Image Management Service), BSS (Boot Script Service), iPXE, and TFTP.
 
 **Entry point**: `cmstools.test.barebones_image_test.__main__:main`
 **Script location**: `/opt/cray/tests/integration/csm/barebones_image_test`
