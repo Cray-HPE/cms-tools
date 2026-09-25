@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `actions/checkout` from 6 to 7 ([#360](https://github.com/Cray-HPE/cms-tools/pull/360))
 - Bump `golang.org/x/net` from 0.41.0 to 0.55.0 ([#361](https://github.com/Cray-HPE/cms-tools/pull/361))
 - Bump `github.com/mattn/go-colorable` from 0.1.14 to 0.1.15 ([#357](https://github.com/Cray-HPE/cms-tools/pull/357))
+- Bump `github.com/go-openapi/jsonpointer` from 0.23.1 to 0.23.2 ([#364](https://github.com/Cray-HPE/cms-tools/pull/364))
 
 ## [1.34.2] - 2026-03-12
 
